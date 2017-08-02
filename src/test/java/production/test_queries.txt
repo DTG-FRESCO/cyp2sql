@@ -1,0 +1,12 @@
+MATCH p=shortestPath((f {name:"omega"})-[*1..6]->(t:Meta)) RETURN count(t);
+MATCH (a)-[*1..3]->(c:Process) RETURN count(c);
+MATCH (a:Local)-[*4..9]->(b) RETURN DISTINCT b.node_id, b.sys_time AS time_alias ORDER BY b.node_id DESC;
+MATCH (n {name:["/var/db/entropy/saved-entropy.7", "/var/db/entropy/saved-entropy.8"]}) RETURN n.node_id ORDER BY n.node_id ASC;
+MATCH (a:Global)-[]->(b) RETURN b.node_id AS conn_id;
+MATCH (a:Global)-[]->(b) RETURN count(b.node_id);
+MATCH (a:Global)-->(b:Local)-->(c:Process)<--(d:Local)<--(b) RETURN count(b);
+MATCH ()-[r]-() RETURN DISTINCT r.state ORDER BY r.state;
+MATCH (n:Local)<--(m:Global) RETURN m.node_id AS thing, m.type AS ty ORDER BY m.sys_time LIMIT 3;
+MATCH (a:Global) RETURN count(a) AS funky;
+MATCH (a:Meta) WHERE a.sys_time < 0 RETURN count(a);
+MATCH (a:Meta) WHERE a.sys_time < 0 OR a.node_id > 845 RETURN count(a);
