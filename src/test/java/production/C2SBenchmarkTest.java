@@ -33,7 +33,7 @@ public class C2SBenchmarkTest {
         File f_postg = folder.newFile("postg_results.txt");
 
         // location of the properties file.
-        String propsLocation = "C:/Users/ocraw/IdeaProjects/Cypher_SQL_Translation/c2s_props.properties";
+        String propsLocation = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/c2s_props.properties";
 
         // helper method to obtain queries from a local text file and store them into the JVM.
         populateQueries();
@@ -53,7 +53,7 @@ public class C2SBenchmarkTest {
     private void populateQueries() {
         try {
             FileInputStream fis =
-                    new FileInputStream("C:\\Users\\ocraw\\IdeaProjects\\Cypher_SQL_Translation" +
+                    new FileInputStream("C:\\Users\\ocraw\\IdeaProjects\\cyp2sql-next" +
                             "\\src\\test\\java\\production\\test_queries.txt");
             BufferedReader br = new BufferedReader(new InputStreamReader(fis));
             String line;

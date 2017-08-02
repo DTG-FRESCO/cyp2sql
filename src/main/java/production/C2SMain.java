@@ -308,7 +308,7 @@ public class C2SMain {
         }
 
         boolean sqlExecSuccess;
-        if (sql != null) {
+        if (sql != null && !sql.isEmpty()) {
             sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypher_line.toLowerCase().contains("count")), dbName);
         } else throw new Exception("Conversion of SQL failed");
 

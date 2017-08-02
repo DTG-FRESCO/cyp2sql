@@ -20,9 +20,8 @@ public class With_Cypher extends AbstractConversion {
         int posOfOrderBy = cypher.toLowerCase().indexOf("order by");
 
         // from the tokens in the original Cypher query, decide on the most appropriate method for translation.
-        if (posOfOrderBy == -1) return withWhere(cypher);
-        else if (posOfWhere == -1) return withOB(cypher);
-        else return "";
+        if (posOfOrderBy == -1 || (posOfWhere != -1 && (posOfWhere < posOfOrderBy))) return withWhere(cypher);
+        else return withOB(cypher);
     }
 
     private String withOB(String cypher) {

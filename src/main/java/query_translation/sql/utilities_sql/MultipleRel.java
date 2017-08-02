@@ -202,11 +202,17 @@ public class MultipleRel extends AbstractTranslation {
             }
 
             if (cR.getCaseString() != null) {
-                String caseString =
-                        cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(), "n01." + cR.getField());
+                // if caseNode is false, then the type must be a relationship.
+                boolean caseNode = (cR.getType().equals("node"));
+                String replacement = caseNode ? "n01." + cR.getField() : "a." + cR.getField();
+                String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(), replacement);
                 sql.append(caseString).append("  ");
-                needNodeTable = true;
-                nodeTableCount++;
+                if (caseNode) {
+                    needNodeTable = true;
+                    nodeTableCount++;
+                } else {
+                    relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, "a");
+                }
                 break;
             }
 

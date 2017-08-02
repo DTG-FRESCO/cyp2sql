@@ -500,7 +500,17 @@ class CypherTranslator {
             if (posInWhere > 0) {
                 typeBooleanA = wc.getWhereMappings().get(wc.getComponents().get(posInWhere - 1));
             }
-            if (clause.contains(" = ")) {
+
+            if (clause.contains("id(")) {
+                String[] idAndValue = clause.split("\\) ");
+                addIDWhere(idAndValue, matchC, typeBooleanA);
+            } else if (clause.contains("exists(")) {
+                String idAndProp = clause.substring(7, clause.length() - 1);
+                addExistsWhere(idAndProp, matchC, typeBooleanA);
+            } else if (clause.contains("labels(")) {
+                String[] idAndValue = clause.split(" in ");
+                addLabelsWhere(idAndValue, matchC, typeBooleanA);
+            } else if (clause.contains(" = ")) {
                 String[] idAndValue = clause.split(" = ");
                 addCondition(idAndValue, matchC, "equals", typeBooleanA);
             } else if (clause.contains(" <> ")) {
@@ -524,13 +534,32 @@ class CypherTranslator {
         return wc;
     }
 
-    private static void addCondition(String[] idAndValue, MatchClause matchC, String op,
-                                     String typeBoolean) throws Exception {
-        String[] idAndProp = idAndValue[0].split("\\.");
+    private static void addLabelsWhere(String[] idAndValue, MatchClause matchC, String typeBool) throws Exception {
+        String op;
+        if (idAndValue[0].startsWith("not")) {
+            op = "<>";
+            idAndValue[0] = idAndValue[0].substring(4);
+        } else op = "=";
+        String val = idAndValue[0].replace("'", "");
+        String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
+
+        for (CypNode cN : matchC.getNodes()) {
+            if (cN.getId().equals(id)) {
+                JsonObject obj = addToJSONObject(cN.getProps(), "label", val, op, typeBool);
+                cN.setProps(obj);
+                return;
+            }
+        }
+
+        throw new Exception("WHERE CLAUSE MALFORMED");
+    }
+
+    private static void addExistsWhere(String clause, MatchClause matchC, String typeBool) throws Exception {
+        String[] idAndProp = clause.split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp, idAndValue, op, typeBoolean);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", typeBool);
                 cN.setProps(obj);
                 return;
             }
@@ -538,7 +567,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp, idAndValue, op, typeBoolean);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], "null", "exists", typeBool);
                 cR.setProps(obj);
                 return;
             }
@@ -547,39 +576,95 @@ class CypherTranslator {
         throw new Exception("WHERE CLAUSE MALFORMED");
     }
 
-    private static JsonObject addToJSONObject(JsonObject origProps, String[] idAndProp, String[] idAndValue,
-                                              String op, String typeBoolean) {
+    private static void addIDWhere(String[] idAndValue, MatchClause matchC, String typeBool) throws Exception {
+        String id = idAndValue[0].substring(3);
+        String opAndValue[] = idAndValue[1].split(" ");
+
+        for (CypNode cN : matchC.getNodes()) {
+            if (cN.getId().equals(id)) {
+                JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], typeBool);
+                cN.setProps(obj);
+                return;
+            }
+        }
+
+        for (CypRel cR : matchC.getRels()) {
+            if (cR.getId() != null && cR.getId().equals(id)) {
+                JsonObject obj = addToJSONObject(cR.getProps(), "id", opAndValue[1], opAndValue[0], typeBool);
+                cR.setProps(obj);
+                return;
+            }
+        }
+
+        throw new Exception("WHERE CLAUSE MALFORMED");
+    }
+
+    private static void addCondition(String[] idAndValue, MatchClause matchC, String op,
+                                     String typeBoolean) throws Exception {
+        String[] idAndProp = idAndValue[0].split("\\.");
+
+        for (CypNode cN : matchC.getNodes()) {
+            if (cN.getId().equals(idAndProp[0])) {
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean);
+                cN.setProps(obj);
+                return;
+            }
+        }
+
+        for (CypRel cR : matchC.getRels()) {
+            if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean);
+                cR.setProps(obj);
+                return;
+            }
+        }
+
+        throw new Exception("WHERE CLAUSE MALFORMED");
+    }
+
+    private static JsonObject addToJSONObject(JsonObject origProps, String prop, String value, String op,
+                                              String typeBoolean) {
         JsonObject obj = origProps;
         if (origProps == null) obj = new JsonObject();
 
         String valueToAdd = "";
-        if (obj.has(idAndProp[1])) {
-            valueToAdd = obj.get(idAndProp[1]).getAsString() + "~" + typeBoolean + "~";
+        if (obj.has(prop)) {
+            valueToAdd = obj.get(prop).getAsString() + "~" + typeBoolean + "~";
         }
         switch (op) {
             case "equals":
-                valueToAdd += "eq#" + idAndValue[1].replace("\"", "").toLowerCase() + "#qe";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case "=":
+                valueToAdd += "eq#" + value.replace("\"", "").toLowerCase() + "#qe";
+                obj.addProperty(prop, valueToAdd);
                 break;
             case "nequals":
-                valueToAdd += "ne#" + idAndValue[1].replace("\"", "").toLowerCase() + "#en";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case "<>":
+                valueToAdd += "ne#" + value.replace("\"", "").toLowerCase() + "#en";
+                obj.addProperty(prop, valueToAdd);
                 break;
             case "lt":
-                valueToAdd += "lt#" + idAndValue[1].replace("\"", "").toLowerCase() + "#tl";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case "<":
+                valueToAdd += "lt#" + value.replace("\"", "").toLowerCase() + "#tl";
+                obj.addProperty(prop, valueToAdd);
                 break;
             case "gt":
-                valueToAdd += "gt#" + idAndValue[1].replace("\"", "").toLowerCase() + "#tg";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case ">":
+                valueToAdd += "gt#" + value.replace("\"", "").toLowerCase() + "#tg";
+                obj.addProperty(prop, valueToAdd);
                 break;
             case "le":
-                valueToAdd += "le#" + idAndValue[1].replace("\"", "").toLowerCase() + "#el";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case "<=":
+                valueToAdd += "le#" + value.replace("\"", "").toLowerCase() + "#el";
+                obj.addProperty(prop, valueToAdd);
                 break;
             case "ge":
-                valueToAdd += "ge#" + idAndValue[1].replace("\"", "").toLowerCase() + "#eg";
-                obj.addProperty(idAndProp[1], valueToAdd);
+            case ">=":
+                valueToAdd += "ge#" + value.replace("\"", "").toLowerCase() + "#eg";
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "exists":
+                valueToAdd += "ex#" + value.replace("\"", "").toLowerCase() + "#xe";
+                obj.addProperty(prop, valueToAdd);
                 break;
         }
         return obj;

@@ -10,3 +10,10 @@ MATCH (n:Local)<--(m:Global) RETURN m.node_id AS thing, m.type AS ty ORDER BY m.
 MATCH (a:Global) RETURN count(a) AS funky;
 MATCH (a:Meta) WHERE a.sys_time < 0 RETURN count(a);
 MATCH (a:Meta) WHERE a.sys_time < 0 OR a.node_id > 845 RETURN count(a);
+MATCH (a)-[r:LOC_OBJ]-(b) RETURN b.name, r.state LIMIT 15;
+MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);
+MATCH (n) WHERE id(n) = 345 RETURN n.mono_time, n.sys_time, n.name;
+MATCH (a)-->(b)-->(c)-->(d) WHERE id(d) < 123 RETURN count(a) AS cool;
+MATCH (n) WHERE exists(n.value) AND exists(n.timestamp) RETURN count(n);
+MATCH (n)--()--()--()--(n) WHERE exists(n.status) RETURN count(n);
+MATCH (s)-[e]-(d) WHERE id(s) = 349 AND NOT 'Process' in labels(s) AND NOT 'Global' in labels(d) RETURN d.node_id ORDER BY d.node_id ASC;

@@ -137,6 +137,9 @@ class TranslateUtils {
         } else if (value.startsWith("ge#")) {
             sql.append(" >= ");
             v = value.substring(3, value.indexOf("#eg"));
+        } else if (value.startsWith("ex#")) {
+            sql.append(" IS NOT NULL ");
+            return sql;
         }
 
         if (array) {

@@ -17,8 +17,19 @@ public class NoRels extends AbstractTranslation {
             if (r.getNodeID() == null && r.getField().equals("*")) {
                 sql.append("*");
             } else if (r.getCaseString() != null) {
-                String caseString = r.getCaseString().replace(r.getNodeID() + "." + r.getField(), "n01." + r.getField());
-                sql.append(caseString);
+                // fix case when lists needed
+                String parts[] = r.getCaseString().toLowerCase().split(" when ");
+                String caseField = parts[0].split("\\.")[1];
+                String caseString;
+                if (C2SMain.props.getListFields().contains(caseField)) {
+                    String innerParts[] = parts[1].toLowerCase().split(" then ");
+                    innerParts[0] = "ARRAY[" + innerParts[0] + "]";
+                    caseString = parts[0] + " when " + innerParts[0] + " then " + innerParts[1];
+                } else {
+                    caseString = r.getCaseString();
+                }
+                sql.append(caseString.replace(r.getNodeID() + "." + r.getField(),
+                        "n01." + r.getField()));
             } else {
                 for (CypNode cN : mc.getNodes()) {
                     if (r.getNodeID().equals(cN.getId())) {
