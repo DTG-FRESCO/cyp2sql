@@ -111,6 +111,7 @@ class TranslateUtils {
     private static StringBuilder getProperWhereValue(String value, StringBuilder sql) {
         // remove anything to do with ARRAYS from the value
         boolean array = value.startsWith("ARRAY[");
+        boolean list = false;
         if (array) value = value.substring(7, value.length() - 2);
         else if (value.contains("ARRAY[")) {
             array = true;
@@ -143,11 +144,17 @@ class TranslateUtils {
         } else if (value.startsWith("nx#")) {
             sql.append(" IS NULL ");
             return sql;
+        } else if (value.startsWith("in#")) {
+            sql.append(" IN ");
+            list = true;
+            v = value.substring(3, value.indexOf("#ni"))
+                    .replace("[", "(").replace("]", ")");
         }
 
         if (array) {
             sql.append("ARRAY[").append(v.replace("\"", "'")).append("] ");
         } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
+        else if (list) sql.append(v);
         else sql.append("'").append(v.replace("'", "")).append("' ");
 
         return sql;

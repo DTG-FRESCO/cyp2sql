@@ -509,7 +509,7 @@ class CypherTranslator {
                 clause = clause.substring(4);
             }
 
-            if (clause.contains("id(")) {
+            if (clause.contains("id(") && !clause.contains("[")) {
                 String[] idAndValue = clause.split("\\) ");
                 addIDWhere(idAndValue, matchC, typeBooleanA, not);
             } else if (clause.contains("exists(")) {
@@ -536,6 +536,18 @@ class CypherTranslator {
             } else if (clause.contains(" >= ")) {
                 String[] idAndValue = clause.split(" >= ");
                 addCondition(idAndValue, matchC, "ge", typeBooleanA, not);
+            } else if (clause.contains(":")) {
+                String[] idAndLabel = clause.split(":");
+                String x = "'" + idAndLabel[1] + "' in labels(" + idAndLabel[0] + ")";
+                String[] idAndValue = x.split(" in ");
+                addLabelsWhere(idAndValue, matchC, typeBooleanA, not);
+            } else if (clause.contains(" in ")) {
+                if (clause.startsWith("id(")) {
+                    clause = clause.substring(3, clause.indexOf(")")) + ".id" + clause.substring(clause.indexOf(")") + 1);
+                    System.out.println(clause);
+                }
+                String[] idAndValue = clause.split(" in ");
+                addCondition(idAndValue, matchC, "in", typeBooleanA, not);
             }
         }
 
@@ -637,9 +649,7 @@ class CypherTranslator {
             valueToAdd = obj.get(prop).getAsString() + "~" + typeBoolean + "~";
         }
 
-        if (not) {
-            op = invertOp(op);
-        }
+        if (not) op = invertOp(op);
 
         switch (op) {
             case "equals":
@@ -678,6 +688,11 @@ class CypherTranslator {
                 break;
             case "not exists":
                 valueToAdd += "nx#" + value.replace("\"", "").toLowerCase() + "#xn";
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "in":
+                valueToAdd += "in#" + value.replace("\"", "").toLowerCase() + "#ni";
+                System.out.println(valueToAdd);
                 obj.addProperty(prop, valueToAdd);
                 break;
         }
