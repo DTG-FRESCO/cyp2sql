@@ -53,6 +53,28 @@ public class NoRels extends AbstractTranslation {
                         break;
                     }
                 }
+                for (String s : WithSQL.withMapping.keySet()) {
+                    if (r.getNodeID().equals(s)) {
+                        String prop = r.getField();
+                        if (r.getCollect()) sql.append("array_agg(");
+                        if (r.getCount()) sql.append("count(");
+                        if (prop != null) {
+                            sql.append(WithSQL.withMapping.get(s)).append(".").append(prop);
+                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            sql.append(TranslateUtils.useAlias(r.getNodeID(), r.getField(), alias)).append(", ");
+                        } else {
+                            sql.append(WithSQL.withMapping.get(s)).append(".*");
+                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            sql.append(TranslateUtils.useAlias("count(" + r.getNodeID() + ")", r.getField(), alias))
+                                    .append(", ");
+                        }
+//                        if (r.getCollect() || r.getCount()) {
+//                            sql.setLength(sql.length() - 2);
+//                            sql.append("), ");
+//                        }
+                        break;
+                    }
+                }
             }
         }
 
@@ -90,6 +112,9 @@ public class NoRels extends AbstractTranslation {
         }
         sql.append(table);
         sql.append(" n01");
+
+        if (!WithSQL.withMapping.isEmpty()) sql.append(", wA");
+
         return sql;
     }
 
@@ -138,6 +163,15 @@ public class NoRels extends AbstractTranslation {
                             sql.append("n01.label LIKE");
                         }
                         sql.append(" ").append(TranslateUtils.genLabelLike(cN, "n01"));
+                    }
+                } else if (!WithSQL.withMapping.isEmpty()) {
+                    cN = matchC.getNodes().get(0);
+                    if (cN.getProps() != null) {
+                        if (!hasWhere) {
+                            sql.append(" WHERE ");
+                            hasWhere = true;
+                        }
+                        sql = TranslateUtils.getWholeWhereClause(sql, cN, wc);
                     }
                 }
             }

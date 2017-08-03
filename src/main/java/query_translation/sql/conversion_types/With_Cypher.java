@@ -16,12 +16,37 @@ public class With_Cypher extends AbstractConversion {
      */
     @Override
     public String convertQuery(String cypher) {
+        int posOfMatch = cypher.toLowerCase().indexOf("match");
         int posOfWhere = cypher.toLowerCase().indexOf("where");
         int posOfOrderBy = cypher.toLowerCase().indexOf("order by");
 
         // from the tokens in the original Cypher query, decide on the most appropriate method for translation.
+        if (posOfMatch != -1) return withMatch(cypher);
         if (posOfOrderBy == -1 || (posOfWhere != -1 && (posOfWhere < posOfOrderBy))) return withWhere(cypher);
         else return withOB(cypher);
+    }
+
+    /**
+     * The current method below accepts queries of the following type ONLY:
+     * MATCH ... WITH ... MATCH ... RETURN ...
+     *
+     * @param cypher Original Cypher input.
+     * @return SQL equivalent of the Cypher input.
+     */
+    private String withMatch(String cypher) {
+        String changeLine = cypher.toLowerCase().replace("with", "return");
+        String firstWith = changeLine.toLowerCase()
+                .substring(0, cypher.toLowerCase().lastIndexOf("match") + 1) + ";";
+        DecodedQuery dqFirstWith = convertCypherToSQL(firstWith);
+
+        String withTemp = null;
+        if (dqFirstWith != null) {
+            withTemp = WithSQL.genTemp(dqFirstWith.getSqlEquiv());
+        }
+
+        String secondWith = cypher.toLowerCase().substring(cypher.toLowerCase().lastIndexOf("match"));
+        String sqlSelect = WithSQL.createSelectMatch(secondWith, dqFirstWith);
+        return withTemp + " " + sqlSelect;
     }
 
     private String withOB(String cypher) {

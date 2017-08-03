@@ -241,6 +241,41 @@ public class MultipleRel extends AbstractTranslation {
                 break;
             }
 
+            boolean usesExistingWith = false;
+            for (String z : WithSQL.withMapping.keySet()) {
+                if (cR.getNodeID().equals(z)) {
+                    usesExistingWith = true;
+                    String prop = cR.getField();
+                    if (cR.getCollect()) sql.append("array_agg(");
+                    if (cR.getCount()) sql.append("count(");
+                    if (cR.getCaseString() != null) {
+                        String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
+                                WithSQL.withMapping.get(z) + "." + cR.getField());
+                        sql.append(caseString).append(", ");
+                    } else {
+                        if (prop != null) {
+                            sql.append(WithSQL.withMapping.get(z)).append(".").append(prop)
+                                    .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                    .append(", ");
+                        } else {
+                            sql.append(WithSQL.withMapping.get(z))
+                                    .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                    .append(", ");
+                        }
+                    }
+                    if (cR.getCollect() || cR.getCount()) {
+                        sql.setLength(sql.length() - 2);
+                        sql.append(")");
+                        sql.append(
+                                TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
+                                .append(", ");
+                    }
+                    break;
+                }
+            }
+
+            if (usesExistingWith) continue;
+
             for (CypNode cN : matchC.getNodes()) {
                 if (cR.getNodeID().equals(cN.getId())) {
                     String prop = cR.getField();
@@ -330,13 +365,22 @@ public class MultipleRel extends AbstractTranslation {
 
         String table = TranslateUtils.getTable(returnC);
 
+        boolean fromAdded = false;
         if (needNodeTable) {
             sql.append(" FROM ");
+            fromAdded = true;
             for (int k = nodeTableCount; k > 0; k--) {
                 sql.append(table).append(" n0").append(k).append(", ");
             }
             sql.append(relsNeeded);
-        } else sql.append(" FROM ").append(relsNeeded);
+        } else if (!relsNeeded.isEmpty()) {
+            sql.append(" FROM ").append(relsNeeded);
+            fromAdded = true;
+        }
+
+        if (!WithSQL.withMapping.isEmpty()) {
+            sql.append((!fromAdded) ? " FROM " : " ").append("wA, ");
+        }
 
         int numRels = matchC.getRels().size();
 
@@ -479,6 +523,7 @@ public class MultipleRel extends AbstractTranslation {
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
         if (needNodeTable)
             sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc());
+        else if (!WithSQL.withMapping.isEmpty()) sql.append(" WHERE wA.id = a.a2");
         return sql;
     }
 }

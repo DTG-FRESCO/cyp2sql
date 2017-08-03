@@ -156,17 +156,25 @@ class TranslateUtils {
                     .replace("[", "(").replace("]", ")");
         }
 
-        if (array) {
-            if (list) {
-                sql.append("(");
-                v = v.replace("(", "").replace(")", "");
-            }
-            sql.append("ARRAY[").append(v.replace("\"", "'")).append("] ");
-            if (list) sql.append(")");
-        } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
-        else if (list) sql.append(v);
-        else sql.append("'").append(v.replace("'", "")).append("' ");
 
+        // this bit of code helps the WITH translation to work
+        // see WithSQL.java and the method createSelectMatch() for further information.
+
+        if (!WithSQL.withMapping.isEmpty() && WithSQL.withMapping.containsKey(v.split("\\.")[0])) {
+            sql.append(v.replace(v.split("\\.")[0] + ".",
+                    WithSQL.withMapping.get(v.split("\\.")[0]) + "."));
+        } else {
+            if (array) {
+                if (list) {
+                    sql.append("(");
+                    v = v.replace("(", "").replace(")", "");
+                }
+                sql.append("ARRAY[").append(v.replace("\"", "'")).append("] ");
+                if (list) sql.append(")");
+            } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
+            else if (list) sql.append(v);
+            else sql.append("'").append(v.replace("'", "")).append("' ");
+        }
         return sql;
     }
 

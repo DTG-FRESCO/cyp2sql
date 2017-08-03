@@ -593,6 +593,8 @@ class CypherTranslator {
         String val = idAndValue[0].replace("'", "");
         String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
 
+        System.out.println(val + " -- " + id);
+
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
                 JsonObject obj = addToJSONObject(cN.getProps(), "label", val, "=", typeBool, not);

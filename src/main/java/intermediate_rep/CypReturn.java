@@ -1,5 +1,7 @@
 package intermediate_rep;
 
+import query_translation.sql.utilities_sql.WithSQL;
+
 /**
  * Class for storing the return fields of a Cypher query.
  */
@@ -46,6 +48,14 @@ public class CypReturn {
             if (cR.getId() != null && cR.getId().equals(nodeID)) {
                 posInClause = cR.getPosInClause();
                 return "rel";
+            }
+        }
+
+        // quite experimental code!
+        for (String s : WithSQL.withMapping.keySet()) {
+            if (s.equals(nodeID)) {
+                posInClause = -1;
+                return "withNode";
             }
         }
 

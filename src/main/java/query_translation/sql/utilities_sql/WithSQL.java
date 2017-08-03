@@ -2,15 +2,20 @@ package query_translation.sql.utilities_sql;
 
 import intermediate_rep.CypReturn;
 import intermediate_rep.DecodedQuery;
+import query_translation.sql.conversion_types.AbstractConversion;
 import translator.CypherTokenizer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class WithSQL {
     private static final String o = "order";
     private static final String r = "return";
     private static final String s = "skip";
     private static final String l = "limit";
+
+    public static Map<String, String> withMapping = new HashMap<>();
 
 
     public static String genTemp(String query) {
@@ -68,14 +73,14 @@ public class WithSQL {
     private static StringBuilder getWhereForWith(StringBuilder sWith, ArrayList<String> tokens) {
         int i = 0;
         sWith.append(" WHERE ");
-        String whereStmt = "";
+        StringBuilder whereStmt = new StringBuilder();
         while (true) {
             String currentTok = tokens.get(i);
 
             // loop termination condition
             if (currentTok.equals(o) || currentTok.equals(r) || currentTok.equals(s) || currentTok.equals(l)) break;
 
-            whereStmt = whereStmt + " " + currentTok;
+            whereStmt.append(" ").append(currentTok);
             i++;
         }
         return sWith.append(whereStmt);
@@ -150,5 +155,33 @@ public class WithSQL {
         if (sWith.length() > 7) sWith.setLength(sWith.length() - 2);
         sWith.append(" FROM wA");
         return sWith.toString();
+    }
+
+    /**
+     * As this method is still a bit in progress, currently ONLY can translate the following pattern:
+     * <p>
+     * MATCH () WHERE ... RETURN ...
+     * i.e. a match clause with no relationships in...
+     *
+     * @param secondWith
+     * @param dqFirstWith
+     * @return
+     */
+    public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith) {
+        withMapping.put(dqFirstWith.getRc().getItems().get(0).getNodeID(), "wA");
+
+        StringBuilder resSecWith = new StringBuilder();
+        DecodedQuery dQSecWith = AbstractConversion.convertCypherToSQL(secondWith);
+
+        if (dQSecWith.getMc().getRels().isEmpty()) {
+            NoRels nr = new NoRels();
+            resSecWith = nr.translate(resSecWith, dQSecWith);
+        } else {
+            MultipleRel mr = new MultipleRel();
+            resSecWith = mr.translate(resSecWith, dQSecWith);
+        }
+
+        withMapping = new HashMap<>();
+        return resSecWith.toString();
     }
 }
