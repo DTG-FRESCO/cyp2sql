@@ -501,51 +501,55 @@ class CypherTranslator {
                 typeBooleanA = wc.getWhereMappings().get(wc.getComponents().get(posInWhere - 1));
             }
 
+            // useful to see the part of the WHERE clause being parsed (if debugging)
+            System.out.println(clause);
+            boolean not = false;
+            if (clause.startsWith("not")) {
+                not = true;
+                clause = clause.substring(4);
+            }
+
             if (clause.contains("id(")) {
                 String[] idAndValue = clause.split("\\) ");
-                addIDWhere(idAndValue, matchC, typeBooleanA);
+                addIDWhere(idAndValue, matchC, typeBooleanA, not);
             } else if (clause.contains("exists(")) {
                 String idAndProp = clause.substring(7, clause.length() - 1);
-                addExistsWhere(idAndProp, matchC, typeBooleanA);
+                addExistsWhere(idAndProp, matchC, typeBooleanA, not);
             } else if (clause.contains("labels(")) {
                 String[] idAndValue = clause.split(" in ");
-                addLabelsWhere(idAndValue, matchC, typeBooleanA);
+                addLabelsWhere(idAndValue, matchC, typeBooleanA, not);
             } else if (clause.contains(" = ")) {
                 String[] idAndValue = clause.split(" = ");
-                addCondition(idAndValue, matchC, "equals", typeBooleanA);
+                addCondition(idAndValue, matchC, "equals", typeBooleanA, not);
             } else if (clause.contains(" <> ")) {
                 String[] idAndValue = clause.split(" <> ");
-                addCondition(idAndValue, matchC, "nequals", typeBooleanA);
+                addCondition(idAndValue, matchC, "nequals", typeBooleanA, not);
             } else if (clause.contains(" < ")) {
                 String[] idAndValue = clause.split(" < ");
-                addCondition(idAndValue, matchC, "lt", typeBooleanA);
+                addCondition(idAndValue, matchC, "lt", typeBooleanA, not);
             } else if (clause.contains(" > ")) {
                 String[] idAndValue = clause.split(" > ");
-                addCondition(idAndValue, matchC, "gt", typeBooleanA);
+                addCondition(idAndValue, matchC, "gt", typeBooleanA, not);
             } else if (clause.contains(" <= ")) {
                 String[] idAndValue = clause.split(" <= ");
-                addCondition(idAndValue, matchC, "le", typeBooleanA);
+                addCondition(idAndValue, matchC, "le", typeBooleanA, not);
             } else if (clause.contains(" >= ")) {
                 String[] idAndValue = clause.split(" >= ");
-                addCondition(idAndValue, matchC, "ge", typeBooleanA);
+                addCondition(idAndValue, matchC, "ge", typeBooleanA, not);
             }
         }
 
         return wc;
     }
 
-    private static void addLabelsWhere(String[] idAndValue, MatchClause matchC, String typeBool) throws Exception {
-        String op;
-        if (idAndValue[0].startsWith("not")) {
-            op = "<>";
-            idAndValue[0] = idAndValue[0].substring(4);
-        } else op = "=";
+    private static void addLabelsWhere(String[] idAndValue, MatchClause matchC,
+                                       String typeBool, boolean not) throws Exception {
         String val = idAndValue[0].replace("'", "");
         String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cN.getProps(), "label", val, op, typeBool);
+                JsonObject obj = addToJSONObject(cN.getProps(), "label", val, "=", typeBool, not);
                 cN.setProps(obj);
                 return;
             }
@@ -554,12 +558,13 @@ class CypherTranslator {
         throw new Exception("WHERE CLAUSE MALFORMED");
     }
 
-    private static void addExistsWhere(String clause, MatchClause matchC, String typeBool) throws Exception {
+    private static void addExistsWhere(String clause, MatchClause matchC,
+                                       String typeBool, boolean not) throws Exception {
         String[] idAndProp = clause.split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", typeBool);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", typeBool, not);
                 cN.setProps(obj);
                 return;
             }
@@ -567,7 +572,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], "null", "exists", typeBool);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], "null", "exists", typeBool, not);
                 cR.setProps(obj);
                 return;
             }
@@ -576,13 +581,13 @@ class CypherTranslator {
         throw new Exception("WHERE CLAUSE MALFORMED");
     }
 
-    private static void addIDWhere(String[] idAndValue, MatchClause matchC, String typeBool) throws Exception {
+    private static void addIDWhere(String[] idAndValue, MatchClause matchC, String typeBool, boolean not) throws Exception {
         String id = idAndValue[0].substring(3);
         String opAndValue[] = idAndValue[1].split(" ");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], typeBool);
+                JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], typeBool, not);
                 cN.setProps(obj);
                 return;
             }
@@ -590,7 +595,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cR.getProps(), "id", opAndValue[1], opAndValue[0], typeBool);
+                JsonObject obj = addToJSONObject(cR.getProps(), "id", opAndValue[1], opAndValue[0], typeBool, not);
                 cR.setProps(obj);
                 return;
             }
@@ -600,12 +605,12 @@ class CypherTranslator {
     }
 
     private static void addCondition(String[] idAndValue, MatchClause matchC, String op,
-                                     String typeBoolean) throws Exception {
+                                     String typeBoolean, boolean not) throws Exception {
         String[] idAndProp = idAndValue[0].split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean, not);
                 cN.setProps(obj);
                 return;
             }
@@ -613,7 +618,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], idAndValue[1], op, typeBoolean, not);
                 cR.setProps(obj);
                 return;
             }
@@ -623,7 +628,7 @@ class CypherTranslator {
     }
 
     private static JsonObject addToJSONObject(JsonObject origProps, String prop, String value, String op,
-                                              String typeBoolean) {
+                                              String typeBoolean, boolean not) {
         JsonObject obj = origProps;
         if (origProps == null) obj = new JsonObject();
 
@@ -631,6 +636,11 @@ class CypherTranslator {
         if (obj.has(prop)) {
             valueToAdd = obj.get(prop).getAsString() + "~" + typeBoolean + "~";
         }
+
+        if (not) {
+            op = invertOp(op);
+        }
+
         switch (op) {
             case "equals":
             case "=":
@@ -666,8 +676,49 @@ class CypherTranslator {
                 valueToAdd += "ex#" + value.replace("\"", "").toLowerCase() + "#xe";
                 obj.addProperty(prop, valueToAdd);
                 break;
+            case "not exists":
+                valueToAdd += "nx#" + value.replace("\"", "").toLowerCase() + "#xn";
+                obj.addProperty(prop, valueToAdd);
+                break;
         }
         return obj;
+    }
+
+    private static String invertOp(String op) {
+        String invertedOp = "";
+        switch (op) {
+            case "equals":
+            case "=":
+                invertedOp = "<>";
+                break;
+            case "nequals":
+            case "<>":
+                invertedOp = "=";
+                break;
+            case "lt":
+            case "<":
+                invertedOp = ">=";
+                break;
+            case "gt":
+            case ">":
+                invertedOp = "<=";
+                break;
+            case "le":
+            case "<=":
+                invertedOp = ">";
+                break;
+            case "ge":
+            case ">=":
+                invertedOp = "<";
+                break;
+            case "exists":
+                invertedOp = "not exists";
+                break;
+            case "not exists":
+                invertedOp = "exists";
+                break;
+        }
+        return invertedOp;
     }
 
     private static CypRel extractVarRel(List<String> varRel, MatchClause m, String varD) {

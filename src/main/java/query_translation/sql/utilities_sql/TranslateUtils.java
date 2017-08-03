@@ -140,6 +140,9 @@ class TranslateUtils {
         } else if (value.startsWith("ex#")) {
             sql.append(" IS NOT NULL ");
             return sql;
+        } else if (value.startsWith("nx#")) {
+            sql.append(" IS NULL ");
+            return sql;
         }
 
         if (array) {
