@@ -55,7 +55,7 @@ public class CypherWalker extends CypherBaseListener {
                 }
                 break;
             case 39:
-                whereClause = ctx.getText();
+                if (whereClause == null) whereClause = ctx.getText();
                 break;
         }
     }

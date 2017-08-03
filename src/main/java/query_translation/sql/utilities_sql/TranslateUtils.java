@@ -149,10 +149,20 @@ class TranslateUtils {
             list = true;
             v = value.substring(3, value.indexOf("#ni"))
                     .replace("[", "(").replace("]", ")");
+        } else if (value.startsWith("any#")) {
+            sql.append(" IN ");
+            list = true;
+            v = value.substring(4, value.indexOf("#yna"))
+                    .replace("[", "(").replace("]", ")");
         }
 
         if (array) {
+            if (list) {
+                sql.append("(");
+                v = v.replace("(", "").replace(")", "");
+            }
             sql.append("ARRAY[").append(v.replace("\"", "'")).append("] ");
+            if (list) sql.append(")");
         } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
         else if (list) sql.append(v);
         else sql.append("'").append(v.replace("'", "")).append("' ");

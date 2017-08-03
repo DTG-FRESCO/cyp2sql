@@ -502,14 +502,18 @@ class CypherTranslator {
             }
 
             // useful to see the part of the WHERE clause being parsed (if debugging)
-            System.out.println(clause);
+            // System.out.println(clause);
             boolean not = false;
             if (clause.startsWith("not")) {
                 not = true;
                 clause = clause.substring(4);
             }
 
-            if (clause.contains("id(") && !clause.contains("[")) {
+            if (clause.startsWith("any(")) {
+                String list = clause.substring(clause.indexOf("in") + 3, clause.indexOf("where") - 1);
+                String predicateValue = clause.substring(clause.lastIndexOf("in") + 3, clause.length() - 1);
+                addAnyWhere(list, predicateValue, matchC, typeBooleanA, not);
+            } else if (clause.contains("id(") && !clause.contains("[")) {
                 String[] idAndValue = clause.split("\\) ");
                 addIDWhere(idAndValue, matchC, typeBooleanA, not);
             } else if (clause.contains("exists(")) {
@@ -543,8 +547,8 @@ class CypherTranslator {
                 addLabelsWhere(idAndValue, matchC, typeBooleanA, not);
             } else if (clause.contains(" in ")) {
                 if (clause.startsWith("id(")) {
-                    clause = clause.substring(3, clause.indexOf(")")) + ".id" + clause.substring(clause.indexOf(")") + 1);
-                    System.out.println(clause);
+                    clause = clause.substring(3, clause.indexOf(")")) + ".id"
+                            + clause.substring(clause.indexOf(")") + 1);
                 }
                 String[] idAndValue = clause.split(" in ");
                 addCondition(idAndValue, matchC, "in", typeBooleanA, not);
@@ -552,6 +556,36 @@ class CypherTranslator {
         }
 
         return wc;
+    }
+
+    private static void addAnyWhere(String list, String predicateValue, MatchClause matchC,
+                                    String typeBool, boolean not) throws Exception {
+        String[] idAndProp;
+        if (list.startsWith("labels(")) {
+            idAndProp = new String[2];
+            // id value
+            idAndProp[0] = list.substring(7, list.length() - 1);
+            // property will be label
+            idAndProp[1] = "label";
+        } else idAndProp = list.split("\\.");
+
+        for (CypNode cN : matchC.getNodes()) {
+            if (cN.getId().equals(idAndProp[0])) {
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, "any", typeBool, not);
+                cN.setProps(obj);
+                return;
+            }
+        }
+
+        for (CypRel cR : matchC.getRels()) {
+            if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], predicateValue, "any", typeBool, not);
+                cR.setProps(obj);
+                return;
+            }
+        }
+
+        throw new Exception("WHERE CLAUSE MALFORMED");
     }
 
     private static void addLabelsWhere(String[] idAndValue, MatchClause matchC,
@@ -692,7 +726,10 @@ class CypherTranslator {
                 break;
             case "in":
                 valueToAdd += "in#" + value.replace("\"", "").toLowerCase() + "#ni";
-                System.out.println(valueToAdd);
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "any":
+                valueToAdd += "any#" + value.replace("\"", "").toLowerCase() + "#yna";
                 obj.addProperty(prop, valueToAdd);
                 break;
         }
