@@ -1,8 +1,8 @@
 package production;
 
-import database.KeyValueTest;
 import database.Neo4jDriver;
-import database.RelDBDriver;
+import database.key_value_hazelcast.KeyValueTest;
+import database.postgres.PostgresDriver;
 import intermediate_rep.DecodedQuery;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.driver.v1.exceptions.ClientException;
@@ -16,6 +16,7 @@ import java.util.*;
 
 /**
  * Main class for starting the application.
+ * View README.md for additional guidance.
  */
 public class C2SMain {
     // for optimisations based on the return clause of Cypher
@@ -26,31 +27,33 @@ public class C2SMain {
     public static C2SProperties props;
     public static int numResultsNeo4j;
     public static int numResultsPostgres;
+
     // stores the current DecodedQuery object so that the Cypher results module can use it,
     // without having to rerun computation.
     public static DecodedQuery currentDQ = null;
+
+    // static variable set by the translation unit if the ID needs to be returned from the Postgres database
+    // by default it is set to false as this is the same logic as Neo4j
+    public static boolean needToPrintID = false;
+    // cache for previously successful queries (saves time and computation doing repetitive work).
+    public static Map<String, String> cache = new HashMap<>();
     // variable set at the command line to turn on/off printing to a file the results of a read query.
     static boolean printBool = false;
-    // variable set at the command line to indicate whether results should be emailed back to the user
-    private static boolean emailUser = false;
     // variable set at the command line to indicate whether testing is being performed on the queries.
     private static boolean testConditions = true;
     // store queries that fail so that they are not run again during the evaluation.
     private static ArrayList<String> denyList = new ArrayList<>();
 
     /**
-     * <-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-a|-e|-i>
+     * <-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-f|-i|-r>
      * View README for additional guidance.
      *
      * @param args Arguments for the application.
      */
     public static void main(String args[]) {
         if (args.length == 0) printError(0);
-        if ((args[0].equals("-s") || args[0].equals("-schema")) && args.length != 3) {
-            printError(1);
-        } else if ((args[0].equals("-t") || args[0].equals("-translate")) && args.length != 4) {
-            printError(2);
-        }
+        if ((args[0].equals("-s") || args[0].equals("-schema")) && args.length != 3) printError(1);
+        else if ((args[0].equals("-t") || args[0].equals("-translate")) && args.length != 4) printError(2);
 
         // obtain properties for the program from the properties file.
         props = new C2SProperties(args[1]);
@@ -64,17 +67,17 @@ public class C2SMain {
 
         if (args.length == 4)
             switch (args[3]) {
-                case "-e":
-                    emailUser = true;
-                    break;
-                case "-a":
+                case "-f":
                     testConditions = false;
                     printBool = true;
                     break;
                 case "-i":
                     printBool = true;
-                    C2SInteractive.run(f_cypher, f_sql, dbName);
+                    C2SInteractive.run_debug(f_cypher, f_sql, dbName);
                     System.exit(0);
+                case "-r":
+                    testConditions = false;
+                    C2SInteractive.run(dbName);
                 default:
                     printError(3);
             }
@@ -88,12 +91,8 @@ public class C2SMain {
             case "-translate":
             case "-t":
                 System.out.println("PRINT TO FILE : " + ((printBool) ? "enabled" : "disabled"));
-                System.out.println("EMAIL USER : " + ((emailUser) ? "enabled" : "disabled"));
                 getLabelMapping();
                 warmUpResetSSL();
-
-                // clear the database test results in preparation for new test data.
-                if (testConditions) RelDBDriver.clearTestContents(dbName);
 
                 if (!printBool && testConditions) {
                     // translate Cypher queries to SQL.
@@ -109,16 +108,6 @@ public class C2SMain {
                         translateCypherFile(randomQueriesFile, f_cypher, f_sql, i, dbName);
                     }
 
-                    // send the results via email
-                    /*
-                    if (emailUser)
-                        try {
-                            SendResultsEmail.sendEmail(dbName, args[0]);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                    */
-
                     // delete temporary queries file.
                     File f = new File(randomQueriesFile);
                     f.delete();
@@ -131,11 +120,13 @@ public class C2SMain {
         }
     }
 
+    /**
+     * warm up the Neo4j caches if the server has just been turned on.
+     * https://neo4j.com/developer/kb/warm-the-cache-to-improve-performance-from-cold-start/
+     * also, if there is an SSL issue when changing databases, attempt to fix it by running
+     * some fix up code.
+     */
     static void warmUpResetSSL() {
-        // warm up the Neo4j caches if the server has just been turned on.
-        // https://neo4j.com/developer/kb/warm-the-cache-to-improve-performance-from-cold-start/
-        // also, if there is an SSL issue when changing databases, attempt to fix it by running
-        // some fix up code.
         try {
             Neo4jDriver.warmUp();
         } catch (ClientException ce) {
@@ -152,6 +143,12 @@ public class C2SMain {
         }
     }
 
+    /**
+     * If there is an error in the main method of C2SMain.java, then one of these messages will be printed
+     * out to the terminal.
+     *
+     * @param errorCode Error code matching the error that has occurred.
+     */
     private static void printError(int errorCode) {
         switch (errorCode) {
             case 0:
@@ -172,8 +169,9 @@ public class C2SMain {
             default:
                 System.err.println("*** Error running the application. ***");
         }
+
         System.err.println("*** Please see README for further help. ***");
-        System.err.println("<-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-a|-e|-i>");
+        System.err.println("<-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-f|-i|-r>");
         System.exit(1);
     }
 
@@ -280,31 +278,56 @@ public class C2SMain {
         }
     }
 
+    private static void runDirectPG(String sql, String dbName) throws IOException {
+        ProcessBuilder b = new ProcessBuilder("C:/Users/ocraw/pgdbPlay.bat", dbName, sql);
+        b.redirectErrorStream(true);
+        Process process = b.start();
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder builder = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            builder.append(line);
+            builder.append(System.getProperty("line.separator"));
+        }
+        System.out.println(builder.toString());
+    }
+
 
     static void translateCypherToSQL(String cypher_line, File f_cypher, File f_pg,
-                                     int repeatCount, String dbName) throws Exception {
+                                     int repeatCount, String dbName, boolean execNeo4j) throws Exception {
         String sql;
 
-        if (cypher_line.toLowerCase().contains(" foreach ")) {
-            ForEach_Cypher fe = new ForEach_Cypher();
-            sql = fe.convertQuery(cypher_line);
-        } else if (cypher_line.toLowerCase().contains(" with ")) {
-            With_Cypher wc = new With_Cypher();
-            sql = wc.convertQuery(cypher_line);
-        }
-        // commented code below was for transitive closure representation which is not used
+        if (cache.containsKey(cypher_line)) sql = cache.get(cypher_line);
+        else {
+            if (cypher_line.toLowerCase().contains(" foreach ")) {
+                ForEach_Cypher fe = new ForEach_Cypher();
+                sql = fe.convertQuery(cypher_line);
+            } else if (cypher_line.toLowerCase().contains(" with ")) {
+                With_Cypher wc = new With_Cypher();
+                sql = wc.convertQuery(cypher_line);
+            }
+            // commented code below was for transitive closure representation which is not used
 //        else if (cypher_line.toLowerCase().contains("allshortestpaths")) {
 //            ASP_Cypher aspc = new ASP_Cypher();
 //            sql = aspc.convertQuery(cypher_line);
 //        }
-        else if (cypher_line.toLowerCase().contains("shortestpath")) {
-            SP_Cypher spc = new SP_Cypher();
-            sql = spc.convertQuery(cypher_line);
-        } else if (cypher_line.toLowerCase().contains("iterate")) {
-            Iterate_Cypher ic = new Iterate_Cypher();
-            sql = ic.convertQuery(cypher_line);
-        } else {
-            sql = AbstractConversion.convertCypherToSQL(cypher_line).getSqlEquiv();
+            else if (cypher_line.toLowerCase().contains("shortestpath")) {
+                SP_Cypher spc = new SP_Cypher();
+                sql = spc.convertQuery(cypher_line);
+            } else if (cypher_line.toLowerCase().contains("iterate")) {
+                Iterate_Cypher ic = new Iterate_Cypher();
+                sql = ic.convertQuery(cypher_line);
+            } else {
+                sql = AbstractConversion.convertCypherToSQL(cypher_line).getSqlEquiv();
+            }
+        }
+
+        if (!execNeo4j) {
+            runDirectPG(sql, dbName);
+            cache.put(cypher_line, sql);
+            resetExecTimes();
+            return;
         }
 
         boolean sqlExecSuccess;
@@ -319,6 +342,7 @@ public class C2SMain {
             Neo4jDriver.run(cypher_line, f_cypher, printBool, testConditions);
 
         // validate the results
+        boolean countSame = false;
         if (sqlExecSuccess) {
             if ((numResultsNeo4j != numResultsPostgres) && !cypher_line.toLowerCase().contains("iterate")
                     && !cypher_line.toLowerCase().startsWith("create")
@@ -326,16 +350,17 @@ public class C2SMain {
                     && !cypher_line.toLowerCase().contains("foreach")) {
                 translationFail(cypher_line, sql, f_cypher, f_pg);
             } else if (cypher_line.toLowerCase().contains("count") && !cypher_line.toLowerCase().contains("with")) {
-                boolean countSame = FileUtils.contentEquals(f_cypher, f_pg);
+                countSame = FileUtils.contentEquals(f_cypher, f_pg);
                 if (!countSame) {
                     translationFail(cypher_line, sql, f_cypher, f_pg);
                 }
             }
 
+            if ((numResultsNeo4j == numResultsPostgres) || countSame) cache.put(cypher_line, sql);
+
             if (repeatCount > 0) {
                 // record the performance of Cypher and SQL on Neo4J and Postgres respectively.
                 printSummary(cypher_line, sql, f_cypher, f_pg, testConditions);
-                // DbUtil.insertMapping(line, sql, returnItemsForCypher, dbName);
             }
         }
 
@@ -362,7 +387,7 @@ public class C2SMain {
             while ((line = br.readLine()) != null) {
                 // if line is commented out in the read queries file, then do not attempt to convert it.
                 if (!line.startsWith("//") && !line.isEmpty() && !denyList.contains(line))
-                    translateCypherToSQL(line, f_cypher, f_pg, repeatCount, dbName);
+                    translateCypherToSQL(line, f_cypher, f_pg, repeatCount, dbName, true);
             }
             br.close();
             fis.close();
@@ -388,13 +413,13 @@ public class C2SMain {
             String indivSQL[] = sql.split(";");
             for (String q : indivSQL) {
                 if (q.trim().startsWith("CREATE")) {
-                    RelDBDriver.executeCreateView(q + ";", dbName);
+                    PostgresDriver.executeCreateView(q + ";", dbName);
                 } else if (q.trim().startsWith("INSERT")) {
-                    RelDBDriver.insertOrDelete(q + ";", dbName);
+                    PostgresDriver.insertOrDelete(q + ";", dbName);
                 } else if (q.trim().startsWith("DELETE")) {
-                    RelDBDriver.insertOrDelete(q + ";", dbName);
+                    PostgresDriver.insertOrDelete(q + ";", dbName);
                 } else
-                    RelDBDriver.select(q + ";", dbName, pg_results, printOutput);
+                    PostgresDriver.select(q + ";", dbName, pg_results, printOutput);
             }
         } catch (SQLException e) {
             System.out.println("FAILED IN executeSQL -- " + sql);
@@ -423,8 +448,8 @@ public class C2SMain {
                 numResultsNeo4j + "\nNumber of results from PostG: " + numResultsPostgres);
         if (testConditions) {
             System.out.println("Time on Neo4j: \t\t" + (Neo4jDriver.lastExecTime / 1000000.0) +
-                    " ms.\nTime on Postgres: \t" + ((RelDBDriver.lastExecTimeRead + RelDBDriver.lastExecTimeCreate +
-                    RelDBDriver.lastExecTimeInsert)
+                    " ms.\nTime on Postgres: \t" + ((PostgresDriver.lastExecTimeRead + PostgresDriver.lastExecTimeCreate +
+                    PostgresDriver.lastExecTimeInsert)
                     / 1000000.0) +
                     " ms.");
         }
@@ -444,8 +469,8 @@ public class C2SMain {
      */
     private static void resetExecTimes() {
         Neo4jDriver.lastExecTime = 0;
-        RelDBDriver.lastExecTimeCreate = 0;
-        RelDBDriver.lastExecTimeRead = 0;
-        RelDBDriver.lastExecTimeInsert = 0;
+        PostgresDriver.lastExecTimeCreate = 0;
+        PostgresDriver.lastExecTimeRead = 0;
+        PostgresDriver.lastExecTimeInsert = 0;
     }
 }

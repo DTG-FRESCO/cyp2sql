@@ -10,7 +10,7 @@ MATCH (n:Local)<--(m:Global) RETURN m.node_id AS thing, m.type AS ty ORDER BY m.
 MATCH (a:Global) RETURN count(a) AS funky;
 MATCH (a:Meta) WHERE a.sys_time < 0 RETURN count(a);
 MATCH (a:Meta) WHERE a.sys_time < 0 OR a.node_id > 845 RETURN count(a);
-MATCH (a)-[r:LOC_OBJ]-(b) RETURN b.name, r.state LIMIT 15;
+MATCH (a)-[r:LOC_OBJ]-(b) RETURN b.name, r.state ORDER BY b.node_id ASC LIMIT 15;
 MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);
 MATCH (n) WHERE id(n) = 345 RETURN n.mono_time, n.sys_time, n.name;
 MATCH (a)-->(b)-->(c)-->(d) WHERE id(d) < 123 RETURN count(a) AS cool;
@@ -23,3 +23,4 @@ MATCH (a) WHERE any(name in a.name WHERE name IN ['uid']) RETURN count(a);
 MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a);
 MATCH (n) WHERE 'Process' in labels(n) WITH n MATCH (m) WHERE m.status = n.status RETURN count(n);
 MATCH (n) WHERE 'Local' in labels(n) AND NOT exists(n.pid) WITH n MATCH (m:Global)-->(n) WHERE id(m) > 900 RETURN n.node_id;
+MATCH (n) WHERE 'Local' in labels(n) AND NOT exists(n.pid) WITH n MATCH (m:Global)-[r]->(n) WHERE id(m) > 900 RETURN n.node_id, r.state;

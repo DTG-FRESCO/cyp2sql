@@ -1,4 +1,4 @@
-package database;
+package database.postgres;
 
 import production.C2SMain;
 
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 /**
  * Database driver for Postgres.
  */
-public class RelDBDriver {
+public class PostgresDriver {
     public static long lastExecTimeRead = 0;
     public static long lastExecTimeCreate = 0;
     public static long lastExecTimeInsert = 0;
@@ -61,7 +61,7 @@ public class RelDBDriver {
      * @throws SQLException Error with the SQL query being executed.
      */
     public static void executeCreateView(String query, String dbName) throws SQLException {
-        if (!DB_OPEN) RelDBDriver.createConnection(dbName);
+        if (!DB_OPEN) PostgresDriver.createConnection(dbName);
         Statement stmt = c.createStatement();
 
         // timing unit for creating statements.
@@ -84,7 +84,7 @@ public class RelDBDriver {
      */
     public static void select(String query, String database, File pg_results, boolean printOutput)
             throws SQLException {
-        if (!DB_OPEN) RelDBDriver.createConnection(database);
+        if (!DB_OPEN) PostgresDriver.createConnection(database);
         Statement stmt;
         stmt = c.createStatement();
 
@@ -101,7 +101,8 @@ public class RelDBDriver {
                 for (ArrayList<String> as : results) {
                     int i = 0;
                     for (String column : colNames) {
-                        if (!column.equals("id") && !column.equals("x") && !column.equals("label")) {
+                        if ((!column.equals("id") || C2SMain.needToPrintID)
+                                && !column.equals("x") && !column.equals("label")) {
                             String result = as.get(i);
                             if (result != null) writer.println(column + " : " + result);
                         }
@@ -117,8 +118,9 @@ public class RelDBDriver {
             }
         }
 
+        C2SMain.needToPrintID = false;
         C2SMain.numResultsPostgres = numRecords;
-        RelDBDriver.closeConnection();
+        PostgresDriver.closeConnection();
     }
 
     /**
@@ -199,84 +201,5 @@ public class RelDBDriver {
         lastExecTimeInsert += (endNanoInsert - startNanoInsert);
 
         stmt.close();
-    }
-
-    /*
-      Method for obtaining the test results of the tool, such that they can be emailed onwards.
-      This method creates a temporary file within user space to store the .csv output of the
-      executed SQL:
-      SELECT cypher, sql, neot, pgt FROM query_mapping
-      This file is deleted once it has been sent via email.
-
-      @param dbName        Database name test results are stored on (same db as translation also stored on).
-     * @param typeTranslate If equal to -t, then normal translation. If -tc, then the transitive closure method
-     *                      has been used.
-     * @return String in HTML format to email.
-     * @throws SQLException Error in th SQL execution.
-    public static String getTestResults(String dbName, String typeTranslate) throws SQLException {
-        if (!DB_OPEN) RelDBDriver.createConnection(dbName);
-        String query = "SELECT cypher, sql, neot, pgt FROM query_mapping";
-        PreparedStatement stmt = c.prepareStatement(query);
-        ResultSet rs = stmt.executeQuery();
-
-        PrintWriter writer;
-        try {
-            writer = new PrintWriter(C2SMain.props.getCsvStats(), "UTF-8");
-            writer.println("cypher,sql,neot,pgt");
-
-            while (rs.next()) {
-                writer.println("\"" + rs.getString(1).replace("\"", "'") + "\",\""
-                        + rs.getString(2) + "\"," + rs.getDouble(3) + ","
-                        + rs.getDouble(4));
-            }
-
-            writer.close();
-        } catch (FileNotFoundException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-
-        String translationMechanism = (typeTranslate.equals("-t")) ?
-                "standard" : (typeTranslate.equals("-tc")) ? "with transitive closure" : "unknown/broken.";
-
-        String html = "<html><head><title>Test Results Summary!</title><style>table, th, td " +
-                "{border: 1px solid black; border-collapse: collapse;}</style></head>" +
-                "<body>Type of translation : " + translationMechanism + "</br>";
-        html = html + "<table style=\"width:100%\"><tr><th>Cypher</th>" +
-                "<th>Neo4J Average Time</th><th>Neo4J STDDEV</th>" +
-                "<th>Postgres Average Time</th><th>Postgres STDDEV</th></tr>";
-
-        query = "SELECT cypher AS Query, avg(neoT) AS Neo4J_Avg_Exec, stddev(neoT) AS Neo4J_stddev, " +
-                "avg(pgt) AS Postgres_Avg_Exec, stddev(pgt) AS Postgres_stddev FROM query_mapping " +
-                "GROUP BY cypher ORDER BY avg(neoT) DESC;";
-        stmt = c.prepareStatement(query);
-        rs = stmt.executeQuery();
-
-        while (rs.next()) {
-            html = html + "<tr>";
-            html = html + "<td>" + rs.getString(1) + "</td>";
-            html = html + "<td>" + rs.getDouble(2) + "</td>";
-            html = html + "<td>" + rs.getDouble(3) + "</td>";
-            html = html + "<td>" + rs.getDouble(4) + "</td>";
-            html = html + "<td>" + rs.getDouble(5) + "</td>";
-            html = html + "</tr>";
-        }
-
-        html = html + "</table></body></html>";
-        return html;
-    }
-    */
-
-    /**
-     * Clear the contents of the current query_mapping relation for a new test run.
-     *
-     * @param dbName Name of the database for which the test results are being cleared from.
-     */
-    public static void clearTestContents(String dbName) {
-        try {
-            RelDBDriver.insertOrDelete("DELETE FROM query_mapping", dbName);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        RelDBDriver.lastExecTimeInsert = 0;
     }
 }

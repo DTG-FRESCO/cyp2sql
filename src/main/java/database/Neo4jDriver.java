@@ -31,6 +31,7 @@ public class Neo4jDriver {
         Driver driver = GraphDatabase.driver("bolt://localhost",
                 AuthTokens.basic(C2SMain.props.getNeoUN(), C2SMain.props.getNeoPW()));
         Session session = driver.session();
+
         // print to file if the result being returned is a count, so that the tool can
         // validate that the translation was valid
         printOutput = printOutput || query.toLowerCase().contains("count");
@@ -79,7 +80,10 @@ public class Neo4jDriver {
                                             .toString()
                                             .replace("[", "")
                                             .replace("]", "") + "}");
-                                } else writer.println(key + " : " + entry.getValue());
+                                } else {
+                                    if (key.startsWith("id(")) key = "id";
+                                    writer.println(key + " : " + entry.getValue());
+                                }
                             }
                         }
                     }
@@ -103,8 +107,16 @@ public class Neo4jDriver {
         driver.close();
     }
 
-    private static Object formatVal(Object value) {
-        String strValue = String.valueOf(value);
+    /**
+     * Formats the value returned from the Neo4j database so that it matches the format emitted from Postgres,
+     * thus helping to validate the results.
+     * In particular, if the value is a number (long), then the inverted commas are removed.
+     *
+     * @param origValue The original value (type of Object) returned from the Neo4j database.
+     * @return Correctly formatted value to output to file.
+     */
+    private static Object formatVal(Object origValue) {
+        String strValue = String.valueOf(origValue);
         strValue = strValue.replace("\"", "");
         try {
             Long o = Long.valueOf(strValue);
@@ -114,16 +126,25 @@ public class Neo4jDriver {
         }
     }
 
-    private static String formatKey(String key) {
-        if (key.contains("count(")) {
+    /**
+     * Formats the key returned from the Neo4j database so that it matches the format emitted from Postgres,
+     * thus helping to validate the results.
+     * In particular, if the key is some sort of count, then only 'count' is returned. Likewise, if something
+     * similar to n.property is returned, then the leading n. is removed, and just 'property' is returned.
+     *
+     * @param origKey The original key returned from the Neo4j database.
+     * @return Correctly formatted key to output to file.
+     */
+    private static String formatKey(String origKey) {
+        if (origKey.contains("count(")) {
             return "count";
-        } else if (key.contains(".")) {
+        } else if (origKey.contains(".")) {
             StringBuilder newKey = new StringBuilder();
-            String[] parts = key.split("\\.");
+            String[] parts = origKey.split("\\.");
             for (int i = 1; i < parts.length; i++) newKey.append(parts[i]);
             return newKey.toString();
         }
-        return key;
+        return origKey;
     }
 
     /**

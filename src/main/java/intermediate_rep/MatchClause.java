@@ -3,7 +3,7 @@ package intermediate_rep;
 import java.util.ArrayList;
 
 /**
- * Stores all the CypNodes, CypRels, and has an internal ID to keep track of order.
+ * Stores all the CypNode and CypRel objects, and has an internal ID to keep track of the order.
  */
 public class MatchClause {
     private ArrayList<CypNode> nodes = new ArrayList<>();

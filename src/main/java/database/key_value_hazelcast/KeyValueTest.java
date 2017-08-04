@@ -1,4 +1,4 @@
-package database;
+package database.key_value_hazelcast;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,7 +26,11 @@ public class KeyValueTest {
     private static Map<Integer, List<Integer>> mapIn;
     private static JsonParser parser = new JsonParser();
 
-
+    /**
+     * Main method for executing the schema conversion to Hazelcast.
+     * The method just needs to be called statically as it operates on files created during the initial
+     * schema conversion process.
+     */
     public static void executeSchemaChange() {
         Config cfg = new Config();
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
@@ -43,6 +47,104 @@ public class KeyValueTest {
         exampleQueries();
     }
 
+    /**
+     * Builds up the mappings in the database for all the nodes in the original graph.
+     * It reads the nodes.txt file (found in the workspace location [see README.md for more information]).
+     */
+    private static void nodesMap() {
+        FileInputStream fis;
+        BufferedReader br = null;
+
+        try {
+            fis = new FileInputStream(SchemaConvert.nodesFile);
+            br = new BufferedReader(new InputStreamReader(fis));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                JsonObject o = (JsonObject) parser.parse(line);
+                int id = o.get("id").getAsInt();
+                String label = o.get("label").getAsString();
+                o.remove("id");
+                mapNodes.put(id, o.toString());
+                addToMap(label, id, mapLabels);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    // ignore ... any significant errors should already have been caught...
+                }
+            }
+            //File f = new File(SchemaConvert.nodesFile);
+            //f.delete();
+        }
+    }
+
+    /**
+     * Builds up the mappings in the database for all the edges in the original graph.
+     * It reads the nodes.txt file (found in the workspace location [see README.md for more information]).
+     */
+    private static void edgesMap() {
+        FileInputStream fis;
+        BufferedReader br = null;
+
+        try {
+            fis = new FileInputStream(SchemaConvert.edgesFile);
+            br = new BufferedReader(new InputStreamReader(fis));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                JsonObject o = (JsonObject) parser.parse(line);
+                int idl = o.get("idL").getAsInt();
+                int idr = o.get("idR").getAsInt();
+                o.remove("idL");
+                o.remove("idR");
+                // the mapping for edges in the map is as follows:
+                // {outgoingID,incomingID} : <properties of the edge>
+                mapEdges.put("{" + idl + "," + idr + "}", o.toString());
+
+                // the two calls to the method addToMap below create the adjacency lists for each node
+                // there is one adjacency list for outgoing edges on each node, and one adjacency list for
+                // incoming edges to a given node.
+                addToMap(idl, idr, mapOut);
+                addToMap(idr, idl, mapIn);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    // ignore ... any significant errors should already have been caught...
+                }
+            }
+            //File f = new File(SchemaConvert.edgesFile);
+            //f.delete();
+        }
+    }
+
+    /**
+     * Adds an item to a list, which is the value of some key in a map.
+     *
+     * @param key   Key in the map for which the corresponding value is being edited.
+     * @param value The value to be added to the list in the map.
+     * @param map   The map being modified.
+     * @param <S>   Type of the key.
+     * @param <T>   Type of the value.
+     */
+    private static <S, T> void addToMap(S key, T value, Map<S, List<T>> map) {
+        List<T> there = map.computeIfAbsent(key, k -> new ArrayList<>());
+        there.add(value);
+        map.put(key, there);
+    }
+
+    /**
+     * This function runs some test queries against the newly created and populated key-value store.
+     */
     private static void exampleQueries() {
         //match(n) where n.node_id = 492 return n.sys_time;
         //answer should be 1112012297
@@ -128,77 +230,5 @@ public class KeyValueTest {
         endNano = System.nanoTime();
         //System.out.println(currentRes.size());
         System.out.println(currentRes.size() + " -- time: " + ((endNano - startNano) / 1000000.0) + "ms.");
-    }
-
-    private static void edgesMap() {
-        FileInputStream fis;
-        BufferedReader br = null;
-
-        try {
-            fis = new FileInputStream(SchemaConvert.edgesFile);
-            br = new BufferedReader(new InputStreamReader(fis));
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                JsonObject o = (JsonObject) parser.parse(line);
-                int idl = o.get("idL").getAsInt();
-                int idr = o.get("idR").getAsInt();
-                o.remove("idL");
-                o.remove("idR");
-                mapEdges.put("{" + idl + "," + idr + "}", o.toString());
-                addToMap(idl, idr, mapOut);
-                addToMap(idr, idl, mapIn);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException ex) {
-                    // ignore ... any significant errors should already have been caught...
-                }
-            }
-            //File f = new File(SchemaConvert.edgesFile);
-            //f.delete();
-        }
-    }
-
-    private static void nodesMap() {
-        FileInputStream fis;
-        BufferedReader br = null;
-
-        try {
-            fis = new FileInputStream(SchemaConvert.nodesFile);
-            br = new BufferedReader(new InputStreamReader(fis));
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                JsonObject o = (JsonObject) parser.parse(line);
-                int id = o.get("id").getAsInt();
-                String label = o.get("label").getAsString();
-                o.remove("id");
-                mapNodes.put(id, o.toString());
-                addToMap(label, id, mapLabels);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException ex) {
-                    // ignore ... any significant errors should already have been caught...
-                }
-            }
-            //File f = new File(SchemaConvert.nodesFile);
-            //f.delete();
-        }
-    }
-
-    private static <S, T> void addToMap(S key, T value, Map<S, List<T>> map) {
-        List<T> there = map.computeIfAbsent(key, k -> new ArrayList<>());
-        there.add(value);
-        map.put(key, there);
     }
 }

@@ -3,11 +3,9 @@ package translator;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import intermediate_rep.*;
+import production.C2SMain;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Main class for translating the Cypher input to its internal representation.
@@ -469,13 +467,13 @@ class CypherTranslator {
     private static WhereClause extractWhere(String allClause, MatchClause matchC, WhereClause wc) throws Exception {
         allClause = allClause.toLowerCase();
         ArrayList<String> whereComponents = new ArrayList<>();
-        Map<String, String> whereMapping = new HashMap<>();
+        Map<String, String> whereMapping = new TreeMap<>();
 
         while (!allClause.isEmpty()) {
-            int posOfOr = (!allClause.contains(" or ")) ? 100000 : allClause.indexOf(" or ");
-            int posOfAnd = (!allClause.contains(" and ")) ? 100000 : allClause.indexOf(" and ");
+            int posOfOr = (!allClause.contains(" or ")) ? Integer.MAX_VALUE : allClause.indexOf(" or ");
+            int posOfAnd = (!allClause.contains(" and ")) ? Integer.MAX_VALUE : allClause.indexOf(" and ");
 
-            if ((posOfAnd == 100000) && (posOfOr == 100000)) {
+            if ((posOfAnd == Integer.MAX_VALUE) && (posOfOr == Integer.MAX_VALUE)) {
                 whereComponents.add(allClause);
                 allClause = "";
             } else if (posOfAnd < posOfOr) {
@@ -592,8 +590,6 @@ class CypherTranslator {
                                        String typeBool, boolean not) throws Exception {
         String val = idAndValue[0].replace("'", "");
         String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
-
-        System.out.println(val + " -- " + id);
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
@@ -820,14 +816,17 @@ class CypherTranslator {
 
     private static CypReturn extractReturn(List<String> clause, MatchClause matchC, CypherWalker cypherQ)
             throws Exception {
-        if (clause.size() == 3 && clause.contains(".")) {
+        if (clause.size() == 4 && clause.get(0).equals("id") && clause.get(1).equals("(")) {
+            C2SMain.needToPrintID = true;
+            return new CypReturn(clause.get(2), "id", false, false, null, matchC);
+        } else if (clause.size() == 3 && clause.contains(".")) {
             return new CypReturn(clause.get(0), clause.get(2), false, false, null, matchC);
-        } else if (clause.size() == 1)
+        } else if (clause.size() == 1) {
             if (clause.get(0).equals("*"))
                 return new CypReturn(null, "*", false, false, null, matchC);
             else
                 return new CypReturn(clause.get(0), null, false, false, null, matchC);
-        else if (cypherQ.hasCount()) {
+        } else if (cypherQ.hasCount()) {
             String field = (clause.size() == 6) ? clause.get(4) : null;
             return new CypReturn(clause.get(2), field, true, false, null, matchC);
         } else if (cypherQ.hasCollect()) {

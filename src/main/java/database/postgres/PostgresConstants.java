@@ -1,12 +1,9 @@
-package database;
+package database.postgres;
 
 /**
- * Class containing a list of useful queries for the translation to SQL.
+ * RelDBConstants holds strings that are inserted into a relational database during the initial schema conversion.
  */
-class DBConstants {
-    static final String QUERY_MAPPING = "CREATE TABLE query_mapping (cypher TEXT, sql TEXT, object BYTEA, " +
-            "neoT DOUBLE PRECISION, pgT DOUBLE PRECISION);";
-
+class PostgresConstants {
     static final String ADJLIST_FROM = "CREATE MATERIALIZED VIEW adjList_from AS (select idl as LeftNode, " +
             "array_agg(idr ORDER BY idr asc) AS RightNode FROM edges e JOIN nodes n on e.idl = n.id GROUP BY idl);";
 

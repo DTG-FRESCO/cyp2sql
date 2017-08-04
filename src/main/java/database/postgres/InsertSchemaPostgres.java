@@ -1,4 +1,4 @@
-package database;
+package database.postgres;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -12,19 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class containing all methods required to store results of schema conversion from Neo4j to
- * a relational backend database.
+ * Class containing all methods required to store the results of the schema conversion from Neo4j to Postgres.
  */
-public class InsertSchema {
+public class InsertSchemaPostgres {
     private static List<String> fieldsForMetaFile = new ArrayList<>();
 
     /**
-     * Executing the various schema parts one by one to the relational backend.
+     * Executing the various schema parts one by one to Postgres.
      *
-     * @param database Name of the database to store the new schema on.
+     * @param database Name of the Postgres database to store the new schema on.
      */
     public static void executeSchemaChange(String database) {
-        RelDBDriver.createConnection(database);
+        PostgresDriver.createConnection(database);
 
         String createAdditionalNodeTables = insertEachLabel();
         String createAdditionalEdgesTables = insertEachRelType();
@@ -33,27 +32,26 @@ public class InsertSchema {
         String sqlInsertEdges = insertEdges();
 
         try {
-            RelDBDriver.createInsert(createAdditionalNodeTables);
-            RelDBDriver.createInsert(createAdditionalEdgesTables);
-            RelDBDriver.createInsert(sqlInsertNodes);
-            RelDBDriver.createInsert(sqlInsertEdges);
-            RelDBDriver.createInsert(DBConstants.QUERY_MAPPING);
-            RelDBDriver.createInsert(DBConstants.ADJLIST_FROM);
-            RelDBDriver.createInsert(DBConstants.ADJLIST_TO);
-            RelDBDriver.createInsert(DBConstants.FOR_EACH_FUNC);
-            RelDBDriver.createInsert(DBConstants.CYPHER_ITERATE);
-            RelDBDriver.createInsert(DBConstants.UNIQUE_ARR_FUNC);
-            RelDBDriver.createInsert(DBConstants.AUTO_SEQ_QUERY);
+            PostgresDriver.createInsert(createAdditionalNodeTables);
+            PostgresDriver.createInsert(createAdditionalEdgesTables);
+            PostgresDriver.createInsert(sqlInsertNodes);
+            PostgresDriver.createInsert(sqlInsertEdges);
+            PostgresDriver.createInsert(PostgresConstants.ADJLIST_FROM);
+            PostgresDriver.createInsert(PostgresConstants.ADJLIST_TO);
+            PostgresDriver.createInsert(PostgresConstants.FOR_EACH_FUNC);
+            PostgresDriver.createInsert(PostgresConstants.CYPHER_ITERATE);
+            PostgresDriver.createInsert(PostgresConstants.UNIQUE_ARR_FUNC);
+            PostgresDriver.createInsert(PostgresConstants.AUTO_SEQ_QUERY);
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         addFieldsToMetaFile();
-        RelDBDriver.closeConnection();
+        PostgresDriver.closeConnection();
     }
 
     /**
-     * All of the fields and relationships gathered during the Schema translation are stored in
+     * All of the fields and relationships gathered during the schema conversion are stored in
      * meta files (to be used when outputting the results of the queries from both Postgres and
      * Neo4j).
      */
@@ -299,13 +297,13 @@ public class InsertSchema {
         sb.append("INSERT INTO edges (");
         StringBuilder sbTypes = new StringBuilder();
 
-        String columns = "";
+        StringBuilder columns = new StringBuilder();
 
         for (String y : SchemaConvert.edgesRelLabels) {
-            columns = columns + y.split(" ")[0] + ", ";
+            columns.append(y.split(" ")[0]).append(", ");
         }
-        columns = columns.substring(0, columns.length() - 2);
-        columns = columns + ")";
+        columns = new StringBuilder(columns.substring(0, columns.length() - 2));
+        columns.append(")");
         sb.append(columns);
 
         sb.append(" VALUES ");
@@ -319,14 +317,14 @@ public class InsertSchema {
             while ((line = br.readLine()) != null) {
                 JsonObject o = (JsonObject) parser.parse(line);
                 sb.append("(");
-                String values = "";
+                StringBuilder values = new StringBuilder();
                 for (String z : SchemaConvert.edgesRelLabels) {
                     String v = getInsertString(z, o);
-                    values = values + v;
+                    values.append(v);
                     sb.append(v);
                 }
-                values = values.substring(0, values.length() - 2);
-                sbTypes = addType(sbTypes, columns, o, values);
+                values = new StringBuilder(values.substring(0, values.length() - 2));
+                sbTypes = addType(sbTypes, columns.toString(), o, values.toString());
                 sb.setLength(sb.length() - 2);
                 sb.append("), ");
             }

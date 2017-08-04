@@ -83,17 +83,6 @@ public class MultipleRel extends AbstractTranslation {
         return sql;
     }
 
-    /**
-     * @param cR
-     * @param matchC
-     * @param sql
-     * @param isBiDirectional
-     * @param indexRel
-     * @param wc
-     * @param nodeLabel1
-     * @param nodeLabel2
-     * @return
-     */
     private static StringBuilder obtainWhereInWithClause(CypRel cR, MatchClause matchC, StringBuilder sql,
                                                          boolean isBiDirectional, int indexRel, WhereClause wc,
                                                          String nodeLabel1, String nodeLabel2) {
@@ -173,15 +162,6 @@ public class MultipleRel extends AbstractTranslation {
         return null;
     }
 
-    /**
-     * @param returnC     Return Clause of Cypher
-     * @param matchC      Match Clause of Cypher
-     * @param sql         Original SQL to append more SQL to.
-     * @param hasDistinct Does the return clause of Cypher have the distinct keyword.
-     * @param alias       Mapping of any alias structures present in the Cypher input.
-     * @return New SQL
-     * @throws Exception
-     */
     private static StringBuilder obtainSelectAndFromClause(ReturnClause returnC, MatchClause matchC,
                                                            StringBuilder sql, boolean hasDistinct,
                                                            Map<String, String> alias) {
@@ -393,15 +373,8 @@ public class MultipleRel extends AbstractTranslation {
         return sql;
     }
 
-    /**
-     * @param sql
-     * @param returnC
-     * @param matchC
-     * @return
-     * @throws Exception
-     */
     private static StringBuilder obtainWhereClause(StringBuilder sql,
-                                                   ReturnClause returnC, MatchClause matchC) {
+                                                   ReturnClause returnC, MatchClause matchC, boolean partOfWithQ) {
         sql.append(" WHERE ");
         int numRels = matchC.getRels().size();
 
@@ -410,6 +383,11 @@ public class MultipleRel extends AbstractTranslation {
             sql.append(" = ");
             sql.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(1);
             sql.append(" AND ");
+        }
+
+        if (partOfWithQ) {
+            sql.setLength(sql.length() - 5);
+            return sql;
         }
 
         if ((numRels == 1)) {
@@ -522,8 +500,13 @@ public class MultipleRel extends AbstractTranslation {
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
         if (needNodeTable)
-            sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc());
-        else if (!WithSQL.withMapping.isEmpty()) sql.append(" WHERE wA.id = a.a2");
+            sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);
+        else if (!WithSQL.withMapping.isEmpty()) {
+            if (decodedQuery.getMc().getRels().size() > 1) {
+                sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), true).append(" AND wA.id = a.a2");
+            } else sql.append(" WHERE wA.id = a.a2");
+        } else if (decodedQuery.getMc().getRels().size() > 1)
+            sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);
         return sql;
     }
 }

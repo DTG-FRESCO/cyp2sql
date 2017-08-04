@@ -18,8 +18,8 @@ public class DecodedQuery {
     private CypherWalker cypherAdditionalInfo;
     private String sqlEquiv;
 
-    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o,
-                        WhereClause wc, int skip, int limit, CypherWalker c) {
+    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, WhereClause wc, int skip, int limit,
+                        CypherWalker c) {
         this.matchC = m;
         this.returnC = r;
         this.orderC = o;

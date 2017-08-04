@@ -74,35 +74,35 @@ public class C2SProperties {
         this.propsLocation = propsLocation;
     }
 
-    public String getNeo4jSchema() {
+    String getNeo4jSchema() {
         return neo4jSchema;
     }
 
-    public void setNeo4jSchema(String neo4jSchema) {
+    private void setNeo4jSchema(String neo4jSchema) {
         this.neo4jSchema = neo4jSchema;
     }
 
-    public String getQueriesFile() {
+    String getQueriesFile() {
         return queriesFile;
     }
 
-    public void setQueriesFile(String queriesFile) {
+    private void setQueriesFile(String queriesFile) {
         this.queriesFile = queriesFile;
     }
 
-    public String getNeo4jRes() {
+    String getNeo4jRes() {
         return neo4jRes;
     }
 
-    public void setNeo4jRes(String neo4jRes) {
+    private void setNeo4jRes(String neo4jRes) {
         this.neo4jRes = neo4jRes;
     }
 
-    public String getSqlRes() {
+    String getSqlRes() {
         return sqlRes;
     }
 
-    public void setSqlRes(String sqlRes) {
+    private void setSqlRes(String sqlRes) {
         this.sqlRes = sqlRes;
     }
 
@@ -110,7 +110,7 @@ public class C2SProperties {
         return neoUN;
     }
 
-    public void setNeoUN(String neoUN) {
+    private void setNeoUN(String neoUN) {
         this.neoUN = neoUN;
     }
 
@@ -118,7 +118,7 @@ public class C2SProperties {
         return neoPW;
     }
 
-    public void setNeoPW(String neoPW) {
+    private void setNeoPW(String neoPW) {
         this.neoPW = neoPW;
     }
 
@@ -126,7 +126,7 @@ public class C2SProperties {
         return postUN;
     }
 
-    public void setPostUN(String postUN) {
+    private void setPostUN(String postUN) {
         this.postUN = postUN;
     }
 
@@ -134,7 +134,7 @@ public class C2SProperties {
         return postPW;
     }
 
-    public void setPostPW(String postPW) {
+    private void setPostPW(String postPW) {
         this.postPW = postPW;
     }
 
@@ -142,11 +142,11 @@ public class C2SProperties {
         return wspace;
     }
 
-    public void setWspace(String wspace) {
+    private void setWspace(String wspace) {
         this.wspace = wspace;
     }
 
-    public void setLists(String listLoc) {
+    private void setLists(String listLoc) {
         ArrayList<String> fields = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(listLoc))) {
             String line;
@@ -163,7 +163,7 @@ public class C2SProperties {
         return listFields;
     }
 
-    public void setListFields(ArrayList<String> listFields) {
+    private void setListFields(ArrayList<String> listFields) {
         this.listFields = listFields;
     }
 }
