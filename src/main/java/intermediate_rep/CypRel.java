@@ -14,7 +14,7 @@ public class CypRel {
 
     /**
      * Constructor for recording information about a Cypher relationship/edge.
-     * Example match clause: MATCH (a)<-[r1 : REL_TYPE_A]-(b)-[r2 {state:8}]-(c)-[r3]->(d) ...
+     * Example match clause: MATCH (a){@literal <}-[r1 : REL_TYPE_A]-(b)-[r2 {state:8}]-(c)-[r3]-{@literal >}(d) ...
      *
      * @param posInClause The position in the match clause that the relationship fits into to. In the example,
      *                    the edge with id 'r1' is in position 1, and the edge with id 'r3' is in position 3.

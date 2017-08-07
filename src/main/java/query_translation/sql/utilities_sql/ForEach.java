@@ -3,6 +3,9 @@ package query_translation.sql.utilities_sql;
 import intermediate_rep.CypForEach;
 import intermediate_rep.DecodedQuery;
 
+/**
+ * Method for translating Cypher with FOREACH into SQL.
+ */
 public class ForEach extends AbstractTranslation {
     @Override
     public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {

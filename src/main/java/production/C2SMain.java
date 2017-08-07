@@ -45,7 +45,8 @@ public class C2SMain {
     private static Map<String, String> cache = new HashMap<>();
 
     /**
-     * <-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-dp|-dn|-r>
+     * {@literal <}-schema|-translate|-s|-t{@literal >}
+     * {@literal <}propertiesFile{@literal >} {@literal <}databaseName{@literal >} {@literal <}-dp|-dn|-r{@literal >}
      * View README for additional guidance.
      *
      * @param args Arguments for the application.

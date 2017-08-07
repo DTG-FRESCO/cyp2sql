@@ -5,6 +5,9 @@ import production.C2SMain;
 import query_translation.sql.utilities_sql.ShortestPath;
 import translator.CypherTokenizer;
 
+/**
+ * Class for dealing with the shortestPath function in Cypher.
+ */
 public class SP_Cypher extends AbstractConversion {
     @Override
     public String convertQuery(String cypher) {
@@ -18,6 +21,7 @@ public class SP_Cypher extends AbstractConversion {
         }
 
         int indexToUse = (whereIndex == -1) ? returnIndex : whereIndex;
+
         String path = cypher.substring(cypher.indexOf("(") + 1, indexToUse - 2);
         String returnClause = cypher.substring(cypher.indexOf("return"));
         String cypherPathQuery = "MATCH " + path + ((whereIndex != -1) ? whereClause : "") + " " + returnClause;

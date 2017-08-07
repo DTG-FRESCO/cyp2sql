@@ -4,6 +4,9 @@ import intermediate_rep.*;
 
 import java.util.Map;
 
+/**
+ * Class for translating Cypher with a single variable length path to SQL.
+ */
 public class SingleVarAdjList extends AbstractTranslation {
     private static StringBuilder getFinalSelect(StringBuilder sql, ReturnClause returnC,
                                                 Map<String, String> alias, CypNode cn2,

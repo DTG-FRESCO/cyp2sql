@@ -20,7 +20,7 @@ public class CypNode {
 
     /**
      * Constructor for recording information about a Cypher node.
-     * Example match clause: MATCH (a:Global:Meta)--(b {node_id : 875})--(c:Process)-->(d) ...
+     * Example match clause: MATCH (a:Global:Meta)--(b {node_id : 875})--(c:Process)--{@literal >}(d) ...
      *
      * @param posInClause The position in the Cypher match clause where the node belongs. In the example above,
      *                    the node with id 'b' would be in position 2, and the node with id 'd' would be in position 4.

@@ -6,6 +6,9 @@ import production.C2SMain;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Class for translating Cypher with no relationships to SQL.
+ */
 public class NoRels extends AbstractTranslation {
 
     private static StringBuilder getSelect(ReturnClause rc, MatchClause mc, StringBuilder sql,
@@ -21,6 +24,7 @@ public class NoRels extends AbstractTranslation {
                 String parts[] = r.getCaseString().toLowerCase().split(" when ");
                 String caseField = parts[0].split("\\.")[1];
                 String caseString;
+
                 if (C2SMain.props.getListFields().contains(caseField)) {
                     String innerParts[] = parts[1].toLowerCase().split(" then ");
                     innerParts[0] = "ARRAY[" + innerParts[0] + "]";
@@ -87,6 +91,7 @@ public class NoRels extends AbstractTranslation {
     private static StringBuilder getFrom(StringBuilder sql, MatchClause mc, ReturnClause rc) {
         sql.append("FROM ");
         String table = TranslateUtils.getLabelType(mc.getNodes().get(0).getType());
+
         if (!table.equals("nodes")) {
             useOptimalTable = true;
         } else {

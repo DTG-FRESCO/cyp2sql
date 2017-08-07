@@ -6,6 +6,11 @@ import intermediate_rep.CypNode;
 import intermediate_rep.DecodedQuery;
 import query_translation.sql.utilities_sql.SQLTranslate;
 
+/**
+ * Class for dealing with the ITERATE keyword. NOTE: this is currently not an accepted keyword
+ * in Cypher, but was added as an extension of this translator tool to show the possibilities
+ * of the program. More details can be found in the documentation.
+ */
 public class Iterate_Cypher extends AbstractConversion {
     private static int calculatePos(String loopIndexFrom, DecodedQuery loopDQ) {
         for (CypNode cN : loopDQ.getMc().getNodes()) {

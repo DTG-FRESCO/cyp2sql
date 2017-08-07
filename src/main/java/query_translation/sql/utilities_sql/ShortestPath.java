@@ -4,7 +4,49 @@ import intermediate_rep.*;
 
 import java.util.Map;
 
+/**
+ * Class for translating Cypher with the shortestPath function to SQL.
+ */
 public class ShortestPath extends AbstractTranslation {
+    /**
+     * Use properties of the first node in the path, and if there are any, add them to the SQL statement
+     * being generated.
+     *
+     * @param cypNode Cypher node for whom the properties/label are being extracted and used.
+     * @param wc      WhereClause of the whole Cypher query.
+     * @return String of newly generated section of SQL.
+     */
+    private static String getFirstStep(CypNode cypNode, WhereClause wc) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("nodes q ON leftnode = id");
+
+        boolean hasWhere = false;
+
+        if (cypNode.getType() != null) {
+            sql.append(" WHERE label LIKE ");
+            hasWhere = true;
+            sql.append(TranslateUtils.genLabelLike(cypNode, "q"));
+        }
+
+        if (cypNode.getProps() != null) {
+            if (hasWhere) sql.append(" AND ");
+            else sql.append(" WHERE ");
+            sql = TranslateUtils.getWholeWhereClause(sql, cypNode, wc, "q");
+        }
+
+        return sql.toString();
+    }
+
+    /**
+     * As part of the translation to SQL, multiple views are built up for each step in the path. To return
+     * the correct shortestPath, the individual results from each step need to be combined together, and
+     * that is what the SQL in this method is doing.
+     *
+     * @param lastIndex  The lastIndex value ensures that the name of this view will be distinct from the ones
+     *                   previously created in this same query.
+     * @param amountHigh To make sure all the views are combined, need to know how many were created.
+     * @return SQL representing the joining of all the individual views previously created.
+     */
     private static String joinViewsTogether(int lastIndex, int amountHigh) {
         StringBuilder sql = new StringBuilder();
         sql.append(alphabet[lastIndex]).append(" AS (SELECT * FROM a");
@@ -15,32 +57,20 @@ public class ShortestPath extends AbstractTranslation {
         return sql.toString();
     }
 
-    private static String getFirstStep(CypNode cN1, WhereClause wc) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append("nodes q");
-
-        sql.append(" ON leftnode = id");
-
-        boolean hasWhere = false;
-
-        if (cN1.getType() != null) {
-            sql.append(" WHERE label LIKE ");
-            hasWhere = true;
-            sql.append(TranslateUtils.genLabelLike(cN1, "q"));
-        }
-
-        if (cN1.getProps() != null) {
-            if (hasWhere) sql.append(" AND ");
-            else sql.append(" WHERE ");
-            sql = TranslateUtils.getWholeWhereClause(sql, cN1, wc, "q");
-        }
-
-        return sql.toString();
-    }
-
-    private static String getFinalSelect(int lastIndex, CypNode cN2, ReturnClause rc,
-                                         Map<String, String> alias, WhereClause wc) {
+    /**
+     * A lot of the magic for making the shortestPath function convert from Cypher to SQL is in this method!
+     * The final view, known as finStep, must firstly work out the correct items to return (using the ReturnClause
+     * object rc). It then must include min(Depth) to match the shortestPath semantics.
+     *
+     * @param lastIndex
+     * @param cN2
+     * @param rc
+     * @param alias
+     * @param wc
+     * @return
+     */
+    private static String getFinalSelect(int lastIndex, CypNode cN2, ReturnClause rc, Map<String, String> alias,
+                                         WhereClause wc) {
         StringBuilder sql = new StringBuilder();
         StringBuilder thingsToGroupBy = new StringBuilder();
 

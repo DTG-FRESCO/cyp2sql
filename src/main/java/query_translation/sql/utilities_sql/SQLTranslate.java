@@ -20,13 +20,6 @@ import java.util.ArrayList;
  * Agnostic to the methods above is appending the ORDER BY, GROUP BY, LIMIT and SKIP elements.
  */
 public class SQLTranslate {
-    /**
-     * Translate calls other methods, stitching the results together into one SQL query.
-     *
-     * @param decodedQuery All the intermediate data gathered about the original Cypher query.
-     * @return SQL string that maps to the original Cypher command.
-     * @throws Exception
-     */
     public static String translateRead(DecodedQuery decodedQuery) throws Exception {
         // SQL built up from a StringBuilder object.
         StringBuilder sql = new StringBuilder();

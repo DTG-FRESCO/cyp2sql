@@ -6,6 +6,9 @@ import intermediate_rep.*;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Class for translating Cypher with multiple relationships to SQL.
+ */
 public class MultipleRel extends AbstractTranslation {
     private static boolean needNodeTable = false;
 
@@ -19,6 +22,7 @@ public class MultipleRel extends AbstractTranslation {
      */
     private static StringBuilder obtainWithClause(StringBuilder sql, MatchClause matchC, WhereClause wc) {
         sql.append("WITH ");
+
         int indexRel = 0;
 
         for (CypRel cR : matchC.getRels()) {
@@ -83,6 +87,22 @@ public class MultipleRel extends AbstractTranslation {
         return sql;
     }
 
+    /**
+     * Augmenting the WITH clauses with the correct predicates (that may be associated with either the nodes
+     * or properties of the relationship itself).
+     *
+     * @param cR              The Cypher relationship: (a)-[b]->(c) for example.
+     * @param matchC          The MatchClause: MATCH (a)-[b]->(c) ...
+     * @param sql             The current SQL being created.
+     * @param isBiDirectional If the relationship has no direction (i.e. -[]- as opposed to <-[] and -[]->), then
+     *                        need to append UNION ALL to the end of the SQL created.
+     * @param indexRel        The position of the relationship within the context of the whole MatchClause.
+     * @param wc              WhereClause containing information about the predicates of the nodes and relationships.
+     *                        Needed to make sure the SQL generated is valid.
+     * @param nodeLabel1      Label(s) of the left node of the relationship.
+     * @param nodeLabel2      Label(s) of the right node of the relationship.
+     * @return SQL string with additional information as a result of this method.
+     */
     private static StringBuilder obtainWhereInWithClause(CypRel cR, MatchClause matchC, StringBuilder sql,
                                                          boolean isBiDirectional, int indexRel, WhereClause wc,
                                                          String nodeLabel1, String nodeLabel2) {
@@ -90,19 +110,19 @@ public class MultipleRel extends AbstractTranslation {
         int posOfRel = cR.getPosInClause();
 
         CypNode leftNode = obtainNode(matchC, posOfRel);
-        JsonObject leftProps = leftNode.getProps();
+        JsonObject leftNodeProps = leftNode.getProps();
         CypNode rightNode = obtainNode(matchC, posOfRel + 1);
-        JsonObject rightProps = rightNode.getProps();
-        JsonObject o = cR.getProps();
+        JsonObject rightNodeProps = rightNode.getProps();
+        JsonObject relProps = cR.getProps();
 
-        if (leftProps != null) {
+        if (leftNodeProps != null) {
             sql.append(" WHERE ( ");
             includesWhere = true;
             sql = TranslateUtils.getWholeWhereClause(sql, leftNode, wc, "n1");
             sql.append(") AND ");
         }
 
-        if (rightProps != null) {
+        if (rightNodeProps != null) {
             if (!includesWhere) {
                 sql.append(" WHERE ( ");
                 includesWhere = true;
@@ -130,7 +150,7 @@ public class MultipleRel extends AbstractTranslation {
             sql.append(TranslateUtils.genLabelLike(rightNode, "n2")).append(" AND ");
         }
 
-        if (o != null) {
+        if (relProps != null) {
             if (!includesWhere) {
                 sql.append(" WHERE ");
                 includesWhere = true;
@@ -167,10 +187,13 @@ public class MultipleRel extends AbstractTranslation {
                                                            Map<String, String> alias) {
         sql.append("SELECT ");
         if (hasDistinct) sql.append("DISTINCT ");
+
         int nodeTableCount = 0;
         ArrayList<String> nodesSoFar = new ArrayList<>();
+
         String relsNeeded = "";
         needNodeTable = false;
+
         for (CypReturn cR : returnC.getItems()) {
             boolean isNode = false;
 
@@ -503,7 +526,8 @@ public class MultipleRel extends AbstractTranslation {
             sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);
         else if (!WithSQL.withMapping.isEmpty()) {
             if (decodedQuery.getMc().getRels().size() > 1) {
-                sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), true).append(" AND wA.id = a.a2");
+                sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), true)
+                        .append(" AND wA.id = a.a2");
             } else sql.append(" WHERE wA.id = a.a2");
         } else if (decodedQuery.getMc().getRels().size() > 1)
             sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);

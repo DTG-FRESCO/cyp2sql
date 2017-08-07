@@ -22,6 +22,13 @@ class PerformWork implements Runnable {
     private BufferedWriter bwNodes;
     private BufferedWriter bwEdges;
 
+    /**
+     * Constructor for setting up a worker thread.
+     *
+     * @param strings List of strings for the thread to work on.
+     * @param file    Index (letter/char) of file to store results from this thread. File should be a single
+     *                letter such as a, b, or c.
+     */
     PerformWork(ArrayList<String> strings, String file) {
         this.lines = strings;
 
@@ -80,6 +87,11 @@ class PerformWork implements Runnable {
         }
     }
 
+    /**
+     * Method for parsing an edge from the dump file.
+     *
+     * @param s Edge to parse and convert.
+     */
     private void parseEdge(String s) {
         s = s.replace("`", "");
         String[] items = s.split("\\)-");
@@ -134,6 +146,11 @@ class PerformWork implements Runnable {
         }
     }
 
+    /**
+     * Method for parsing a node from the dump file.
+     *
+     * @param s Node to parse and convert.
+     */
     private void parseNode(String s) {
         // initialSplit[0] contains id and node label
         // initialSplit[1] contains properties of the node
@@ -190,6 +207,16 @@ class PerformWork implements Runnable {
         }
     }
 
+    /**
+     * Calculate the datatype of a key, based on an example value presented to this method. This method mostly
+     * works as expected, however fails in some cases where it inteprets a field as an INT, where in fact it
+     * should be of type BIGINT. The tool cannot currently handle this automatically, however can be fixed
+     * manually in the code.
+     *
+     * @param key   Key of the field being tested.
+     * @param value An example value of this field.
+     * @return The correct datatype.
+     */
     private String calculateDataType(String key, JsonElement value) {
         if (value.isJsonArray()) {
             return "TEXT[]";
@@ -209,6 +236,13 @@ class PerformWork implements Runnable {
         }
     }
 
+    /**
+     * Each label has all of its keys (and their datatypes) stored.
+     *
+     * @param nodeLabel Label of the node.
+     * @param key       Key of the property.
+     * @param type      The datatype of the property (see calculateDataType()).
+     */
     private void addToLabelMap(String nodeLabel, String key, String type) {
         if (SchemaConvert.labelMappings.keySet().contains(nodeLabel)) {
             String currentValue = SchemaConvert.labelMappings.get(nodeLabel);

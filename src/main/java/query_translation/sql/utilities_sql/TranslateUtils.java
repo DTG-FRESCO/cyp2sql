@@ -283,17 +283,4 @@ class TranslateUtils {
         }
         return "";
     }
-
-    static String getSQLStmtID(CypNode cN, MatchClause matchC) {
-        // if rel is of type (a)-[]->(b)
-        if (matchC.getNodes().size() == 2) {
-            switch (cN.getPosInClause()) {
-                case 1:
-                    return "n2";
-                case 2:
-                    return "n";
-            }
-        }
-        return "n";
-    }
 }

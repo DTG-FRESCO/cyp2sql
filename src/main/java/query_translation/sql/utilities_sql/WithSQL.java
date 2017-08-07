@@ -157,16 +157,6 @@ public class WithSQL {
         return sWith.toString();
     }
 
-    /**
-     * As this method is still a bit in progress, currently ONLY can translate the following pattern:
-     * <p>
-     * MATCH () WHERE ... RETURN ...
-     * i.e. a match clause with no relationships in...
-     *
-     * @param secondWith
-     * @param dqFirstWith
-     * @return
-     */
     public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith) {
         withMapping.put(dqFirstWith.getRc().getItems().get(0).getNodeID(), "wA");
 

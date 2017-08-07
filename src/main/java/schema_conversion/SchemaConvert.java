@@ -50,7 +50,9 @@ public class SchemaConvert {
     /**
      * Main method for translating the schema.
      *
-     * @param file Dump File from Neo4j.
+     * @param file The dump file to be parsed and converted.
+     * @return True if the conversion of the dump file to a more manageable form for inserting into the target
+     * database was successful; false otherwise.
      */
     public static boolean translate(String file) {
         // perform initial preprocess of the file to remove content such as new file markers

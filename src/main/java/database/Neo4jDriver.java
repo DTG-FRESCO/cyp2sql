@@ -147,7 +147,7 @@ public class Neo4jDriver {
 
     /**
      * Warm up the Neo4J database by running the following query:
-     * MATCH (n) OPTIONAL MATCH (n)-[r]->() RETURN count(n.prop) + count(r.prop);
+     * MATCH (n) OPTIONAL MATCH (n)-[r]-{@literal >}() RETURN count(n.prop) + count(r.prop);
      */
     public static void warmUp() {
         Driver driver = GraphDatabase.driver("bolt://localhost",

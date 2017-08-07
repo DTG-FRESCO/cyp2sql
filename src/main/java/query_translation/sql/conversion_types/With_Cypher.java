@@ -3,13 +3,12 @@ package query_translation.sql.conversion_types;
 import intermediate_rep.DecodedQuery;
 import query_translation.sql.utilities_sql.WithSQL;
 
+/**
+ * Class for dealing with the WITH keyword in Cypher.
+ */
 public class With_Cypher extends AbstractConversion {
     /**
      * Method for converting Cypher queries containing the WITH keyword.
-     * The method is currently a framework for how to translate one type of WITH query:
-     * <p>
-     * MATCH (a:Global)-[m]->(b:Local) WITH a, COUNT(m) AS Glo_Loc_Count
-     * WHERE Glo_Loc_Count >= 2 RETURN a.node_id, Glo_Loc_Count ORDER BY Glo_Loc_Count DESC;
      *
      * @param cypher Original Cypher input containing the WITH keyword.
      * @return SQL string equivalent of the original Cypher input.
@@ -27,7 +26,7 @@ public class With_Cypher extends AbstractConversion {
     }
 
     /**
-     * The current method below accepts queries of the following type ONLY:
+     * The current method accepts queries of the following type ONLY:
      * MATCH ... WITH ... MATCH ... RETURN ...
      *
      * @param cypher Original Cypher input.
@@ -49,6 +48,13 @@ public class With_Cypher extends AbstractConversion {
         return withTemp + " " + sqlSelect;
     }
 
+    /**
+     * The current method accepts queries of the following type ONLY:
+     * MATCH ... WITH ... ORDER BY ... RETURN ...
+     *
+     * @param cypher Original Cypher input.
+     * @return SQL equivalent of the Cypher input.
+     */
     private String withOB(String cypher) {
         int posOfReturn = cypher.toLowerCase().indexOf("return");
         String firstWith = cypher.toLowerCase().replace("with", "return");
@@ -68,6 +74,13 @@ public class With_Cypher extends AbstractConversion {
         return withTemp + " " + sqlSelect;
     }
 
+    /**
+     * The current method accepts queries of the following type ONLY:
+     * MATCH ... WHERE ... WITH ... MATCH ... WHERE ... RETURN ...
+     *
+     * @param cypher Original Cypher input.
+     * @return SQL equivalent of the Cypher input.
+     */
     private String withWhere(String cypher) {
         String changeLine = cypher.toLowerCase().replace("with", "return");
         String[] withParts = changeLine.toLowerCase().split(" where ");
