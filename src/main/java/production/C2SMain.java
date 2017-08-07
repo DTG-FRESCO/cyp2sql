@@ -44,6 +44,8 @@ public class C2SMain {
     // cache for previously successful queries (saves time and computation doing repetitive work).
     private static Map<String, String> cache = new HashMap<>();
 
+    private static String OS = System.getProperty("os.name").toLowerCase();
+
     /**
      * {@literal <}-schema|-translate|-s|-t{@literal >}
      * {@literal <}propertiesFile{@literal >} {@literal <}databaseName{@literal >} {@literal <}-dp|-dn|-r{@literal >}
@@ -245,8 +247,13 @@ public class C2SMain {
      * @throws IOException Some issue with the Buffered Reader object.
      */
     private static void runDirectPG(String sql, String dbName) throws IOException {
-        String locOfBatch = System.getProperty("user.dir") + "/pgdbPlay.bat";
-        ProcessBuilder b = new ProcessBuilder(locOfBatch, dbName, sql);
+        String locOfScript;
+        if (isWindows())
+            locOfScript = System.getProperty("user.dir") + "/pgdbPlay.bat";
+        else
+            locOfScript = System.getProperty("user.dir") + "/auto_run_pg.sh";
+
+        ProcessBuilder b = new ProcessBuilder(locOfScript, dbName, sql);
         b.redirectErrorStream(true);
         Process process = b.start();
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -418,5 +425,13 @@ public class C2SMain {
         PostgresDriver.lastExecTimeCreate = 0;
         PostgresDriver.lastExecTimeRead = 0;
         PostgresDriver.lastExecTimeInsert = 0;
+    }
+
+    public static boolean isWindows() {
+        return (OS.contains("win"));
+    }
+
+    public static boolean isUnix() {
+        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
     }
 }
