@@ -32,7 +32,7 @@ class C2SBenchmark {
 
         // translate the Cypher
         try {
-            C2SMain.translateCypherToSQL(originalCypherInput, f_cypher, f_sql, 1, dbName, true);
+            C2SMain.translateCypherToSQL(originalCypherInput, f_cypher, f_sql, dbName, true);
         } catch (Exception e) {
             System.err.println("*** Error with the last query... ***");
             e.printStackTrace();

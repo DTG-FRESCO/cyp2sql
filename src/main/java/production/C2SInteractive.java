@@ -8,7 +8,16 @@ import java.util.Scanner;
  * tool with a file containing a list of Cypher queries.
  */
 class C2SInteractive {
+    /**
+     * Method for running the tool in debug mode, where information about the queries is recorded, and where
+     * printing the results to a local file is possible.
+     *
+     * @param f_cypher File object to store the results from Neo4j.
+     * @param f_sql    File object to store the results from Postgres.
+     * @param dbName   Name of the relational database that the generated SQL will be executed on.
+     */
     static void run_debug(File f_cypher, File f_sql, String dbName) {
+        System.out.println("PRINT TO FILE : " + ((C2SMain.printBool) ? "enabled" : "disabled"));
         System.out.println("Cypher to SQL Translator Tool v1.0");
         System.out.println("To exit, type :exit.");
 
@@ -22,14 +31,7 @@ class C2SInteractive {
             if (resp.equals(":exit")) break;
             else {
                 try {
-                    try {
-                        C2SMain.getLabelMapping();
-                        C2SMain.warmUpResetSSL();
-                    } catch (Exception e) {
-                        System.err.println("Error setting up the tool...");
-                        e.printStackTrace();
-                    }
-                    C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, 1, dbName, true);
+                    C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, dbName, true);
                 } catch (Exception e) {
                     System.err.println("Error with the last query...");
                     e.printStackTrace();
@@ -38,6 +40,12 @@ class C2SInteractive {
         }
     }
 
+    /**
+     * Method for running the tool in its normal operation, where Cypher is inputted into the console, and then
+     * the results are outputted to the console, but from the relational database.
+     *
+     * @param dbName Name of the relational database that the translated query is to be executed on.
+     */
     static void run(String dbName) {
         System.out.println("Cypher to SQL Translator Tool v1.0");
         System.out.println("To exit, type :exit.");
@@ -52,13 +60,7 @@ class C2SInteractive {
             if (resp.equals(":exit")) break;
             else {
                 try {
-                    try {
-                        C2SMain.getLabelMapping();
-                    } catch (Exception e) {
-                        System.err.println("Error setting up the tool...");
-                        e.printStackTrace();
-                    }
-                    C2SMain.translateCypherToSQL(resp, null, null, -1, dbName, false);
+                    C2SMain.translateCypherToSQL(resp, null, null, dbName, false);
                 } catch (Exception e) {
                     System.err.println("Error with the last query...");
                     e.printStackTrace();

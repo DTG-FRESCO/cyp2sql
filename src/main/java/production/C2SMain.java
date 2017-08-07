@@ -1,7 +1,7 @@
 package production;
 
 import database.Neo4jDriver;
-import database.key_value_hazelcast.KeyValueTest;
+import database.postgres.InsertSchemaPostgres;
 import database.postgres.PostgresDriver;
 import intermediate_rep.DecodedQuery;
 import org.apache.commons.io.FileUtils;
@@ -12,7 +12,9 @@ import schema_conversion.SchemaConvert;
 
 import java.io.*;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Main class for starting the application.
@@ -35,52 +37,31 @@ public class C2SMain {
     // static variable set by the translation unit if the ID needs to be returned from the Postgres database
     // by default it is set to false as this is the same logic as Neo4j
     public static boolean needToPrintID = false;
-    // cache for previously successful queries (saves time and computation doing repetitive work).
-    public static Map<String, String> cache = new HashMap<>();
+
     // variable set at the command line to turn on/off printing to a file the results of a read query.
     static boolean printBool = false;
-    // variable set at the command line to indicate whether testing is being performed on the queries.
-    private static boolean testConditions = true;
-    // store queries that fail so that they are not run again during the evaluation.
-    private static ArrayList<String> denyList = new ArrayList<>();
+
+    // cache for previously successful queries (saves time and computation doing repetitive work).
+    private static Map<String, String> cache = new HashMap<>();
 
     /**
-     * <-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-f|-i|-r>
+     * <-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-dp|-dn|-r>
      * View README for additional guidance.
      *
      * @param args Arguments for the application.
      */
     public static void main(String args[]) {
         if (args.length == 0) printError(0);
+
         if ((args[0].equals("-s") || args[0].equals("-schema")) && args.length != 3) printError(1);
         else if ((args[0].equals("-t") || args[0].equals("-translate")) && args.length != 4) printError(2);
 
         // obtain properties for the program from the properties file.
         props = new C2SProperties(args[1]);
 
-        // create file objects to store results of the file
-        File f_cypher = new File(props.getNeo4jRes());
-        File f_sql = new File(props.getSqlRes());
-
+        // find out the database being used, based on the argument from the command line.
         String dbName = args[2];
         System.out.println("DATABASE RUNNING : " + dbName);
-
-        if (args.length == 4)
-            switch (args[3]) {
-                case "-f":
-                    testConditions = false;
-                    printBool = true;
-                    break;
-                case "-i":
-                    printBool = true;
-                    C2SInteractive.run_debug(f_cypher, f_sql, dbName);
-                    System.exit(0);
-                case "-r":
-                    testConditions = false;
-                    C2SInteractive.run(dbName);
-                default:
-                    printError(3);
-            }
 
         switch (args[0]) {
             case "-schema":
@@ -90,110 +71,35 @@ public class C2SMain {
                 break;
             case "-translate":
             case "-t":
-                System.out.println("PRINT TO FILE : " + ((printBool) ? "enabled" : "disabled"));
                 getLabelMapping();
                 warmUpResetSSL();
 
-                if (!printBool && testConditions) {
-                    // translate Cypher queries to SQL.
-                    // first, reorder the queries file, to randomise the order in which the
-                    // queries are executed. This is more for testing than production purposes however.
-                    randomiseQueriesFile(args[1]);
+                // create file objects to store results of the file.
+                File f_cypher = new File(props.getNeo4jRes());
+                File f_sql = new File(props.getSqlRes());
 
-                    String randomQueriesFile = args[1].replace(".txt", "_temp.txt");
-
-                    // perform 3 dry runs, then record the times of 5 executions
-                    for (int i = -2; i <= 5; i++) {
-                        if (i < 1) System.out.println("Warming up - iterations left : " + (i * -1));
-                        translateCypherFile(randomQueriesFile, f_cypher, f_sql, i, dbName);
-                    }
-
-                    // delete temporary queries file.
-                    File f = new File(randomQueriesFile);
-                    f.delete();
-                } else {
-                    translateCypherFile(props.getQueriesFile(), f_cypher, f_sql, 1, dbName);
+                // find out the value of the additional command line flag,
+                // and choose the appropriate method to run as a result.
+                switch (args[3]) {
+                    case "-dp":
+                        printBool = true;
+                        C2SInteractive.run_debug(f_cypher, f_sql, dbName);
+                        break;
+                    case "-dn":
+                        printBool = false;
+                        C2SInteractive.run_debug(f_cypher, f_sql, dbName);
+                        break;
+                    case "-r":
+                        C2SInteractive.run(dbName);
+                        break;
+                    default:
+                        printError(3);
+                        break;
                 }
                 break;
             default:
                 printError(4);
-        }
-    }
-
-    /**
-     * warm up the Neo4j caches if the server has just been turned on.
-     * https://neo4j.com/developer/kb/warm-the-cache-to-improve-performance-from-cold-start/
-     * also, if there is an SSL issue when changing databases, attempt to fix it by running
-     * some fix up code.
-     */
-    static void warmUpResetSSL() {
-        try {
-            Neo4jDriver.warmUp();
-        } catch (ClientException ce) {
-            if (ce.getMessage().contains("SSLEngine problem")) {
-                System.out.println("Resetting Neo4j SSL properties...");
-                // Neo4jDriver.resetSSLNeo4J();
-                System.out.println("Reset complete.");
-                Neo4jDriver.warmUp();
-            }
-        } catch (ServiceUnavailableException unavail) {
-            System.err.println("*** Make sure the Neo4j database is up and running correctly. ***");
-            unavail.printStackTrace();
-            System.exit(1);
-        }
-    }
-
-    /**
-     * If there is an error in the main method of C2SMain.java, then one of these messages will be printed
-     * out to the terminal.
-     *
-     * @param errorCode Error code matching the error that has occurred.
-     */
-    private static void printError(int errorCode) {
-        switch (errorCode) {
-            case 0:
-                System.err.println("*** Error 0: Must pass either 3 or 4 arguments to the program. ***");
                 break;
-            case 1:
-                System.err.println("*** Error 1: Schema translator requires 3 arguments. ***");
-                break;
-            case 2:
-                System.err.println("*** Error 2: The tool requires 4 arguments to function correctly. ***");
-                break;
-            case 3:
-                System.err.println("*** Error 3: Fourth command line flag is invalid. Options are below. ***");
-                break;
-            case 4:
-                System.err.println("*** Error 4: First command line flag is invalid. Options are below. ***");
-                break;
-            default:
-                System.err.println("*** Error running the application. ***");
-        }
-
-        System.err.println("*** Please see README for further help. ***");
-        System.err.println("<-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-f|-i|-r>");
-        System.exit(1);
-    }
-
-    /**
-     * Converting a 'dump' from an existing Neo4j graph into a relational schema, before executing
-     * on a relational backend.
-     *
-     * @param neo4jSchema  The 'dump' file being converted. This location is set in the properties file,
-     *                     under the key 'neo4jSchema'.
-     * @param databaseName The name of the database to be used for storing the relational representation.
-     */
-    private static void convertGraphSchema(String neo4jSchema, String databaseName) {
-        System.out.println("\n***CONVERTING THE SCHEMA***\n");
-        boolean successfulConversion = SchemaConvert.translate(neo4jSchema);
-        if (successfulConversion) {
-            System.out.println("\n***INSERTING THE SCHEMA TO THE DATABASE***\n");
-            //InsertSchema.executeSchemaChange(databaseName);
-            KeyValueTest.executeSchemaChange();
-        } else {
-            // error in the schema conversion - exits the application.
-            System.err.println("Conversion of the graph schema to a relational form has failed.");
-            System.exit(1);
         }
     }
 
@@ -251,39 +157,98 @@ public class C2SMain {
     }
 
     /**
-     * Iterate through the original query file, randomising the order of the queries within the file.
-     *
-     * @param queriesFile Original location of the queries file.
+     * warm up the Neo4j caches if the server has just been turned on.
+     * https://neo4j.com/developer/kb/warm-the-cache-to-improve-performance-from-cold-start/
+     * also, if there is an SSL issue when changing databases, attempt to fix it by running
+     * some fix up code.
      */
-    private static void randomiseQueriesFile(String queriesFile) {
+    static void warmUpResetSSL() {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(queriesFile));
-            Map<Integer, String> queries = new TreeMap<>();
-            String line;
-            Random r = new Random();
-            while ((line = reader.readLine()) != null) {
-                queries.put(r.nextInt(1000), line);
+            Neo4jDriver.warmUp();
+        } catch (ClientException ce) {
+            if (ce.getMessage().contains("SSLEngine problem")) {
+                System.out.println("Resetting Neo4j SSL properties...");
+                // Neo4jDriver.resetSSLNeo4J();
+                System.out.println("Reset complete.");
+                Neo4jDriver.warmUp();
             }
-            reader.close();
-
-            FileWriter writer = new FileWriter(queriesFile.replace(".txt", "_temp.txt"));
-
-            for (String val : queries.values()) {
-                writer.write(val);
-                writer.write('\n');
-            }
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (ServiceUnavailableException unavail) {
+            System.err.println("*** Make sure the Neo4j database is up and running correctly. ***");
+            unavail.printStackTrace();
+            System.exit(1);
         }
     }
 
+    /**
+     * If there is an error in the main method of C2SMain.java, then one of these messages will be printed
+     * out to the terminal.
+     *
+     * @param errorCode Error code matching the error that has occurred.
+     */
+    private static void printError(int errorCode) {
+        switch (errorCode) {
+            case 0:
+                System.err.println("*** Error 0: Must pass either 3 or 4 arguments to the program. ***");
+                break;
+            case 1:
+                System.err.println("*** Error 1: Schema translator requires 3 arguments. ***");
+                break;
+            case 2:
+                System.err.println("*** Error 2: The tool requires 4 arguments to function correctly. ***");
+                break;
+            case 3:
+                System.err.println("*** Error 3: Fourth command line flag is invalid. Options are below. ***");
+                break;
+            case 4:
+                System.err.println("*** Error 4: First command line flag is invalid. Options are below. ***");
+                break;
+            default:
+                System.err.println("*** Error running the application. ***");
+                break;
+        }
+
+        System.err.println("*** Please see README for further help. ***");
+        System.err.println("<-schema|-translate|-s|-t> <propertiesFile> <databaseName> <-dp|-dn|-r>");
+        System.exit(1);
+    }
+
+    /**
+     * Converting a 'dump' from an existing Neo4j graph into a relational schema, before executing
+     * on a relational backend.
+     *
+     * @param neo4jSchema  The 'dump' file being converted. This location is set in the properties file,
+     *                     under the key 'neo4jSchema'.
+     * @param databaseName The name of the database to be used for storing the relational representation.
+     */
+    private static void convertGraphSchema(String neo4jSchema, String databaseName) {
+        System.out.println("\n***CONVERTING THE SCHEMA***\n");
+        boolean successfulConversion = SchemaConvert.translate(neo4jSchema);
+        if (successfulConversion) {
+            System.out.println("\n***INSERTING THE SCHEMA TO THE DATABASE***\n");
+            InsertSchemaPostgres.executeSchemaChange(databaseName);
+            // KeyValueTest.executeSchemaChange();
+        } else {
+            // error in the schema conversion - exits the application.
+            System.err.println("Conversion of the graph schema to a relational form has failed.");
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Executes the query sql on the relational database named dbName. The arguments are themselves passed as
+     * arguments currently to a Windows batch file, which performs the query on the Postgres database. The
+     * results are then piped back into this tool and outputted.
+     *
+     * @param sql    Query to be executed on the database.
+     * @param dbName Name of the relational database for the query to be executed on.
+     * @throws IOException Some issue with the Buffered Reader object.
+     */
     private static void runDirectPG(String sql, String dbName) throws IOException {
-        ProcessBuilder b = new ProcessBuilder("C:/Users/ocraw/pgdbPlay.bat", dbName, sql);
+        String locOfBatch = System.getProperty("user.dir") + "/pgdbPlay.bat";
+        ProcessBuilder b = new ProcessBuilder(locOfBatch, dbName, sql);
         b.redirectErrorStream(true);
         Process process = b.start();
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(process.getInputStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder builder = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -294,106 +259,82 @@ public class C2SMain {
     }
 
 
-    static void translateCypherToSQL(String cypher_line, File f_cypher, File f_pg,
-                                     int repeatCount, String dbName, boolean execNeo4j) throws Exception {
+    /**
+     * Method for translating Cypher to SQL.
+     *
+     * @param cypherInput The original Cypher input that is to be translated.
+     * @param f_cypher    The file object for storing the results from Neo4j (if desired).
+     * @param f_pg        The file object for storing the results from Postgres (if desired).
+     * @param dbName      The name of the database to execute the newly created SQL on.
+     * @param execNeo4j   In the case that the user is just running the tool in its normal operation, there is no need
+     *                    to deal with any of the files, or printing of the results to these files. Instead, the
+     *                    newly generated SQL is executed via a .bat script on Postgres, with the results piped
+     *                    back to this tool.
+     * @throws Exception Something didn't go to plan...
+     */
+    static void translateCypherToSQL(String cypherInput, File f_cypher, File f_pg, String dbName, boolean execNeo4j)
+            throws Exception {
         String sql;
 
-        if (cache.containsKey(cypher_line)) sql = cache.get(cypher_line);
+        // either calculate the SQL or retrieve from a cache of valid translations.
+        if (cache.containsKey(cypherInput)) sql = cache.get(cypherInput);
         else {
-            if (cypher_line.toLowerCase().contains(" foreach ")) {
+            if (cypherInput.toLowerCase().contains(" foreach ")) {
                 ForEach_Cypher fe = new ForEach_Cypher();
-                sql = fe.convertQuery(cypher_line);
-            } else if (cypher_line.toLowerCase().contains(" with ")) {
+                sql = fe.convertQuery(cypherInput);
+            } else if (cypherInput.toLowerCase().contains(" with ")) {
                 With_Cypher wc = new With_Cypher();
-                sql = wc.convertQuery(cypher_line);
-            }
-            // commented code below was for transitive closure representation which is not used
-//        else if (cypher_line.toLowerCase().contains("allshortestpaths")) {
-//            ASP_Cypher aspc = new ASP_Cypher();
-//            sql = aspc.convertQuery(cypher_line);
-//        }
-            else if (cypher_line.toLowerCase().contains("shortestpath")) {
+                sql = wc.convertQuery(cypherInput);
+            } else if (cypherInput.toLowerCase().contains("shortestpath")) {
                 SP_Cypher spc = new SP_Cypher();
-                sql = spc.convertQuery(cypher_line);
-            } else if (cypher_line.toLowerCase().contains("iterate")) {
+                sql = spc.convertQuery(cypherInput);
+            } else if (cypherInput.toLowerCase().contains("iterate")) {
                 Iterate_Cypher ic = new Iterate_Cypher();
-                sql = ic.convertQuery(cypher_line);
+                sql = ic.convertQuery(cypherInput);
             } else {
-                sql = AbstractConversion.convertCypherToSQL(cypher_line).getSqlEquiv();
+                sql = AbstractConversion.convertCypherToSQL(cypherInput).getSqlEquiv();
             }
         }
 
         if (!execNeo4j) {
             runDirectPG(sql, dbName);
-            cache.put(cypher_line, sql);
+            // cache.put(cypherInput, sql);
             resetExecTimes();
             return;
         }
 
         boolean sqlExecSuccess;
         if (sql != null && !sql.isEmpty()) {
-            sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypher_line.toLowerCase().contains("count")), dbName);
+            sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypherInput.toLowerCase().contains("count")), dbName);
         } else throw new Exception("Conversion of SQL failed");
 
-        if (!sqlExecSuccess) denyList.add(cypher_line);
-
         // All the Cypher queries other than the extension
-        if (!cypher_line.toLowerCase().contains("iterate"))
-            Neo4jDriver.run(cypher_line, f_cypher, printBool, testConditions);
+        if (!cypherInput.toLowerCase().contains("iterate"))
+            Neo4jDriver.run(cypherInput, f_cypher, printBool);
 
         // validate the results
-        boolean countSame = false;
+        boolean fileSame = false;
+
         if (sqlExecSuccess) {
-            if ((numResultsNeo4j != numResultsPostgres) && !cypher_line.toLowerCase().contains("iterate")
-                    && !cypher_line.toLowerCase().startsWith("create")
-                    && !cypher_line.toLowerCase().contains("detach delete")
-                    && !cypher_line.toLowerCase().contains("foreach")) {
-                translationFail(cypher_line, sql, f_cypher, f_pg);
-            } else if (cypher_line.toLowerCase().contains("count") && !cypher_line.toLowerCase().contains("with")) {
-                countSame = FileUtils.contentEquals(f_cypher, f_pg);
-                if (!countSame) {
-                    translationFail(cypher_line, sql, f_cypher, f_pg);
+            if ((numResultsNeo4j != numResultsPostgres) && !cypherInput.toLowerCase().contains("iterate")
+                    && !cypherInput.toLowerCase().startsWith("create")
+                    && !cypherInput.toLowerCase().contains("detach delete")
+                    && !cypherInput.toLowerCase().contains("foreach")) {
+                translationFail(cypherInput, sql, f_cypher, f_pg);
+            } else if (cypherInput.toLowerCase().contains("count") && !cypherInput.toLowerCase().contains("with")) {
+                fileSame = FileUtils.contentEquals(f_cypher, f_pg);
+                if (!fileSame) {
+                    translationFail(cypherInput, sql, f_cypher, f_pg);
                 }
             }
 
-            if ((numResultsNeo4j == numResultsPostgres) || countSame) cache.put(cypher_line, sql);
+            if ((numResultsNeo4j == numResultsPostgres) || fileSame) cache.put(cypherInput, sql);
 
-            if (repeatCount > 0) {
-                // record the performance of Cypher and SQL on Neo4J and Postgres respectively.
-                printSummary(cypher_line, sql, f_cypher, f_pg, testConditions);
-            }
+            // print the performance of Cypher and SQL on Neo4J and Postgres respectively.
+            printSummary(cypherInput, sql, f_cypher, f_pg);
         }
 
         resetExecTimes();
-    }
-
-
-    /**
-     * Translating the queries in the file to SQL and executing them.
-     *
-     * @param translateFile String file location containing a list of Cypher queries.
-     * @param f_cypher      File object - the output from the Neo4j Java driver will be sent here.
-     * @param f_pg          File object - the output from the JDBC driver will be sent here.
-     * @param repeatCount   The number of iterations completed so far. If less than 0, the database is still being
-     * @param dbName        The name of the database the queries are to be executed on (for the relational side; the
-     *                      equivalent Neo4j database needs to already be a running process).
-     */
-    private static void translateCypherFile(String translateFile, File f_cypher, File f_pg,
-                                            int repeatCount, String dbName) {
-        try {
-            FileInputStream fis = new FileInputStream(translateFile);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-            String line;
-            while ((line = br.readLine()) != null) {
-                // if line is commented out in the read queries file, then do not attempt to convert it.
-                if (!line.startsWith("//") && !line.isEmpty() && !denyList.contains(line))
-                    translateCypherToSQL(line, f_cypher, f_pg, repeatCount, dbName, true);
-            }
-            br.close();
-            fis.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -424,7 +365,6 @@ public class C2SMain {
         } catch (SQLException e) {
             System.out.println("FAILED IN executeSQL -- " + sql);
             e.printStackTrace();
-            //if (emailUser) SendResultsEmail.sendFailEmail(dbName, sql);
             return false;
         }
         return true;
@@ -433,34 +373,39 @@ public class C2SMain {
     /**
      * Print summary of the translation.
      *
-     * @param line           Cypher query.
-     * @param sql            SQL equivalent.
-     * @param f_cypher       File containing Neo4J output.
-     * @param f_pg           File containing Postgres output.
-     * @param testConditions If this flag is set than the times of execution will be printed.
+     * @param line     Cypher query.
+     * @param sql      SQL equivalent.
+     * @param f_cypher File containing Neo4J output.
+     * @param f_pg     File containing Postgres output.
      * @throws IOException Error comparing the files f_cypher and f_pg.
      */
-    private static void printSummary(String line, String sql, File f_cypher, File f_pg,
-                                     boolean testConditions) throws IOException {
+    private static void printSummary(String line, String sql, File f_cypher, File f_pg) throws IOException {
         System.out.println("**********\nCypher Input : " + line);
         System.out.println("SQL Output: " + sql + "\nExact Result: " +
                 FileUtils.contentEquals(f_cypher, f_pg) + "\nNumber of records from Neo4j: " +
                 numResultsNeo4j + "\nNumber of results from PostG: " + numResultsPostgres);
-        if (testConditions) {
-            System.out.println("Time on Neo4j: \t\t" + (Neo4jDriver.lastExecTime / 1000000.0) +
-                    " ms.\nTime on Postgres: \t" + ((PostgresDriver.lastExecTimeRead + PostgresDriver.lastExecTimeCreate +
-                    PostgresDriver.lastExecTimeInsert)
-                    / 1000000.0) +
-                    " ms.");
-        }
+        System.out.println("Time on Neo4j: \t\t" + (Neo4jDriver.lastExecTime / 1000000.0) +
+                " ms.\nTime on Postgres: \t" + ((PostgresDriver.lastExecTimeRead + PostgresDriver.lastExecTimeCreate +
+                PostgresDriver.lastExecTimeInsert)
+                / 1000000.0) +
+                " ms.");
         System.out.println("**********\n");
     }
 
+    /**
+     * If the translation failed, alert the user.
+     *
+     * @param line     Original Cypher input.
+     * @param sql      Converted SQL.
+     * @param f_cypher Neo4j results file object.
+     * @param f_pg     Postgres results file object.
+     * @throws IOException Something went wrong in printSummary()
+     */
     private static void translationFail(String line, String sql, File f_cypher, File f_pg) throws IOException {
         System.err.println("\n**********Statements do not appear to " +
                 "be logically correct - please check**********\n"
                 + line + "\n" + sql + "\n***********");
-        printSummary(line, sql, f_cypher, f_pg, testConditions);
+        printSummary(line, sql, f_cypher, f_pg);
         System.exit(1);
     }
 

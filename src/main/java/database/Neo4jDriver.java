@@ -24,9 +24,8 @@ public class Neo4jDriver {
      * @param query          Cypher to execute.
      * @param cypher_results File to store the results.
      * @param printOutput    Set to true to store the outputs of the query on disk.
-     * @param testConditions If set to true, the times of the execution will not be recorded.
      */
-    public static void run(String query, File cypher_results, boolean printOutput, boolean testConditions) {
+    public static void run(String query, File cypher_results, boolean printOutput) {
         // database essentials
         Driver driver = GraphDatabase.driver("bolt://localhost",
                 AuthTokens.basic(C2SMain.props.getNeoUN(), C2SMain.props.getNeoPW()));
@@ -37,12 +36,11 @@ public class Neo4jDriver {
         printOutput = printOutput || query.toLowerCase().contains("count");
 
         // timing unit
-        if (testConditions) {
-            long startNano = System.nanoTime();
-            session.run(query).consume();
-            long endNano = System.nanoTime();
-            lastExecTime = endNano - startNano;
-        }
+        long startNano = System.nanoTime();
+        session.run(query).consume();
+        long endNano = System.nanoTime();
+        lastExecTime = endNano - startNano;
+
 
         // only print results to the output file if the query is for reading.
         if (!query.toLowerCase().startsWith("create")) {

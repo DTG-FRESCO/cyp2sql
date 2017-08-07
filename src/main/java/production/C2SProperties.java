@@ -14,7 +14,6 @@ import java.util.Properties;
 public class C2SProperties {
     private String propsLocation;
     private String neo4jSchema;
-    private String queriesFile;
     private String wspace;
     private String neo4jRes;
     private String sqlRes;
@@ -49,7 +48,6 @@ public class C2SProperties {
 
             // get the property values.
             setNeo4jSchema(prop.getProperty("neo4jSchema"));
-            setQueriesFile(prop.getProperty("queriesFile"));
             setWspace(prop.getProperty("workspaceLocation"));
             setNeo4jRes(prop.getProperty("neo4jResults"));
             setSqlRes(prop.getProperty("sqlResults"));
@@ -80,14 +78,6 @@ public class C2SProperties {
 
     private void setNeo4jSchema(String neo4jSchema) {
         this.neo4jSchema = neo4jSchema;
-    }
-
-    String getQueriesFile() {
-        return queriesFile;
-    }
-
-    private void setQueriesFile(String queriesFile) {
-        this.queriesFile = queriesFile;
     }
 
     String getNeo4jRes() {
@@ -146,6 +136,13 @@ public class C2SProperties {
         this.wspace = wspace;
     }
 
+    /**
+     * Reads file at location listLoc, and for each line in the text file, it adds the content
+     * to an ArrayList. The file is a list of fields that may contain lists.
+     *
+     * @param listLoc Path location of the file containing the list of fields that need to be able to handle lists.
+     *                This location should be set in the properties file under the heading listsLocation.
+     */
     private void setLists(String listLoc) {
         ArrayList<String> fields = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(listLoc))) {
@@ -153,6 +150,7 @@ public class C2SProperties {
             while ((line = br.readLine()) != null) {
                 fields.add(line);
             }
+            br.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
