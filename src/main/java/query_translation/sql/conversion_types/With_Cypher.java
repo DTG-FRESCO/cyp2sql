@@ -40,7 +40,7 @@ public class With_Cypher extends AbstractConversion {
 
         String withTemp = null;
         if (dqFirstWith != null) {
-            withTemp = WithSQL.genTemp(dqFirstWith.getSqlEquiv());
+            withTemp = WithSQL.genTemp(dqFirstWith.getSqlEquiv(), 0, dqFirstWith);
         }
 
         String secondWith = cypher.toLowerCase().substring(cypher.toLowerCase().lastIndexOf("match"));
@@ -63,7 +63,7 @@ public class With_Cypher extends AbstractConversion {
 
         String withTemp = null;
         if (dQ != null) {
-            withTemp = WithSQL.genTemp(dQ.getSqlEquiv());
+            withTemp = WithSQL.genTemp(dQ.getSqlEquiv(), 0, dQ);
         }
 
         String indexName = dQ.getMc().getNodes().get(0).getId();
@@ -88,7 +88,7 @@ public class With_Cypher extends AbstractConversion {
 
         String withTemp = null;
         if (dQ != null) {
-            withTemp = WithSQL.genTemp(dQ.getSqlEquiv());
+            withTemp = WithSQL.genTemp(dQ.getSqlEquiv(), 0, dQ);
         }
 
         String sqlSelect = WithSQL.createSelectWhere(withParts[1].trim(), dQ);

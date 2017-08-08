@@ -3,6 +3,7 @@ package query_translation.sql.utilities_sql;
 import intermediate_rep.CypReturn;
 import intermediate_rep.DecodedQuery;
 import query_translation.sql.conversion_types.AbstractConversion;
+import query_translation.sql.conversion_types.Multiple_With_Cypher;
 import translator.CypherTokenizer;
 
 import java.util.ArrayList;
@@ -14,13 +15,27 @@ public class WithSQL {
     private static final String r = "return";
     private static final String s = "skip";
     private static final String l = "limit";
-
+    private static final char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
     public static Map<String, String> withMapping = new HashMap<>();
 
-
-    public static String genTemp(String query) {
-        String initial = "CREATE TEMP VIEW wA AS (";
-        return initial + query.substring(0, query.length() - 1) + ");";
+    public static String genTemp(String query, int numWith, DecodedQuery withPartDQ) {
+        String initial = "CREATE TEMP VIEW w" + String.valueOf(alphabet[numWith]).toUpperCase() + " AS (";
+        String resultingView = initial + query.substring(0, query.length() - 1) + ");";
+        if (numWith > 0 && withPartDQ.getMc().getRels().size() > 0) {
+            String prevView = String.valueOf(alphabet[numWith - 1]);
+            resultingView = resultingView.replace(" WHERE", ", w" + prevView + " WHERE ");
+            for (String s : Multiple_With_Cypher.mappingMultipleWith.keySet()) {
+                if (Multiple_With_Cypher.mappingMultipleWith.get(s).endsWith(String.valueOf(alphabet[numWith - 1]).toUpperCase())) {
+                    resultingView = resultingView.substring(0, resultingView.length() - 2);
+                    resultingView = resultingView + " AND w" + alphabet[numWith - 1]
+                            + ".id = a.a2);";
+                }
+            }
+        } else if (numWith > 0) {
+            String prevView = String.valueOf(alphabet[numWith - 1]);
+            resultingView = resultingView.replace(" WHERE", ", w" + prevView + " WHERE ");
+        }
+        return resultingView;
     }
 
     // current WITH statement setup presumes no aliasing of return in second part of the WITH clause.

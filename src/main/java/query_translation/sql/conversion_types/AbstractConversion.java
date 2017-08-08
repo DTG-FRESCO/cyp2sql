@@ -12,6 +12,8 @@ import java.util.ArrayList;
  * Class to extend if wishing to extend scope of Cypher that can be converted.
  */
 public abstract class AbstractConversion {
+    static final char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+
     /**
      * Convert Cypher queries to SQL
      *

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import intermediate_rep.*;
 import production.C2SMain;
+import query_translation.sql.conversion_types.Multiple_With_Cypher;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -31,7 +32,7 @@ class TranslateUtils {
             } else if (entry.getKey().equals("name")) {
                 value = "ARRAY[" + entry.getValue().toString() + "]";
             } else value = entry.getValue().getAsString();
-            sql = TranslateUtils.addWhereClause(sql, value);
+            sql = TranslateUtils.addWhereClause(sql, value, sqlLabel);
 
             String i = null;
             int index = 0;
@@ -84,15 +85,16 @@ class TranslateUtils {
      * in the original Cypher WHERE clause.
      *
      * @param sql
+     * @param sqlLabel
      * @return
      */
-    private static StringBuilder addWhereClause(StringBuilder sql, String value) {
+    private static StringBuilder addWhereClause(StringBuilder sql, String value, String sqlLabel) {
         // format part of the where clause correctly for further parsing.
         if (!value.contains("#")) value = "eq#" + value + "#qe";
 
         String prop = sql.toString().substring(sql.toString().lastIndexOf(" ") + 1);
 
-        sql = getProperWhereValue(value, sql);
+        sql = getProperWhereValue(value, sql, sqlLabel);
 
         while (value.contains("~")) {
             sql.append(value.split("~")[1]).append(" ").append(prop);
@@ -102,13 +104,13 @@ class TranslateUtils {
                 value += valueSplit[i] + "~";
             }
             value = value.substring(0, value.length() - 1);
-            sql = getProperWhereValue(value, sql);
+            sql = getProperWhereValue(value, sql, sqlLabel);
         }
 
         return sql;
     }
 
-    private static StringBuilder getProperWhereValue(String value, StringBuilder sql) {
+    private static StringBuilder getProperWhereValue(String value, StringBuilder sql, String sqlLabel) {
         // remove anything to do with ARRAYS from the value
         boolean array = value.startsWith("ARRAY[");
         boolean list = false;
@@ -169,11 +171,32 @@ class TranslateUtils {
                     sql.append("(");
                     v = v.replace("(", "").replace(")", "");
                 }
-                sql.append("ARRAY[").append(v.replace("\"", "'")).append("] ");
+                String arrayItems[] = v.split(", ");
+                for (String x : arrayItems) {
+                    sql.append("ARRAY[").append(x.replace("\"", "'")).append("] ").append(", ");
+                }
+                sql.setLength(sql.length() - 2);
                 if (list) sql.append(")");
             } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
             else if (list) sql.append(v);
-            else sql.append("'").append(v.replace("'", "")).append("' ");
+            else if (v.startsWith("id(")) {
+                String id = v.substring(v.indexOf("(") + 1, v.length() - 1);
+                String withTable = Multiple_With_Cypher.mappingMultipleWith.get(id);
+                sql.append(withTable).append(".id");
+            } else if (v.contains(".")) {
+                String idAndValue[] = v.split("\\.");
+                String withTable;
+
+                // swap n1 for n2 and vice versa.
+                sqlLabel = (sqlLabel.equals("n1")) ? "n2" : "n1";
+
+                if (Multiple_With_Cypher.mappingMultipleWith != null) {
+                    withTable = Multiple_With_Cypher.mappingMultipleWith.get(idAndValue[0]);
+                } else withTable = sqlLabel;
+
+                if (withTable == null) withTable = sqlLabel;
+                sql.append(withTable).append(".").append(idAndValue[1]);
+            } else sql.append("'").append(v.replace("'", "")).append("' ");
         }
         return sql;
     }

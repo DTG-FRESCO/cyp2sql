@@ -75,3 +75,7 @@ can be translated. There is more information in the technical manual.
 - `MATCH (n) WHERE 'Process' in labels(n) WITH n MATCH (m) WHERE m.status = n.status RETURN count(n)`
 - `MATCH (n) WHERE 'Local' in labels(n) AND NOT exists(n.pid) WITH n MATCH (m:Global)-->(n) WHERE id(m) > 900 RETURN n.node_id`
 - `MATCH (n) WHERE 'Local' in labels(n) AND NOT exists(n.pid) WITH n MATCH (m:Global)-[r]->(n) WHERE id(m) > 900 RETURN n.node_id, r.state`
+- `MATCH (n:Global)-->(m:Local) WHERE n.node_id < m.node_id RETURN count(m)`
+- `MATCH (n:Meta)<--(m:Process)-->(p) WHERE n.node_id > m.node_id AND p.node_id <= m.node_id RETURN count(m)`
+- `MATCH (n) WHERE id(n) < 3 WITH n MATCH (m) WHERE id(m) < id(n) WITH m MATCH (p) WHERE p.node_id < m.node_id RETURN count(p)`
+- `MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name IN ['postgres', 'cron', 'dhclient']) WITH n MATCH (m:Process) WHERE id(m) > id(n) WITH m MATCH (p)-->(m) RETURN count(p)`

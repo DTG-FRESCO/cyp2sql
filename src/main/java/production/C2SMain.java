@@ -291,8 +291,13 @@ public class C2SMain {
                 ForEach_Cypher fe = new ForEach_Cypher();
                 sql = fe.convertQuery(cypherInput);
             } else if (cypherInput.toLowerCase().contains(" with ")) {
-                With_Cypher wc = new With_Cypher();
-                sql = wc.convertQuery(cypherInput);
+                if (cypherInput.toLowerCase().split(" with ").length > 2) {
+                    Multiple_With_Cypher mwc = new Multiple_With_Cypher();
+                    sql = mwc.convertQuery(cypherInput);
+                } else {
+                    With_Cypher wc = new With_Cypher();
+                    sql = wc.convertQuery(cypherInput);
+                }
             } else if (cypherInput.toLowerCase().contains("shortestpath")) {
                 SP_Cypher spc = new SP_Cypher();
                 sql = spc.convertQuery(cypherInput);
@@ -427,7 +432,7 @@ public class C2SMain {
         PostgresDriver.lastExecTimeInsert = 0;
     }
 
-    public static boolean isWindows() {
+    private static boolean isWindows() {
         return (OS.contains("win"));
     }
 
