@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>intermediate_rep.DecodedQuery</OriginalElement>
+  <nodes>
+    <node x="1364.2710084033615" y="0.0">intermediate_rep.CypRel</node>
+    <node x="0.0" y="678.0">translator.CypherWalker</node>
+    <node x="257.0000000000002" y="776.5">intermediate_rep.WhereClause</node>
+    <node x="542.0000000000002" y="810.0">intermediate_rep.OrderClause</node>
+    <node x="1238.0000000000002" y="810.0">intermediate_rep.ReturnClause</node>
+    <node x="977.0000000000002" y="798.5">intermediate_rep.CypForEach</node>
+    <node x="1062.2710084033615" y="11.0">intermediate_rep.CypNode</node>
+    <node x="1435.903361344538" y="232.0">intermediate_rep.MatchClause</node>
+    <node x="748.0000000000002" y="721.5">intermediate_rep.CypIterate</node>
+    <node x="1141.5714285714287" y="422.0">intermediate_rep.CypReturn</node>
+    <node x="589.6680672268909" y="1093.0">intermediate_rep.DecodedQuery</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="intermediate_rep.MatchClause" target="intermediate_rep.CypNode">
+      <point x="-81.0" y="-70.0" />
+      <point x="1462.903361344538" y="202.0" />
+      <point x="1203.2710084033615" y="202.0" />
+      <point x="0.0" y="70.0" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.CypIterate">
+      <point x="-20.35714285714289" y="-136.0" />
+      <point x="854.310924369748" y="1013.0" />
+      <point x="800.2500000000002" y="1013.0" />
+      <point x="-52.25" y="114.0" />
+    </edge>
+    <edge source="intermediate_rep.MatchClause" target="intermediate_rep.CypRel">
+      <point x="27.0" y="-70.0" />
+      <point x="1570.903361344538" y="182.0" />
+      <point x="1517.2710084033615" y="182.0" />
+      <point x="0.0" y="81.0" />
+    </edge>
+    <edge source="intermediate_rep.CypReturn" target="intermediate_rep.MatchClause">
+      <point x="138.0" y="-103.0" />
+      <point x="1486.5714285714287" y="397.0" />
+      <point x="1471.903361344538" y="397.0" />
+      <point x="-72.0" y="70.0" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.CypForEach">
+      <point x="61.07142857142867" y="-136.0" />
+      <point x="935.7394957983196" y="1023.0" />
+      <point x="1037.2500000000002" y="1023.0" />
+      <point x="-60.25" y="37.0" />
+    </edge>
+    <edge source="intermediate_rep.CypReturn" target="intermediate_rep.CypNode">
+      <point x="-138.0" y="-103.0" />
+      <point x="1210.5714285714287" y="397.0" />
+      <point x="1167.3214285714287" y="397.0" />
+      <point x="1167.3214285714287" y="212.0" />
+      <point x="1109.2710084033615" y="212.0" />
+      <point x="-94.0" y="70.0" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.MatchClause">
+      <point x="223.92857142857156" y="-136.0" />
+      <point x="1098.5966386554624" y="1063.0" />
+      <point x="1566.0714285714287" y="1063.0" />
+      <point x="1566.0714285714287" y="397.0" />
+      <point x="1543.903361344538" y="397.0" />
+      <point x="0.0" y="70.0" />
+    </edge>
+    <edge source="intermediate_rep.CypReturn" target="intermediate_rep.CypRel">
+      <point x="0.0" y="-103.0" />
+      <point x="1348.5714285714287" y="397.0" />
+      <point x="1303.2710084033615" y="397.0" />
+      <point x="1303.2710084033615" y="212.0" />
+      <point x="1415.2710084033615" y="212.0" />
+      <point x="-102.0" y="81.0" />
+    </edge>
+    <edge source="intermediate_rep.ReturnClause" target="intermediate_rep.CypReturn">
+      <point x="47.75" y="-25.5" />
+      <point x="1381.2500000000002" y="653.0" />
+      <point x="1452.0714285714287" y="653.0" />
+      <point x="103.5" y="103.0" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.OrderClause">
+      <point x="-101.78571428571422" y="-136.0" />
+      <point x="772.8823529411767" y="1033.0" />
+      <point x="588.5000000000002" y="1033.0" />
+      <point x="-46.5" y="25.5" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.ReturnClause">
+      <point x="183.21428571428578" y="-136.0" />
+      <point x="1057.8823529411766" y="1053.0" />
+      <point x="1381.2500000000002" y="1053.0" />
+      <point x="47.75" y="25.5" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="intermediate_rep.WhereClause">
+      <point x="-183.21428571428578" y="-136.0" />
+      <point x="691.4537815126051" y="1053.0" />
+      <point x="323.2500000000002" y="1053.0" />
+      <point x="-66.25" y="59.0" />
+    </edge>
+    <edge source="intermediate_rep.DecodedQuery" target="translator.CypherWalker">
+      <point x="-264.6428571428571" y="-136.0" />
+      <point x="610.0252100840338" y="1073.0" />
+      <point x="59.25" y="1073.0" />
+      <point x="-59.25" y="157.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.4657039711191336" x="835.5" y="682.5" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Constructors</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

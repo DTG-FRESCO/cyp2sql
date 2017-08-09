@@ -8,8 +8,12 @@ import java.util.Map;
  * Stores the where clause.
  */
 public class WhereClause {
+    // The individual predicates of the WHERE clause are stored in this field.
     private ArrayList<String> components;
+    // whereMappings holds a mapping between an individual item in the WHERE clause, and the boolean
+    // operator that follows it (currently the tool handles only AND and OR, not yet built for XOR).
     private Map<String, String> whereMappings = new HashMap<>();
+    // The whole WHERE part of the Cypher input.
     private String clause;
 
     public WhereClause(String c) {
@@ -40,6 +44,9 @@ public class WhereClause {
         this.whereMappings = map;
     }
 
+    /**
+     * Prints out the individual components of the WHERE part of the Cypher input.
+     */
     @Override
     public String toString() {
         StringBuilder strb = new StringBuilder();

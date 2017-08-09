@@ -16,6 +16,9 @@ public class ReturnClause {
         this.items = items;
     }
 
+    /**
+     * Prints out information about the individual items in the match clause.
+     */
     @Override
     public String toString() {
         StringBuilder strb = new StringBuilder();

@@ -29,3 +29,4 @@ MATCH (n:Global)-->(m:Local) WHERE n.node_id < m.node_id RETURN count(m);
 MATCH (n:Meta)<--(m:Process)-->(p) WHERE n.node_id > m.node_id AND p.node_id <= m.node_id RETURN count(m);
 MATCH (n) WHERE id(n) < 3 WITH n MATCH (m) WHERE id(m) < id(n) WITH m MATCH (p) WHERE p.node_id < m.node_id RETURN count(p);
 MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name IN ['postgres', 'cron', 'dhclient']) WITH n MATCH (m:Process) WHERE id(m) > id(n) WITH m MATCH (p)-->(m) RETURN count(p);
+MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name IN ['postgres', 'cron', 'dhclient']) WITH n MATCH (m:Process) WHERE id(m) > id(n) WITH m MATCH (p)-->(m) WITH p MATCH (j)<-[:PROC_OBJ_PREV]-(p) WHERE p.sys_time = j.sys_time RETURN count(j);

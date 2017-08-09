@@ -16,6 +16,9 @@ public class OrderClause {
         this.items = items;
     }
 
+    /**
+     * Prints out information about the ORDER BY clause.
+     */
     @Override
     public String toString() {
         StringBuilder strb = new StringBuilder();

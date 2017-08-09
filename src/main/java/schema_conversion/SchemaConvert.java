@@ -178,7 +178,7 @@ public class SchemaConvert {
             fos = new FileOutputStream(file.replace(".txt", "_new.txt"));
 
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-            String output = "";
+            StringBuilder output = new StringBuilder();
             boolean firstLine = true;
 
             while ((line = br.readLine()) != null) {
@@ -191,14 +191,14 @@ public class SchemaConvert {
                     if (firstLine) {
                         firstLine = false;
                     } else {
-                        bw.write(output);
+                        bw.write(output.toString());
                         bw.newLine();
                     }
-                    output = line;
+                    output = new StringBuilder(line);
                 } else if (line.isEmpty()) {
                     // do nothing intentionally
                 } else {
-                    output += line;
+                    output.append(line);
                 }
 
                 bytesRead += line.length();
@@ -210,6 +210,7 @@ public class SchemaConvert {
             }
 
             br.close();
+
             // remove last semi-colon and commit from the dump file.
             bw.write(output.substring(0, output.length() - 7));
             bw.flush();

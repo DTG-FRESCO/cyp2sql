@@ -39,13 +39,14 @@ public class Multiple_With_Cypher extends AbstractConversion {
         DecodedQuery finalPartDQ = convertCypherToSQL(withParts.get(0));
         String finalSQL = finalPartDQ.getSqlEquiv();
 
+        String letter = String.valueOf(alphabet[numParts - 2]).toUpperCase();
         if (finalPartDQ.getMc().getRels().size() > 0) {
-            finalSQL = finalSQL.replace(" WHERE ", ", wB WHERE ");
+            finalSQL = finalSQL.replace(" nodes n01, a ", " nodes n01, a, w" + letter);
             finalSQL = finalSQL.substring(0, finalSQL.length() - 1);
             String correctPart = (mappingMultipleWith.keySet().contains(finalPartDQ.getMc().getNodes().get(0).getId()))
                     ? "a.a1" : "a.a2";
-            finalSQL = finalSQL + " AND " + correctPart + " = wB.id;";
-        } else finalSQL = finalSQL.replace(" nodes n01 ", " nodes n01, wB ");
+            finalSQL = finalSQL + " AND " + correctPart + " = w" + letter + ".id;";
+        } else finalSQL = finalSQL.replace(" nodes n01 ", " nodes n01, w" + letter + " ");
 
         multipleWithSQL.append(finalSQL);
         mappingMultipleWith = null;

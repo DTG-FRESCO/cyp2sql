@@ -6,10 +6,12 @@ import java.util.ArrayList;
  * Stores all the CypNode and CypRel objects, and has an internal ID to keep track of the order.
  */
 public class MatchClause {
+    // Stores all the nodes in the MATCH clause.
     private ArrayList<CypNode> nodes = new ArrayList<>();
+    // Stores all the relationships in the MATCH clause.
     private ArrayList<CypRel> rels = new ArrayList<>();
 
-    // varRel indicates that a relationship of the type -[*a..b]- is being used.
+    // varRel indicates if the relationship is of the type -[*a..b]-.
     private boolean varRel = false;
 
     private int internalID;
@@ -51,6 +53,10 @@ public class MatchClause {
         this.varRel = true;
     }
 
+
+    /**
+     * Prints out information about the nodes and relationships in the match clause.
+     */
     @Override
     public String toString() {
         StringBuilder strb = new StringBuilder();

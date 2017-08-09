@@ -16,10 +16,22 @@ public class DecodedQuery {
     private int skipAmount;
     private int limitAmount;
     private CypherWalker cypherAdditionalInfo;
+    // The SQL translation is also stored in this object for completeness.
     private String sqlEquiv;
 
-    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, WhereClause wc, int skip, int limit,
-                        CypherWalker c) {
+    /**
+     * Create the DecodedQuery object based on the parsing of the Cypher input.
+     *
+     * @param m     MatchClause object.
+     * @param r     ReturnClause object.
+     * @param o     OrderClause object.
+     * @param wc    WhereClause object.
+     * @param skip  SKIP value.
+     * @param limit LIMIT value.
+     * @param c     The CypherWalker object.
+     */
+    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, WhereClause wc,
+                        int skip, int limit, CypherWalker c) {
         this.matchC = m;
         this.returnC = r;
         this.orderC = o;
