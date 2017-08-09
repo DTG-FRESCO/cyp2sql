@@ -57,18 +57,6 @@ public class ShortestPath extends AbstractTranslation {
         return sql.toString();
     }
 
-    /**
-     * A lot of the magic for making the shortestPath function convert from Cypher to SQL is in this method!
-     * The final view, known as finStep, must firstly work out the correct items to return (using the ReturnClause
-     * object rc). It then must include min(Depth) to match the shortestPath semantics.
-     *
-     * @param lastIndex
-     * @param cN2
-     * @param rc
-     * @param alias
-     * @param wc
-     * @return
-     */
     private static String getFinalSelect(int lastIndex, CypNode cN2, ReturnClause rc, Map<String, String> alias,
                                          WhereClause wc) {
         StringBuilder sql = new StringBuilder();

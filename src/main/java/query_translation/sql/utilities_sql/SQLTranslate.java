@@ -198,14 +198,6 @@ public class SQLTranslate {
         return sql;
     }
 
-    /**
-     * Append ORDER BY clause to the SQL statement.
-     *
-     * @param orderC Order Clause object generated during the translation process.
-     * @param rc     Return Clause object. It is used to determine what to include in the order part of the SQL, particularly
-     *               when we are ordering by a field that is part of an edge AND NOT part of a node.
-     * @param sql    Original SQL built up already.  @return New SQL StringBuilder object with ORDER BY clause appended to the end.
-     */
     static StringBuilder obtainOrderByClause(OrderClause orderC, ReturnClause rc, StringBuilder sql) {
         sql.append(" ");
         sql.append("ORDER BY ");

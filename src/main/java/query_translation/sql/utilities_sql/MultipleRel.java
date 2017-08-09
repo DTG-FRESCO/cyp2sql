@@ -91,10 +91,10 @@ public class MultipleRel extends AbstractTranslation {
      * Augmenting the WITH clauses with the correct predicates (that may be associated with either the nodes
      * or properties of the relationship itself).
      *
-     * @param cR              The Cypher relationship: (a)-[b]->(c) for example.
-     * @param matchC          The MatchClause: MATCH (a)-[b]->(c) ...
+     * @param cR              The Cypher relationship: (a)-[b]-{@literal >}(c) for example.
+     * @param matchC          The MatchClause: MATCH (a)-[b]-{@literal >}(c) ...
      * @param sql             The current SQL being created.
-     * @param isBiDirectional If the relationship has no direction (i.e. -[]- as opposed to <-[] and -[]->), then
+     * @param isBiDirectional If the relationship has no direction (i.e. -[]- as opposed to {@literal <}-[] and -[]-{@literal >}), then
      *                        need to append UNION ALL to the end of the SQL created.
      * @param indexRel        The position of the relationship within the context of the whole MatchClause.
      * @param wc              WhereClause containing information about the predicates of the nodes and relationships.

@@ -80,14 +80,6 @@ class TranslateUtils {
         return genWhere(sql, obj, wc, sqlLabel);
     }
 
-    /**
-     * Formats the WHERE part of the SQL query, depending on the boolean operator
-     * in the original Cypher WHERE clause.
-     *
-     * @param sql
-     * @param sqlLabel
-     * @return
-     */
     private static StringBuilder addWhereClause(StringBuilder sql, String value, String sqlLabel) {
         // format part of the where clause correctly for further parsing.
         if (!value.contains("#")) value = "eq#" + value + "#qe";
@@ -201,13 +193,6 @@ class TranslateUtils {
         return sql;
     }
 
-    /**
-     * Labels in the current schema conversion are stored as strings. Some nodes have multiple labels.
-     * Thus, need to query labels using string comparison, and this methods helps generate that.
-     *
-     * @param cN CypNode with labels attached to it.
-     * @return SQL Like statement (such as n.label LIKE '%person$' AND n.label LIKE '%actor%')
-     */
     static String genLabelLike(CypNode cN, String id) {
         String label = cN.getType();
         String stmt = "'%";

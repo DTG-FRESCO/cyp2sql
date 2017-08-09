@@ -130,6 +130,7 @@ public class PostgresDriver {
      * @param query SQL to execute.
      * @param stm   Internal JDBC statement.
      * @return List of the results and column names.
+     * @throws SQLException Error with the SQL.
      */
     private static ArrayList<ArrayList<String>> getQueryResult(String query, Statement stm)
             throws SQLException {

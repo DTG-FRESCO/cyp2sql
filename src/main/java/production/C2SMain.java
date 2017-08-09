@@ -361,6 +361,7 @@ public class C2SMain {
      * @param pg_results  File to store the results.
      * @param printOutput Write the results to a file for viewing.
      * @param dbName      Name of the database the SQL will be executed on.
+     * @return True if the execution on Postgres was successful, false otherwise.
      */
     private static boolean executeSQL(String sql, File pg_results, boolean printOutput, String dbName) {
         try {

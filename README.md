@@ -71,6 +71,7 @@ can be translated. There is more information in the technical manual.
 - `MATCH (n:Process)<-[e:PROC_OBJ]-(c:Local) WHERE id(n) = 916 AND e.state in [5] RETURN c.name, e.state ORDER BY c.name DESC`
 - `MATCH (a)-[e]-(b) WHERE id(a) IN [100, 200, 300, 400] AND id(b) IN [101, 201, 202, 302, 404] RETURN e.state`
 - `MATCH (a) WHERE any(name in a.name WHERE name IN ['uid']) RETURN count(a)`
+- `MATCH (a) WHERE any(name in a.name WHERE name IN ['uid', 'postgres']) RETURN count(a)`
 - `MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a)`
 - `MATCH (n) WHERE 'Process' in labels(n) WITH n MATCH (m) WHERE m.status = n.status RETURN count(n)`
 - `MATCH (n) WHERE 'Local' in labels(n) AND NOT exists(n.pid) WITH n MATCH (m:Global)-->(n) WHERE id(m) > 900 RETURN n.node_id`
@@ -79,3 +80,4 @@ can be translated. There is more information in the technical manual.
 - `MATCH (n:Meta)<--(m:Process)-->(p) WHERE n.node_id > m.node_id AND p.node_id <= m.node_id RETURN count(m)`
 - `MATCH (n) WHERE id(n) < 3 WITH n MATCH (m) WHERE id(m) < id(n) WITH m MATCH (p) WHERE p.node_id < m.node_id RETURN count(p)`
 - `MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name IN ['postgres', 'cron', 'dhclient']) WITH n MATCH (m:Process) WHERE id(m) > id(n) WITH m MATCH (p)-->(m) WITH p MATCH (j)<-[:PROC_OBJ_PREV]-(p) WHERE p.sys_time = j.sys_time RETURN count(j)`
+- `MATCH (a:Global {name:'postgres'})-->(b:Global) WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5`
