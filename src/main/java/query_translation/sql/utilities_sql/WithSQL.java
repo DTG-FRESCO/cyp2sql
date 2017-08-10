@@ -187,6 +187,13 @@ public class WithSQL {
             resSecWith = mr.translate(resSecWith, dQSecWith);
         }
 
+        int skipAmount = dQSecWith.getSkipAmount();
+        int limitAmount = dQSecWith.getLimitAmount();
+        if (skipAmount != -1) resSecWith.append(" OFFSET ").append(skipAmount);
+        if (limitAmount != -1) resSecWith.append(" LIMIT ").append(limitAmount);
+
+        resSecWith.append(";");
+
         withMapping = new HashMap<>();
         return resSecWith.toString();
     }

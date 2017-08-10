@@ -759,18 +759,23 @@ class CypherTranslator {
             CypWhere cW = new CypWhere(posInClause++);
             cW.setBoolOp(operatorAfter.get(clause));
 
+            boolean clauseHasLeftBr = false;
+
             // extract bracketing information
             while (clause.startsWith("(")) {
                 cW.addLBrack();
                 clause = clause.substring(1);
                 numLeftBracketsNotClosed++;
+                clauseHasLeftBr = true;
             }
 
             while (clause.endsWith(")")) {
                 if (numLeftBracketsNotClosed == 0) break;
-                cW.addRBrack();
-                clause = clause.substring(0, clause.length() - 1);
-                numLeftBracketsNotClosed--;
+                if (!clauseHasLeftBr) {
+                    cW.addRBrack();
+                    clause = clause.substring(0, clause.length() - 1);
+                    numLeftBracketsNotClosed--;
+                } else break;
             }
 
             // extract NOT information

@@ -32,3 +32,4 @@ MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name IN ['postgr
 MATCH (a:Global {name:'postgres'})-->(b:Global) WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;
 MATCH (a:Meta) RETURN count(distinct a.name);
 MATCH (a:Local)-->(b)<--(c:Process)<--(d) RETURN min(d.node_id);
+MATCH (n) WHERE 'Global' in labels(n) AND any(name in n.name WHERE name IN ['master']) OR (exists(n.pid) AND n.status = 2) WITH n MATCH (m:Meta) WHERE m.node_id > n.node_id RETURN DISTINCT n LIMIT 10;
