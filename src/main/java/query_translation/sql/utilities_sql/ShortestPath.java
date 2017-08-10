@@ -13,10 +13,9 @@ public class ShortestPath extends AbstractTranslation {
      * being generated.
      *
      * @param cypNode Cypher node for whom the properties/label are being extracted and used.
-     * @param wc      WhereClause of the whole Cypher query.
      * @return String of newly generated section of SQL.
      */
-    private static String getFirstStep(CypNode cypNode, WhereClause wc) {
+    private static String getFirstStep(CypNode cypNode) {
         StringBuilder sql = new StringBuilder();
         sql.append("nodes q ON leftnode = id");
 
@@ -31,7 +30,7 @@ public class ShortestPath extends AbstractTranslation {
         if (cypNode.getProps() != null) {
             if (hasWhere) sql.append(" AND ");
             else sql.append(" WHERE ");
-            sql = TranslateUtils.getWholeWhereClause(sql, cypNode, wc, "q");
+            sql = TranslateUtils.getWholeWhereClause(sql, cypNode, "q");
         }
 
         return sql.toString();
@@ -57,8 +56,7 @@ public class ShortestPath extends AbstractTranslation {
         return sql.toString();
     }
 
-    private static String getFinalSelect(int lastIndex, CypNode cN2, ReturnClause rc, Map<String, String> alias,
-                                         WhereClause wc) {
+    private static String getFinalSelect(int lastIndex, CypNode cN2, ReturnClause rc, Map<String, String> alias) {
         StringBuilder sql = new StringBuilder();
         StringBuilder thingsToGroupBy = new StringBuilder();
 
@@ -97,7 +95,7 @@ public class ShortestPath extends AbstractTranslation {
         if (cN2.getProps() != null) {
             if (hasWhere) sql.append(" AND ");
             else sql.append(" WHERE ");
-            sql = TranslateUtils.getWholeWhereClause(sql, cN2, wc, "n01");
+            sql = TranslateUtils.getWholeWhereClause(sql, cN2, "n01");
         }
 
         thingsToGroupBy = new StringBuilder(thingsToGroupBy.substring(0, thingsToGroupBy.length() - 2));
@@ -163,7 +161,7 @@ public class ShortestPath extends AbstractTranslation {
             cN2 = matchC.getNodes().get(1);
         }
 
-        shortPath.append(getFirstStep(cN1, dQMainPath.getWc()));
+        shortPath.append(getFirstStep(cN1));
         shortPath.append("), ");
 
         int lastIndex = 1;
@@ -186,7 +184,7 @@ public class ShortestPath extends AbstractTranslation {
         shortPath.append(joinViewsTogether(lastIndex, amountHigh));
 
         shortPath.append(getFinalSelect(lastIndex, cN2, dQMainPath.getRc(),
-                dQMainPath.getCypherAdditionalInfo().getAliasMap(), dQMainPath.getWc()));
+                dQMainPath.getCypherAdditionalInfo().getAliasMap()));
 
         if (dQMainPath.getOc() != null)
             shortPath = SQLTranslate.obtainOrderByClause(dQMainPath.getOc(), dQMainPath.getRc(), shortPath);

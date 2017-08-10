@@ -95,12 +95,11 @@ class CypherTranslator {
             int skipAmount = (posOfSkip != -1) ? cypWalker.getSkipAmount() : -1;
             int limitAmount = (posOfLimit != -1) ? cypWalker.getLimitAmount() : -1;
 
-            WhereClause whereC = null;
             if (cypWalker.doesCluaseHaveWhere()) {
-                whereC = whereDecode(matchC, cypWalker);
+                whereDecode(matchC, cypWalker);
             }
 
-            return new DecodedQuery(matchC, returnC, orderC, whereC, skipAmount, limitAmount, cypWalker);
+            return new DecodedQuery(matchC, returnC, orderC, skipAmount, limitAmount, cypWalker);
         }
     }
 
@@ -139,7 +138,7 @@ class CypherTranslator {
             }
         }
 
-        return new DecodedQuery(matchC_Create_Delete, null, null, null, -1, -1, cypWalker);
+        return new DecodedQuery(matchC_Create_Delete, null, null, -1, -1, cypWalker);
     }
 
     /**
@@ -715,100 +714,118 @@ class CypherTranslator {
      *
      * @param matchC    MatchClause object generated from same Cypher input.
      * @param cypWalker CypherWalker object (contains string for WHERE part of input which is being parsed)
-     * @return WhereClause object.
      * @throws Exception Error in generating the WhereClause object.
      */
-    private static WhereClause whereDecode(MatchClause matchC, CypherWalker cypWalker) throws Exception {
-        WhereClause wc = new WhereClause(cypWalker.getWhereClause());
-        String allClause = wc.getClause().toLowerCase();
+    private static void whereDecode(MatchClause matchC, CypherWalker cypWalker) throws Exception {
+        String fullClause = cypWalker.getWhereClause().toLowerCase();
 
+        // store the individual parts of the full WHERE clause of the Cypher input.
         ArrayList<String> whereComponents = new ArrayList<>();
-        Map<String, String> whereMapping = new TreeMap<>();
 
-        while (!allClause.isEmpty()) {
-            int posOfOr = (!allClause.contains(" or ")) ? Integer.MAX_VALUE : allClause.indexOf(" or ");
-            int posOfAnd = (!allClause.contains(" and ")) ? Integer.MAX_VALUE : allClause.indexOf(" and ");
+        // store the boolean operator that follows the individual component
+        Map<String, String> operatorAfter = new TreeMap<>();
+
+        // split by AND, OR, XOR
+        while (!fullClause.isEmpty()) {
+            int posOfOr = (!fullClause.contains(" or ")) ? Integer.MAX_VALUE : fullClause.indexOf(" or ");
+            int posOfAnd = (!fullClause.contains(" and ")) ? Integer.MAX_VALUE : fullClause.indexOf(" and ");
 
             if ((posOfAnd == Integer.MAX_VALUE) && (posOfOr == Integer.MAX_VALUE)) {
-                whereComponents.add(allClause);
-                allClause = "";
-            } else if (posOfAnd < posOfOr) {
-                String comps[] = allClause.split(" and ");
+                whereComponents.add(fullClause);
+                fullClause = "";
+            }
+            // check for AND firstly
+            else if ((posOfAnd < posOfOr)) {
+                String comps[] = fullClause.split(" and ");
                 whereComponents.add(comps[0]);
-                whereMapping.put(comps[0], "and");
-                allClause = allClause.substring(comps[0].length() + 5);
-            } else {
-                String comps[] = allClause.split(" or ");
+                fullClause = fullClause.substring(comps[0].length() + 5);
+                operatorAfter.put(comps[0], (!fullClause.isEmpty()) ? "and" : null);
+            }
+            // check for OR else throw an error
+            else if ((posOfOr < posOfAnd)) {
+                String comps[] = fullClause.split(" or ");
                 whereComponents.add(comps[0]);
-                whereMapping.put(comps[0], "or");
-                allClause = allClause.substring(comps[0].length() + 4);
+                fullClause = fullClause.substring(comps[0].length() + 4);
+                operatorAfter.put(comps[0], (!fullClause.isEmpty()) ? "or" : null);
             }
         }
 
-        wc.setComponents(whereComponents);
-        wc.setWhereMappings(whereMapping);
-
-        for (String clause : wc.getComponents()) {
-            int posInWhere = wc.getComponents().indexOf(clause);
-            String typeBooleanA = null;
-            if (posInWhere > 0) {
-                typeBooleanA = wc.getWhereMappings().get(wc.getComponents().get(posInWhere - 1));
-            }
-
+        // iterate through each clause and parse it correctly.
+        int posInClause = 1;
+        int numLeftBracketsNotClosed = 0;
+        for (String clause : whereComponents) {
             // useful to see the part of the WHERE clause being parsed (if debugging)
             // System.out.println(clause);
+            CypWhere cW = new CypWhere(posInClause++);
+            cW.setBoolOp(operatorAfter.get(clause));
+
+            // extract bracketing information
+            while (clause.startsWith("(")) {
+                cW.addLBrack();
+                clause = clause.substring(1);
+                numLeftBracketsNotClosed++;
+            }
+
+            while (clause.endsWith(")")) {
+                if (numLeftBracketsNotClosed == 0) break;
+                cW.addRBrack();
+                clause = clause.substring(0, clause.length() - 1);
+                numLeftBracketsNotClosed--;
+            }
+
+            // extract NOT information
             boolean not = false;
             if (clause.startsWith("not")) {
                 not = true;
                 clause = clause.substring(4);
             }
 
+            // parse the component according to its keywords
             if (clause.startsWith("any(")) {
                 String collection = clause.substring(clause.indexOf("in") + 3, clause.indexOf("where") - 1);
                 String predicateValue = clause.substring(clause.lastIndexOf("in") + 3, clause.length() - 1);
-                addAnyWhere(collection, predicateValue, matchC, typeBooleanA, not);
+                addAnyWhere(collection, predicateValue, matchC, not, cW);
             } else if (clause.contains("id(") && !clause.contains("[")) {
                 String[] idAndValue = clause.split("\\) ");
-                addIDWhere(idAndValue, matchC, typeBooleanA, not);
+                addIDWhere(idAndValue, matchC, not, cW);
             } else if (clause.contains("exists(")) {
                 String idAndProp = clause.substring(7, clause.length() - 1);
-                addExistsWhere(idAndProp, matchC, typeBooleanA, not);
+                addExistsWhere(idAndProp, matchC, not, cW);
             } else if (clause.contains("labels(")) {
                 String[] idAndValue = clause.split(" in ");
-                addLabelsWhere(idAndValue, matchC, typeBooleanA, not);
+                addLabelsWhere(idAndValue, matchC, not, cW);
             } else if (clause.contains(" = ")) {
                 String[] idAndValue = clause.split(" = ");
-                addCondition(idAndValue, matchC, "equals", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "equals", not, cW);
             } else if (clause.contains(" <> ")) {
                 String[] idAndValue = clause.split(" <> ");
-                addCondition(idAndValue, matchC, "nequals", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "nequals", not, cW);
             } else if (clause.contains(" < ")) {
                 String[] idAndValue = clause.split(" < ");
-                addCondition(idAndValue, matchC, "lt", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "lt", not, cW);
             } else if (clause.contains(" > ")) {
                 String[] idAndValue = clause.split(" > ");
-                addCondition(idAndValue, matchC, "gt", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "gt", not, cW);
             } else if (clause.contains(" <= ")) {
                 String[] idAndValue = clause.split(" <= ");
-                addCondition(idAndValue, matchC, "le", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "le", not, cW);
             } else if (clause.contains(" >= ")) {
                 String[] idAndValue = clause.split(" >= ");
-                addCondition(idAndValue, matchC, "ge", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "ge", not, cW);
             } else if (clause.contains(":")) {
                 String[] idAndLabel = clause.split(":");
                 String x = "'" + idAndLabel[1] + "' in labels(" + idAndLabel[0] + ")";
                 String[] idAndValue = x.split(" in ");
-                addLabelsWhere(idAndValue, matchC, typeBooleanA, not);
+                addLabelsWhere(idAndValue, matchC, not, cW);
             } else if (clause.contains(" in ")) {
                 if (clause.startsWith("id(")) {
                     clause = clause.substring(3, clause.indexOf(")")) + ".id"
                             + clause.substring(clause.indexOf(")") + 1);
                 }
                 String[] idAndValue = clause.split(" in ");
-                addCondition(idAndValue, matchC, "in", typeBooleanA, not);
+                addCondition(idAndValue, matchC, "in", not, cW);
             }
         }
-        return wc;
     }
 
     /**
@@ -819,17 +836,17 @@ class CypherTranslator {
      * @param collection     The collection value (in the example above, collection would be equal to a.name).
      * @param predicateValue The list after the keyword IN (['uid', 'postgres']).
      * @param matchC         MatchClause of the Cypher input.
-     * @param typeBool       Set to AND or OR, depending on the logical operator that follows this component. Inspect
-     *                       whereMapping for more details.
      * @param not            If the NOT keyword is used in this component, this flag is set to true.
+     * @param cW             CypWhere object.
      * @throws Exception The id does not match any nodes/relationships.
      */
-    private static void addAnyWhere(String collection, String predicateValue, MatchClause matchC,
-                                    String typeBool, boolean not) throws Exception {
+    private static void addAnyWhere(String collection, String predicateValue, MatchClause matchC, boolean not,
+                                    CypWhere cW) throws Exception {
         String[] idAndProp;
 
         if (collection.startsWith("labels(")) {
             idAndProp = new String[2];
+
             // id value
             idAndProp[0] = collection.substring(7, collection.length() - 1);
             // property will be label
@@ -838,7 +855,7 @@ class CypherTranslator {
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, "any", typeBool, not);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, "any", not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -846,7 +863,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], predicateValue, "any", typeBool, not);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], predicateValue, "any", not, cW);
                 cR.setProps(obj);
                 return;
             }
@@ -863,12 +880,11 @@ class CypherTranslator {
      * @param idAndValue String array - idAndValue[0] will include the id of the node; idAndValue[1] will contain
      *                   the logical operator and the value.
      * @param matchC     MatchClause of the Cypher input.
-     * @param typeBool   Set to AND or OR, depending on the logical operator that follows this component. Inspect
-     *                   whereMapping for more details.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
+     * @param cW         CypWhere object.
      * @throws Exception The id does not match any nodes/relationships.
      */
-    private static void addIDWhere(String[] idAndValue, MatchClause matchC, String typeBool, boolean not)
+    private static void addIDWhere(String[] idAndValue, MatchClause matchC, boolean not, CypWhere cW)
             throws Exception {
         String id = idAndValue[0].substring(3);
         // opAndValue[0] will contain the operator (such as =, <, >=)
@@ -877,7 +893,7 @@ class CypherTranslator {
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], typeBool, not);
+                JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -885,7 +901,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cR.getProps(), "id", opAndValue[1], opAndValue[0], typeBool, not);
+                JsonObject obj = addToJSONObject(cR.getProps(), "id", opAndValue[1], opAndValue[0], not, cW);
                 cR.setProps(obj);
                 return;
             }
@@ -899,20 +915,19 @@ class CypherTranslator {
      * WHERE exists(n.value)
      * then this is the method that will be called to convert it into the intermediate representation.
      *
-     * @param clause   Contains the string within the exists function (in the example above, this would be 'n.value').
-     * @param matchC   MatchClause of the Cypher input.
-     * @param typeBool Set to AND or OR, depending on the logical operator that follows this component. Inspect
-     *                 whereMapping for more details.
-     * @param not      If the NOT keyword is used in this component, this flag is set to true.
+     * @param clause Contains the string within the exists function (in the example above, this would be 'n.value').
+     * @param matchC MatchClause of the Cypher input.
+     * @param not    If the NOT keyword is used in this component, this flag is set to true.
+     * @param cW     CypWhere object.
      * @throws Exception The id does not match any nodes/relationships.
      */
-    private static void addExistsWhere(String clause, MatchClause matchC, String typeBool, boolean not)
+    private static void addExistsWhere(String clause, MatchClause matchC, boolean not, CypWhere cW)
             throws Exception {
         String[] idAndProp = clause.split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", typeBool, not);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -920,7 +935,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], "null", "exists", typeBool, not);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], "null", "exists", not, cW);
                 cR.setProps(obj);
                 return;
             }
@@ -936,19 +951,18 @@ class CypherTranslator {
      *
      * @param idAndValue String array; idAndValue[0] = value being searched for ('Local'), idAndValue[1] = labels(id).
      * @param matchC     MatchClause of the Cypher input.
-     * @param typeBool   Set to AND or OR, depending on the logical operator that follows this component. Inspect
-     *                   whereMapping for more details.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
+     * @param cW         CypWhere object.
      * @throws Exception The id does not match any nodes/relationships.
      */
-    private static void addLabelsWhere(String[] idAndValue, MatchClause matchC, String typeBool, boolean not)
+    private static void addLabelsWhere(String[] idAndValue, MatchClause matchC, boolean not, CypWhere cW)
             throws Exception {
         String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
         String val = idAndValue[0].replace("'", "");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(id)) {
-                JsonObject obj = addToJSONObject(cN.getProps(), "label", val, "=", typeBool, not);
+                JsonObject obj = addToJSONObject(cN.getProps(), "label", val, "=", not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -963,18 +977,17 @@ class CypherTranslator {
      * @param idAndValue The id and property are contained within idAndValue[0]. The value is within idAndValue[1].
      * @param matchC     MatchClause of the Cypher input.
      * @param op         Logical operator of the where component.
-     * @param typeBool   Set to AND or OR, depending on the logical operator that follows this component. Inspect
-     *                   whereMapping for more details.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
+     * @param cW         CypWhere object.
      * @throws Exception The id does not match any nodes/relationships.
      */
-    private static void addCondition(String[] idAndValue, MatchClause matchC, String op, String typeBool, boolean not)
+    private static void addCondition(String[] idAndValue, MatchClause matchC, String op, boolean not, CypWhere cW)
             throws Exception {
         String[] idAndProp = idAndValue[0].split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, typeBool, not);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -982,7 +995,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], idAndValue[1], op, typeBool, not);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], idAndValue[1], op, not, cW);
                 cR.setProps(obj);
                 return;
             }
@@ -995,72 +1008,81 @@ class CypherTranslator {
      * Adds WHERE component to the properties of either the node or relationship the WHERE component was
      * referring to. The new JSONObject is then returned from this method.
      *
-     * @param origProps   The original properties of the node/relationship.
-     * @param prop        The property to modify.
-     * @param value       The value to add.
-     * @param op          The type of logical operator involved.
-     * @param typeBoolean If a property has multiple WHERE components acting upon it, then the type of boolean operator
-     *                    associated with the component is also stored (AND/OR).
-     * @param not         If the NOT keyword was used then this is true, otherwise false.
+     * @param origProps The original properties of the node/relationship.
+     * @param prop      The property to modify.
+     * @param value     The value to add.
+     * @param op        The type of logical operator involved.
+     * @param not       If the NOT keyword was used then this is true, otherwise false.
+     * @param cW        CypWhere object.
      * @return The modified properties of the node/relationship.
      */
     private static JsonObject addToJSONObject(JsonObject origProps, String prop, String value, String op,
-                                              String typeBoolean, boolean not) {
+                                              boolean not, CypWhere cW) {
         JsonObject obj = origProps;
         if (origProps == null) obj = new JsonObject();
 
         String valueToAdd = "";
         if (obj.has(prop)) {
-            valueToAdd = obj.get(prop).getAsString() + "~" + typeBoolean + "~";
+            // if a key of the node/relationship has multiple conditions (such as in more complex queries,
+            // the conditions should be separated by a tilde symbol).
+            valueToAdd = obj.get(prop).getAsString() + "~";
         }
 
         if (not) op = invertOp(op);
 
+        // include this meta string so that during the translation, the right bracketing can be included,
+        // the correct boolean operators are used, and the ordering is consistent with the original
+        // Cypher input.
+        // format: p2and@r1#
+        // meaning: the where component is the second component in the whole clause (p2), it is followed by an
+        // AND, and the string should end with a right parenthesis.
+        String metaString = "p" + cW.getPosInWhere() + cW.getBoolOp() + "@" + cW.getBracketing() + "$";
+
         switch (op) {
             case "equals":
             case "=":
-                valueToAdd += "eq#" + value.replace("\"", "").toLowerCase() + "#qe";
+                valueToAdd += metaString + "eq#" + value.replace("\"", "").toLowerCase() + "#qe";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "nequals":
             case "<>":
-                valueToAdd += "ne#" + value.replace("\"", "").toLowerCase() + "#en";
+                valueToAdd += metaString + "ne#" + value.replace("\"", "").toLowerCase() + "#en";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "lt":
             case "<":
-                valueToAdd += "lt#" + value.replace("\"", "").toLowerCase() + "#tl";
+                valueToAdd += metaString + "lt#" + value.replace("\"", "").toLowerCase() + "#tl";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "gt":
             case ">":
-                valueToAdd += "gt#" + value.replace("\"", "").toLowerCase() + "#tg";
+                valueToAdd += metaString + "gt#" + value.replace("\"", "").toLowerCase() + "#tg";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "le":
             case "<=":
-                valueToAdd += "le#" + value.replace("\"", "").toLowerCase() + "#el";
+                valueToAdd += metaString + "le#" + value.replace("\"", "").toLowerCase() + "#el";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "ge":
             case ">=":
-                valueToAdd += "ge#" + value.replace("\"", "").toLowerCase() + "#eg";
+                valueToAdd += metaString + "ge#" + value.replace("\"", "").toLowerCase() + "#eg";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "exists":
-                valueToAdd += "ex#" + value.replace("\"", "").toLowerCase() + "#xe";
+                valueToAdd += metaString + "ex#" + value.replace("\"", "").toLowerCase() + "#xe";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "not exists":
-                valueToAdd += "nx#" + value.replace("\"", "").toLowerCase() + "#xn";
+                valueToAdd += metaString + "nx#" + value.replace("\"", "").toLowerCase() + "#xn";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "in":
-                valueToAdd += "in#" + value.replace("\"", "").toLowerCase() + "#ni";
+                valueToAdd += metaString + "in#" + value.replace("\"", "").toLowerCase() + "#ni";
                 obj.addProperty(prop, valueToAdd);
                 break;
             case "any":
-                valueToAdd += "any#" + value.replace("\"", "").toLowerCase() + "#yna";
+                valueToAdd += metaString + "any#" + value.replace("\"", "").toLowerCase() + "#yna";
                 obj.addProperty(prop, valueToAdd);
                 break;
         }

@@ -7,7 +7,7 @@ import intermediate_rep.DecodedQuery;
  * in this class are some helper field, including an alphabet char array and number char array, and
  * the translate method definition.
  */
-public abstract class AbstractTranslation {
+abstract class AbstractTranslation {
     static final char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
     static char[] extendID = "123456789".toCharArray();
     static boolean useOptimalTable = false;

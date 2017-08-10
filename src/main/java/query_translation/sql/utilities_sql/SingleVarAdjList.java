@@ -10,7 +10,7 @@ import java.util.Map;
 public class SingleVarAdjList extends AbstractTranslation {
     private static StringBuilder getFinalSelect(StringBuilder sql, ReturnClause returnC,
                                                 Map<String, String> alias, CypNode cn2,
-                                                int amountHigh, WhereClause wc, boolean usesDistinct) {
+                                                int amountHigh, boolean usesDistinct) {
         sql.append(" SELECT ");
         if (usesDistinct) sql.append("DISTINCT ");
 
@@ -49,7 +49,7 @@ public class SingleVarAdjList extends AbstractTranslation {
         if (cn2.getProps() != null) {
             sql.append(" WHERE ");
             hasWhere = true;
-            TranslateUtils.getWholeWhereClause(sql, cn2, wc, "n01");
+            TranslateUtils.getWholeWhereClause(sql, cn2, "n01");
         }
 
         if (cn2.getType() != null && table.equals("nodes")) {
@@ -67,7 +67,6 @@ public class SingleVarAdjList extends AbstractTranslation {
     @Override
     public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
         MatchClause matchC = decodedQuery.getMc();
-        WhereClause whereC = decodedQuery.getWc();
 
         String direction = "none";
         int amountLow = 0;
@@ -110,7 +109,7 @@ public class SingleVarAdjList extends AbstractTranslation {
                     sql.append(relToUse).append(" zz ON leftnode = zz.id");
                     if (cN1.getProps() != null) {
                         sql.append(" WHERE ");
-                        TranslateUtils.getWholeWhereClause(sql, cN1, whereC, "zz");
+                        TranslateUtils.getWholeWhereClause(sql, cN1, "zz");
                     }
                 } else {
                     sql.append(alphabet[(i - 1) % 26]).append(extendID[(i - 1) / 26]).append(" ON leftnode = xx");
@@ -121,7 +120,7 @@ public class SingleVarAdjList extends AbstractTranslation {
         }
 
         sql = getFinalSelect(sql, decodedQuery.getRc(), decodedQuery.getCypherAdditionalInfo().getAliasMap(),
-                cN2, amountHigh, whereC, decodedQuery.getCypherAdditionalInfo().hasDistinct());
+                cN2, amountHigh, decodedQuery.getCypherAdditionalInfo().hasDistinct());
 
         return sql;
     }

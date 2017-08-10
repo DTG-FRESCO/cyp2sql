@@ -44,7 +44,7 @@ public class C2SMain {
     // cache for previously successful queries (saves time and computation doing repetitive work).
     private static Map<String, String> cache = new HashMap<>();
 
-    private static String OS = System.getProperty("os.name").toLowerCase();
+    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     /**
      * {@literal <}-schema|-translate|-s|-t{@literal >}

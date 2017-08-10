@@ -111,15 +111,15 @@ public class WithSQL {
             if (currentTok.equals("order") || currentTok.equals("skip") || currentTok.equals("limit")) {
                 break;
             } else {
-                String returnStmt = currentTok;
+                StringBuilder returnStmt = new StringBuilder(currentTok);
 
                 while (i + 1 < tokens.size()) {
                     if (!tokens.get(i + 1).equals(",") && !tokens.get(i + 1).equals("order") &&
                             !tokens.get(i + 1).equals("skip") && !tokens.get(i + 1).equals("limit")
                             && !tokens.get(i + 1).equals(".")) {
-                        returnStmt = returnStmt + " " + tokens.get(i++);
+                        returnStmt.append(" ").append(tokens.get(i++));
                     } else if (tokens.get(i + 1).equals(".")) {
-                        returnStmt = returnStmt + "." + tokens.get(i + 2);
+                        returnStmt.append(".").append(tokens.get(i + 2));
                         i += 2;
                     } else {
                         i++;
@@ -127,7 +127,7 @@ public class WithSQL {
                     }
                 }
 
-                String[] idAndProp = returnStmt.split("\\.");
+                String[] idAndProp = returnStmt.toString().split("\\.");
 
                 boolean sWithChanged = false;
                 for (CypReturn cR : dQ.getRc().getItems()) {

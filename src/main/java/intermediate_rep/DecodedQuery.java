@@ -10,9 +10,7 @@ public class DecodedQuery {
     private MatchClause matchC;
     private ReturnClause returnC;
     private OrderClause orderC;
-    private WhereClause whereC;
     private CypForEach forEachC;
-    private CypIterate iterateC;
     private int skipAmount;
     private int limitAmount;
     private CypherWalker cypherAdditionalInfo;
@@ -21,21 +19,18 @@ public class DecodedQuery {
 
     /**
      * Create the DecodedQuery object based on the parsing of the Cypher input.
-     *
-     * @param m     MatchClause object.
+     *  @param m     MatchClause object.
      * @param r     ReturnClause object.
      * @param o     OrderClause object.
-     * @param wc    WhereClause object.
      * @param skip  SKIP value.
      * @param limit LIMIT value.
      * @param c     The CypherWalker object.
      */
-    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, WhereClause wc,
+    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o,
                         int skip, int limit, CypherWalker c) {
         this.matchC = m;
         this.returnC = r;
         this.orderC = o;
-        this.whereC = wc;
         this.skipAmount = skip;
         this.limitAmount = limit;
         this.cypherAdditionalInfo = c;
@@ -51,10 +46,6 @@ public class DecodedQuery {
 
     public OrderClause getOc() {
         return orderC;
-    }
-
-    public WhereClause getWc() {
-        return whereC;
     }
 
     public int getSkipAmount() {
@@ -83,13 +74,5 @@ public class DecodedQuery {
 
     public void setForEachC(CypForEach forEachC) {
         this.forEachC = forEachC;
-    }
-
-    public CypIterate getIterateC() {
-        return iterateC;
-    }
-
-    public void setIterateC(CypIterate iterateC) {
-        this.iterateC = iterateC;
     }
 }

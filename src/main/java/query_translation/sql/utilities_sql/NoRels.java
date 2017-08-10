@@ -114,8 +114,7 @@ public class NoRels extends AbstractTranslation {
         return sql;
     }
 
-    private static StringBuilder getWhere(StringBuilder sql, ReturnClause returnC,
-                                          MatchClause matchC, WhereClause wc) {
+    private static StringBuilder getWhere(StringBuilder sql, ReturnClause returnC, MatchClause matchC) {
         boolean hasWhere = false;
         ArrayList<String> nodesScanned = new ArrayList<>();
 
@@ -129,7 +128,7 @@ public class NoRels extends AbstractTranslation {
                 sql.append(" WHERE n01.label LIKE ").append(TranslateUtils.genLabelLike(cN, "n01"));
                 if (cN.getProps() != null) {
                     sql.append(" AND ");
-                    sql = TranslateUtils.getWholeWhereClause(sql, cN, wc);
+                    sql = TranslateUtils.getWholeWhereClause(sql, cN);
                 }
             } else {
                 CypNode cN = null;
@@ -147,7 +146,7 @@ public class NoRels extends AbstractTranslation {
                             sql.append(" WHERE ");
                             hasWhere = true;
                         }
-                        sql = TranslateUtils.getWholeWhereClause(sql, cN, wc);
+                        sql = TranslateUtils.getWholeWhereClause(sql, cN);
                     }
 
                     if (cN.getType() != null && !useOptimalTable) {
@@ -167,7 +166,7 @@ public class NoRels extends AbstractTranslation {
                             sql.append(" WHERE ");
                             hasWhere = true;
                         }
-                        sql = TranslateUtils.getWholeWhereClause(sql, cN, wc);
+                        sql = TranslateUtils.getWholeWhereClause(sql, cN);
                     }
                 }
             }
@@ -183,7 +182,7 @@ public class NoRels extends AbstractTranslation {
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
         sql = getFrom(sql, decodedQuery.getMc(), decodedQuery.getRc());
-        sql = getWhere(sql, decodedQuery.getRc(), decodedQuery.getMc(), decodedQuery.getWc());
+        sql = getWhere(sql, decodedQuery.getRc(), decodedQuery.getMc());
         return sql;
     }
 }

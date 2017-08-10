@@ -2,7 +2,10 @@ package query_translation.sql.utilities_sql;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import intermediate_rep.*;
+import intermediate_rep.CypNode;
+import intermediate_rep.CypRel;
+import intermediate_rep.CypReturn;
+import intermediate_rep.ReturnClause;
 import production.C2SMain;
 import query_translation.sql.conversion_types.Multiple_With_Cypher;
 
@@ -12,54 +15,74 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Class with useful translation methods that can be used regardless of the type of Cypher query
  * actually being translated.
  */
 class TranslateUtils {
-    private static StringBuilder genWhere(StringBuilder sql, JsonObject obj, WhereClause wc, String sqlLabel) {
+    private static StringBuilder genWhere(StringBuilder sql, JsonObject obj, String sqlLabel) {
         Set<Map.Entry<String, JsonElement>> entries = obj.entrySet();
 
-        // default boolean condition to add.
-        String boolToAppend = "and";
+        TreeMap<Integer, StringBuilder> whereComps = new TreeMap<>();
+
+        StringBuilder beginningWhere = new StringBuilder();
 
         for (Map.Entry<String, JsonElement> entry : entries) {
-            sql.append(sqlLabel).append(".").append(entry.getKey());
             String value;
             if (entry.getValue().isJsonArray()) {
                 value = "ARRAY" + entry.getValue().getAsJsonArray().toString();
             } else if (entry.getKey().equals("name")) {
                 value = "ARRAY[" + entry.getValue().toString() + "]";
             } else value = entry.getValue().getAsString();
-            sql = TranslateUtils.addWhereClause(sql, value, sqlLabel);
 
-            String i = null;
-            int index = 0;
-            int j = 0;
-            boolean findBoolToAppend = false;
-            if (wc != null) {
-                for (String x : wc.getComponents()) {
-                    if (x.contains(entry.getKey())) {
-                        findBoolToAppend = true;
-                        i = x;
-                        index = j;
-                    }
-                    j++;
+            for (String innerVal : value.split("~")) {
+                if (!innerVal.contains("$") && !innerVal.contains("@") && !innerVal.contains("#")) {
+                    beginningWhere.append(sqlLabel).append(".").append(entry.getKey());
+                    beginningWhere = (addWhereClause(beginningWhere, innerVal, sqlLabel));
+                    beginningWhere.append(" and ");
+                } else {
+                    boolean isArray = innerVal.startsWith("ARRAY[");
+                    if (isArray) innerVal = innerVal.substring(7, innerVal.length() - 2);
+
+                    int pos = Integer.parseInt(String.valueOf(innerVal.charAt(1)));
+                    String boolOp = innerVal.substring(2, innerVal.indexOf("@"));
+                    String bracketing = innerVal.split("@")[1].split("\\$")[0];
+                    innerVal = innerVal.split("\\$")[1];
+
+                    StringBuilder temp = new StringBuilder();
+                    if (!bracketing.equals("null") && bracketing.startsWith("(")) temp.append(bracketing);
+                    temp.append(sqlLabel).append(".").append(entry.getKey());
+
+                    if (isArray) innerVal = "ARRAY[\"" + innerVal + "\"]";
+                    temp = addWhereClause(temp, innerVal, sqlLabel);
+
+                    if (!bracketing.equals("null") && bracketing.startsWith(")")) temp.append(bracketing).append(" ");
+                    if (!boolOp.equals("null")) temp.append(boolOp);
+                    temp.append(" ");
+
+                    whereComps.put(pos, temp);
                 }
-                if (findBoolToAppend)
-                    boolToAppend = (index < wc.getWhereMappings().size()) ? wc.getWhereMappings().get(i) : "and";
             }
-
-            sql.append(" ").append(boolToAppend).append(" ");
         }
-        sql.setLength(sql.length() - (boolToAppend.length() + 1));
+
+        StringBuilder whereBit = new StringBuilder();
+        for (StringBuilder x : whereComps.values()) {
+            whereBit.append(x.toString());
+        }
+        if (whereBit.length() == 0) {
+            if (beginningWhere.toString().endsWith(" and ")) beginningWhere.setLength(beginningWhere.length() - 5);
+        }
+        sql.append(beginningWhere).append(" ");
+        sql.append(whereBit);
+
         return sql;
     }
 
-    static StringBuilder getWholeWhereClause(StringBuilder sql, CypNode cN, WhereClause wc, String sqlLabel) {
+    static StringBuilder getWholeWhereClause(StringBuilder sql, CypNode cN, String sqlLabel) {
         JsonObject obj = cN.getProps();
-        return genWhere(sql, obj, wc, sqlLabel);
+        return genWhere(sql, obj, sqlLabel);
     }
 
     /**
@@ -68,16 +91,15 @@ class TranslateUtils {
      *
      * @param sql Original SQL statement.
      * @param cN  CypNode with properties.
-     * @param wc  Where Clause of Cypher query with additional information about the WHERE clause.
      * @return New SQL with WHERE part added.
      */
-    static StringBuilder getWholeWhereClause(StringBuilder sql, CypNode cN, WhereClause wc) {
-        return getWholeWhereClause(sql, cN, wc, "n01");
+    static StringBuilder getWholeWhereClause(StringBuilder sql, CypNode cN) {
+        return getWholeWhereClause(sql, cN, "n01");
     }
 
-    static StringBuilder getWholeWhereClauseRel(StringBuilder sql, CypRel cR, WhereClause wc, String sqlLabel) {
+    static StringBuilder getWholeWhereClauseRel(StringBuilder sql, CypRel cR, String sqlLabel) {
         JsonObject obj = cR.getProps();
-        return genWhere(sql, obj, wc, sqlLabel);
+        return genWhere(sql, obj, sqlLabel);
     }
 
     private static StringBuilder addWhereClause(StringBuilder sql, String value, String sqlLabel) {
@@ -170,7 +192,7 @@ class TranslateUtils {
                 sql.setLength(sql.length() - 2);
                 if (list) sql.append(")");
             } else if (v.equals("ANY($1)")) sql.append(v).append(" ");
-            else if (list) sql.append(v);
+            else if (list) sql.append(v).append(" ");
             else if (v.startsWith("id(")) {
                 String id = v.substring(v.indexOf("(") + 1, v.length() - 1);
                 String withTable = Multiple_With_Cypher.mappingMultipleWith.get(id);
@@ -187,7 +209,7 @@ class TranslateUtils {
                 } else withTable = sqlLabel;
 
                 if (withTable == null) withTable = sqlLabel;
-                sql.append(withTable).append(".").append(idAndValue[1]);
+                sql.append(withTable).append(".").append(idAndValue[1]).append(" ");
             } else sql.append("'").append(v.replace("'", "")).append("' ");
         }
         return sql;

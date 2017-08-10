@@ -80,26 +80,26 @@ public class SQLTranslate {
         insertEdgesString.append("VALUES ((");
         if (!colsAndValues[1].equals("")) insertEdgesString.append(colsAndValues[1]).append(", ");
 
-        String selectA = "SELECT id FROM " + InsertUtils.findRelation(createC, 0) + " WHERE ";
+        StringBuilder selectA = new StringBuilder("SELECT id FROM " + InsertUtils.findRelation(createC, 0) + " WHERE ");
         String[] selectAColsAndValues = InsertUtils.findColsAndValues(createC, 0);
         String[] values = selectAColsAndValues[1].split(", ");
         int i = 0;
 
         for (String col : selectAColsAndValues[0].split(", ")) {
-            selectA = selectA + col + " = " + values[i++].replace("eq#", "").replace("#qe", "") + " AND ";
+            selectA.append(col).append(" = ").append(values[i++].replace("eq#", "").replace("#qe", "")).append(" AND ");
         }
-        selectA = selectA.substring(0, selectA.length() - 5);
-        selectA = selectA + ")";
+        selectA = new StringBuilder(selectA.substring(0, selectA.length() - 5));
+        selectA.append(")");
 
-        String selectB = "SELECT id FROM " + InsertUtils.findRelation(createC, 1) + " WHERE ";
+        StringBuilder selectB = new StringBuilder("SELECT id FROM " + InsertUtils.findRelation(createC, 1) + " WHERE ");
         String[] selectBColsAndValues = InsertUtils.findColsAndValues(createC, 1);
         values = selectBColsAndValues[1].split(", ");
         i = 0;
         for (String col : selectBColsAndValues[0].split(", ")) {
-            selectB = selectB + col + " = " + values[i++].replace("eq#", "").replace("#qe", "") + " AND ";
+            selectB.append(col).append(" = ").append(values[i++].replace("eq#", "").replace("#qe", "")).append(" AND ");
         }
-        selectB = selectB.substring(0, selectB.length() - 5);
-        selectB = selectB + ")";
+        selectB = new StringBuilder(selectB.substring(0, selectB.length() - 5));
+        selectB.append(")");
 
         String relType = createC.getRels().get(0).getType();
 

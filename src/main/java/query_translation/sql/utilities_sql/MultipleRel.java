@@ -17,10 +17,9 @@ public class MultipleRel extends AbstractTranslation {
      *
      * @param sql    Existing SQL
      * @param matchC Match Clause of the original Cypher query.
-     * @param wc     Where Clause of the original Cypher query.
      * @return New SQL.
      */
-    private static StringBuilder obtainWithClause(StringBuilder sql, MatchClause matchC, WhereClause wc) {
+    private static StringBuilder obtainWithClause(StringBuilder sql, MatchClause matchC) {
         sql.append("WITH ");
 
         int indexRel = 0;
@@ -50,7 +49,7 @@ public class MultipleRel extends AbstractTranslation {
                             .append(" on n1.id = e").append(indexRel + 1).append(".idl ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idr = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, wc, labelC1, labelC2);
+                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
                     break;
                 case "left":
                     sql.append(" FROM ").append(labelC1).append(" n1 " + "INNER JOIN ").append(typeRel).append(" e")
@@ -58,7 +57,7 @@ public class MultipleRel extends AbstractTranslation {
                             .append(" on n1.id = e").append(indexRel + 1).append(".idr ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idl = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, wc, labelC1, labelC2);
+                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
                     break;
                 case "none":
                     sql.append(" FROM ").append(labelC1).append(" n1 INNER JOIN ").append(typeRel).append(" e")
@@ -66,7 +65,7 @@ public class MultipleRel extends AbstractTranslation {
                             .append(" on n1.id = e").append(indexRel + 1).append(".idl ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idr = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, true, indexRel, wc, labelC1, labelC2);
+                    sql = obtainWhereInWithClause(cR, matchC, sql, true, indexRel, labelC1, labelC2);
                     sql.append("SELECT n1.id AS ").append(withAlias).append(1).append(", ");
                     sql.append("n2.id AS ").append(withAlias).append(2);
                     sql.append(", e").append(indexRel + 1).append(".*");
@@ -75,7 +74,7 @@ public class MultipleRel extends AbstractTranslation {
                             .append(" on n1.id = e").append(indexRel + 1).append(".idr ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idl = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, wc, labelC1, labelC2);
+                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
                     break;
             }
 
@@ -97,14 +96,12 @@ public class MultipleRel extends AbstractTranslation {
      * @param isBiDirectional If the relationship has no direction (i.e. -[]- as opposed to {@literal <}-[] and -[]-{@literal >}), then
      *                        need to append UNION ALL to the end of the SQL created.
      * @param indexRel        The position of the relationship within the context of the whole MatchClause.
-     * @param wc              WhereClause containing information about the predicates of the nodes and relationships.
-     *                        Needed to make sure the SQL generated is valid.
      * @param nodeLabel1      Label(s) of the left node of the relationship.
      * @param nodeLabel2      Label(s) of the right node of the relationship.
      * @return SQL string with additional information as a result of this method.
      */
     private static StringBuilder obtainWhereInWithClause(CypRel cR, MatchClause matchC, StringBuilder sql,
-                                                         boolean isBiDirectional, int indexRel, WhereClause wc,
+                                                         boolean isBiDirectional, int indexRel,
                                                          String nodeLabel1, String nodeLabel2) {
         boolean includesWhere = false;
         int posOfRel = cR.getPosInClause();
@@ -118,7 +115,9 @@ public class MultipleRel extends AbstractTranslation {
         if (leftNodeProps != null) {
             sql.append(" WHERE ( ");
             includesWhere = true;
-            sql = TranslateUtils.getWholeWhereClause(sql, leftNode, wc, "n1");
+            sql = TranslateUtils.getWholeWhereClause(sql, leftNode, "n1");
+            if (sql.toString().endsWith(" and ")) sql.setLength(sql.length() - 5);
+            else if (sql.toString().endsWith(" or ")) sql.setLength(sql.length() - 4);
             sql.append(") AND ");
         }
 
@@ -128,7 +127,9 @@ public class MultipleRel extends AbstractTranslation {
                 includesWhere = true;
             } else sql.append(" ( ");
 
-            sql = TranslateUtils.getWholeWhereClause(sql, rightNode, wc, "n2");
+            sql = TranslateUtils.getWholeWhereClause(sql, rightNode, "n2");
+            if (sql.toString().endsWith(" and ")) sql.setLength(sql.length() - 5);
+            else if (sql.toString().endsWith(" or ")) sql.setLength(sql.length() - 4);
             sql.append(") AND ");
         }
 
@@ -155,7 +156,9 @@ public class MultipleRel extends AbstractTranslation {
                 sql.append(" WHERE ");
                 includesWhere = true;
             }
-            sql = TranslateUtils.getWholeWhereClauseRel(sql, cR, wc, "e" + (indexRel + 1));
+            sql = TranslateUtils.getWholeWhereClauseRel(sql, cR, "e" + (indexRel + 1));
+            if (sql.toString().endsWith(" and ")) sql.setLength(sql.length() - 5);
+            else if (sql.toString().endsWith(" or ")) sql.setLength(sql.length() - 4);
             sql.append(" AND ");
         }
 
@@ -530,7 +533,7 @@ public class MultipleRel extends AbstractTranslation {
 
     @Override
     public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
-        sql = obtainWithClause(sql, decodedQuery.getMc(), decodedQuery.getWc());
+        sql = obtainWithClause(sql, decodedQuery.getMc());
         sql = obtainSelectAndFromClause(decodedQuery.getRc(), decodedQuery.getMc(), sql,
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
