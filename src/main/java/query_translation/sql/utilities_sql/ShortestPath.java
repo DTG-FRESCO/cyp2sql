@@ -66,7 +66,7 @@ public class ShortestPath extends AbstractTranslation {
 
         // return only the correct things
         for (CypReturn cR : rc.getItems()) {
-            if (cR.getField() == null && cR.getCount()) {
+            if (cR.getField() == null && cR.getCount() > 0) {
                 sql.append("id");
             } else {
                 sql.append("n01.").append(cR.getField());
@@ -105,14 +105,19 @@ public class ShortestPath extends AbstractTranslation {
 
         // return only the correct things
         for (CypReturn cR : rc.getItems()) {
-            if (cR.getCollect()) sql.append("array_agg(");
-            if (cR.getCount()) sql.append("count(");
+            if (cR.hasAggFunc()) {
+                sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+            }
+            if (cR.getCount() > 0) {
+                sql.append("count(");
+                if (cR.getCount() == 2) sql.append("distinct ");
+            }
             if (cR.getField() == null) {
                 sql.append("id");
             } else {
                 sql.append("n01.").append(cR.getField());
             }
-            if (cR.getCollect() || cR.getCount()) {
+            if (cR.hasAggFunc() || cR.getCount() > 0) {
                 sql.append(") ").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
             } else {
                 sql.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");

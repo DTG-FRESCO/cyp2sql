@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import static intermediate_rep.CypCount.COUNT_FALSE;
+
 /**
  * MAIN TRANSLATION UNIT FROM INTERMEDIATE TRANSLATION TO SQL.
  * <p>
@@ -246,9 +248,9 @@ public class SQLTranslate {
                 nodeTableCount++;
             }
 
-            if (cR.getField() != null && !cR.getCount()) {
+            if (cR.getField() != null && cR.getCount() == COUNT_FALSE) {
                 sql.append("n0").append(nodeTableCount).append(".").append(cR.getField()).append(", ");
-            } else if (!cR.getCount()) {
+            } else if (cR.getCount() == COUNT_FALSE) {
                 FileInputStream fis = new FileInputStream(C2SMain.props.getWspace() + "/meta_nodeProps.txt");
                 BufferedReader br = new BufferedReader(new InputStreamReader(fis));
                 String line;

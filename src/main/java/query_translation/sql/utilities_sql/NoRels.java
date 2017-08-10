@@ -27,44 +27,46 @@ public class NoRels extends AbstractTranslation {
                 for (CypNode cN : mc.getNodes()) {
                     if (r.getNodeID().equals(cN.getId())) {
                         String prop = r.getField();
-                        if (r.getCollect()) sql.append("array_agg(");
-                        if (r.getCount()) sql.append("count(");
+                        if (r.hasAggFunc()) {
+                            sql.append(CypAggFuncs.sqlEquiv(r.getAggFunc()));
+                        }
+                        if (r.getCount() > 0) {
+                            sql.append("count(");
+                            if (r.getCount() == 2) sql.append("distinct ");
+                        }
                         if (prop != null) {
                             sql.append("n01").append(".").append(prop);
-                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
                             sql.append(TranslateUtils.useAlias(r.getNodeID(), r.getField(), alias)).append(", ");
                         } else {
                             sql.append("n01.*");
-                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
                             sql.append(TranslateUtils.useAlias("count(" + r.getNodeID() + ")", r.getField(), alias))
                                     .append(", ");
                         }
-//                        if (r.getCollect() || r.getCount()) {
-//                            sql.setLength(sql.length() - 2);
-//                            sql.append("), ");
-//                        }
                         break;
                     }
                 }
                 for (String s : WithSQL.withMapping.keySet()) {
                     if (r.getNodeID().equals(s)) {
                         String prop = r.getField();
-                        if (r.getCollect()) sql.append("array_agg(");
-                        if (r.getCount()) sql.append("count(");
+                        if (r.hasAggFunc()) {
+                            sql.append(CypAggFuncs.sqlEquiv(r.getAggFunc()));
+                        }
+                        if (r.getCount() > 0) {
+                            sql.append("count(");
+                            if (r.getCount() == 2) sql.append("distinct ");
+                        }
                         if (prop != null) {
                             sql.append(WithSQL.withMapping.get(s)).append(".").append(prop);
-                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
                             sql.append(TranslateUtils.useAlias(r.getNodeID(), r.getField(), alias)).append(", ");
                         } else {
                             sql.append(WithSQL.withMapping.get(s)).append(".*");
-                            if (r.getCollect() || r.getCount()) sql.append(") ");
+                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
                             sql.append(TranslateUtils.useAlias("count(" + r.getNodeID() + ")", r.getField(), alias))
                                     .append(", ");
                         }
-//                        if (r.getCollect() || r.getCount()) {
-//                            sql.setLength(sql.length() - 2);
-//                            sql.append("), ");
-//                        }
                         break;
                     }
                 }

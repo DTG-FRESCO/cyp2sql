@@ -7,6 +7,9 @@ import production.C2SMain;
 
 import java.util.*;
 
+import static intermediate_rep.CypAggFuncs.*;
+import static intermediate_rep.CypCount.*;
+
 /**
  * Main class for translating the Cypher input to its internal representation.
  * The representation includes extracting the nodes and relationships, finding
@@ -560,51 +563,54 @@ class CypherTranslator {
         object are determined in the constructor of the CypReturn object.
         NOTE: Exception is thrown otherwise.
 
-        1. id(n) = [id, (, n, )] --> ID: n, FIELD: id, COUNT: false, COLLECT: false, CASE: null
-        2. a.name = [a, ., name] --> ID: a, FIELD: name, COUNT: false, COLLECT: false, CASE: null
-        3. * = [*] --> ID: null, FIELD: *, COUNT: false, COLLECT: false, CASE: null
-        4. a = [a] --> ID: a, FIELD: null, COUNT: false, COLLECT: false, CASE: null
-        5. count(a) = [count, (, a, )] --> ID: a, FIELD: null, COUNT: true, COLLECT: false, CASE: null
-        6. count(a.name) = [count, (, a, ., name, )] --> ID: a, FIELD: name, COUNT: true, COLLECT: false, CASE: null
-        7. collect(a) = [collect, (, a, )] --> ID: a, FIELD: null, COUNT: false, COLLECT: true, CASE: null
-        8. collect(a.name) = [collect, (, a, ., name, )] --> ID: a, FIELD: name, COUNT: false, COLLECT: true, CASE: null
-        9. case a.status WHEN a.status = 1 THEN 'good' ELSE 'bad' END = [case, a, ., status, when, a, ., status, =, 1,
+        1.  id(n) = [id, (, n, )] --> ID: n, FIELD: id, COUNT: false, COLLECT: false, CASE: null
+        2.  a.name = [a, ., name] --> ID: a, FIELD: name, COUNT: false, COLLECT: false, CASE: null
+        3.  * = [*] --> ID: null, FIELD: *, COUNT: false, COLLECT: false, CASE: null
+        4.  a = [a] --> ID: a, FIELD: null, COUNT: false, COLLECT: false, CASE: null
+        5.  count(a) = [count, (, a, )] --> ID: a, FIELD: null, COUNT: true, COLLECT: false, CASE: null
+        6.  count(a.name) = [count, (, a, ., name, )] --> ID: a, FIELD: name, COUNT: true, COLLECT: false, CASE: null
+        6a. count (distinct a.name) = [count, (, distinct, a, ., name, )] -->
+                ID: a, FIELD: name, COUNT: distinct, COLLECT: false, CASE: null
+        7.  collect(a) = [collect, (, a, )] --> ID: a, FIELD: null, COUNT: false, COLLECT: true, CASE: null
+        8.  collect(a.name) = [collect, (, a, ., name, )] --> ID: a, FIELD: name, COUNT: false, COLLECT: true, CASE: null
+        9.  case a.status WHEN a.status = 1 THEN 'good' ELSE 'bad' END = [case, a, ., status, when, a, ., status, =, 1,
                 then, 'good', else, 'bad', end] --> ID: a, FIELD: status, COUNT: false, COLLECT: false,
                 CASE: case when a.status = 1 THEN 'good' ELSE 'bad' END
+        10. aggregating functions (see point 8 above).
 
          */
         // 1.
         if (clause.size() == 4 && clause.get(0).equals("id") && clause.get(1).equals("(")) {
             C2SMain.needToPrintID = true;
-            return new CypReturn(clause.get(2), "id", false, false, null, matchC);
+            return new CypReturn(clause.get(2), "id", COUNT_FALSE, AGG_NONE, null, matchC);
         }
         // 2.
         else if (clause.size() == 3 && clause.contains(".")) {
-            return new CypReturn(clause.get(0), clause.get(2), false, false, null, matchC);
+            return new CypReturn(clause.get(0), clause.get(2), COUNT_FALSE, AGG_NONE, null, matchC);
         } else if (clause.size() == 1) {
             // 3.
             if (clause.get(0).equals("*")) {
-                return new CypReturn(null, "*", false, false, null, matchC);
+                return new CypReturn(null, "*", COUNT_FALSE, AGG_NONE, null, matchC);
             }
             // 4.
             else {
-                return new CypReturn(clause.get(0), null, false, false, null, matchC);
+                return new CypReturn(clause.get(0), null, COUNT_FALSE, AGG_NONE, null, matchC);
             }
         }
-        // 5. and 6.
+        // 5. and 6. and 6a.
         else if (cypWalker.hasCount()) {
+            if (clause.size() == 7 && clause.get(2).equals("distinct"))
+                return new CypReturn(clause.get(3), clause.get(5), COUNT_DISTINCT, AGG_NONE, null, matchC);
             String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, true, false, null, matchC);
+            return new CypReturn(clause.get(2), field, COUNT_TRUE, AGG_NONE, null, matchC);
         }
         // 7. and 8.
         else if (cypWalker.hasCollect()) {
             String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, false, true, null, matchC);
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_COLLECT, null, matchC);
         }
         // 9.
         else if (cypWalker.hasCase()) {
-            System.out.println(clause);
-
             StringBuilder caseString = new StringBuilder();
             for (String s : clause) {
                 if (s.equals(".")) {
@@ -616,7 +622,27 @@ class CypherTranslator {
             }
             int posOfWhere = caseString.indexOf("when");
             String caseForReturn = "case " + caseString.toString().substring(posOfWhere);
-            return new CypReturn(clause.get(1), clause.get(3), false, false, caseForReturn, matchC);
+            return new CypReturn(clause.get(1), clause.get(3), COUNT_FALSE, AGG_NONE, caseForReturn, matchC);
+        }
+        // 10a.
+        else if (cypWalker.hasAverage()) {
+            String field = (clause.size() == 6) ? clause.get(4) : null;
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_AVG, null, matchC);
+        }
+        // 10b.
+        else if (cypWalker.hasSum()) {
+            String field = (clause.size() == 6) ? clause.get(4) : null;
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_SUM, null, matchC);
+        }
+        // 10c.
+        else if (cypWalker.hasMin()) {
+            String field = (clause.size() == 6) ? clause.get(4) : null;
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_MIN, null, matchC);
+        }
+        // 10d.
+        else if (cypWalker.hasMax()) {
+            String field = (clause.size() == 6) ? clause.get(4) : null;
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_MAX, null, matchC);
         } else throw new Exception("RETURN CLAUSE MALFORMED" + clause);
     }
 

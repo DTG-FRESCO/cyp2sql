@@ -9,10 +9,11 @@ public class CypReturn {
     private String nodeID;
     private String field;
     private String type;
-    private boolean count;
-    private boolean collect;
+    private int count;
+    private int agg_func;
     private String caseString;
     private int posInClause;
+    private boolean hasAggFunc = false;
 
     /**
      * Constructor for recording information about the items being returned from the Cypher query.
@@ -20,24 +21,27 @@ public class CypReturn {
      * commas in the whole clause).
      * Example return clause: ... RETURN count(n) AS cool_count, b.thing, collect(b.other_thing) ...
      *
-     * @param id        The id of the return item being stored. In the example above, these include 'n' and 'b'.
-     * @param field     The field of the return item being stored. In the example, these are null, 'thing', and
-     *                  'other_thing' respectively.
-     * @param count_x   If the return item is a count(...), then this is set to true; otherwise it is false.
-     * @param collect_x If the return item is a collect(...), then this is set to true; otherwise it is false.
-     * @param caseS     If the return item has the format of CASE .. etc., then the whole original CASE string
-     *                  in the Cypher query is stored in this field.
-     * @param matchC    The MatchClause object associated with the same Cypher query is also needed, so that
-     *                  the type of the return item can be calculated (type meaning either the return item is returning
-     *                  a node, a relationship, or is part of a longer Cypher query that contains the WITH keyword.)
+     * @param id         The id of the return item being stored. In the example above, these include 'n' and 'b'.
+     * @param field      The field of the return item being stored. In the example, these are null, 'thing', and
+     *                   'other_thing' respectively.
+     * @param count_x    If the return item is a count(...), then it is set to 1. If it is count(distinct ...), then
+     *                   it is set to 2; otherwise it is 0. View CypCount.java for further information.
+     * @param agg_func_x An integer value matching CypAggFuncs.java - if the value is 0 then no aggregating function
+     *                   is used.
+     * @param caseS      If the return item has the format of CASE .. etc., then the whole original CASE string
+     *                   in the Cypher query is stored in this field.
+     * @param matchC     The MatchClause object associated with the same Cypher query is also needed, so that
+     *                   the type of the return item can be calculated (type meaning either the return item is returning
+     *                   a node, a relationship, or is part of a longer Cypher query that contains the WITH keyword.)
      * @throws Exception Error in discovering the type of the return item.
      */
-    public CypReturn(String id, String field, boolean count_x, boolean collect_x, String caseS, MatchClause matchC)
+    public CypReturn(String id, String field, int count_x, int agg_func_x, String caseS, MatchClause matchC)
             throws Exception {
         this.nodeID = id;
         this.field = field;
         this.count = count_x;
-        this.collect = collect_x;
+        this.agg_func = agg_func_x;
+        if (agg_func_x > 0) this.hasAggFunc = true;
         this.caseString = caseS;
 
         if (this.nodeID != null) {
@@ -104,12 +108,12 @@ public class CypReturn {
         return field;
     }
 
-    public boolean getCount() {
+    public int getCount() {
         return count;
     }
 
-    public boolean getCollect() {
-        return collect;
+    public int getAggFunc() {
+        return agg_func;
     }
 
     public String getCaseString() {
@@ -120,8 +124,8 @@ public class CypReturn {
     public String toString() {
         return "(ID: " + this.nodeID +
                 ", FIELD: " + this.field + ", TYPE: " + this.type + ", POS: " + this.getPosInClause() +
-                ", COUNT: " + this.count +
-                ", COLLECT: " + this.collect + ", CASE: " + this.caseString + ")";
+                ", COUNT: " + CypCount.convert(this.count) +
+                ", COLLECT: " + CypAggFuncs.convert(this.agg_func) + ", CASE: " + this.caseString + ")";
     }
 
     public String getType() {
@@ -130,5 +134,9 @@ public class CypReturn {
 
     public int getPosInClause() {
         return posInClause;
+    }
+
+    public boolean hasAggFunc() {
+        return hasAggFunc;
     }
 }

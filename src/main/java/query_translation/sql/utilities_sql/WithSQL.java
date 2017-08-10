@@ -1,5 +1,6 @@
 package query_translation.sql.utilities_sql;
 
+import intermediate_rep.CypAggFuncs;
 import intermediate_rep.CypReturn;
 import intermediate_rep.DecodedQuery;
 import query_translation.sql.conversion_types.AbstractConversion;
@@ -163,8 +164,8 @@ public class WithSQL {
         StringBuilder sWith = new StringBuilder();
         sWith.append("SELECT ");
         for (CypReturn cR : dQ.getRc().getItems()) {
-            if (cR.getCollect()) {
-                sWith.append("array_agg(").append(cR.getField()).append("), ");
+            if (cR.hasAggFunc()) {
+                sWith.append(CypAggFuncs.sqlEquiv(cR.getAggFunc())).append(cR.getField()).append("), ");
             }
         }
         if (sWith.length() > 7) sWith.setLength(sWith.length() - 2);

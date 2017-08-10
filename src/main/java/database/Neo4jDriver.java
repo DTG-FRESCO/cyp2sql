@@ -136,6 +136,14 @@ public class Neo4jDriver {
     private static String formatKey(String origKey) {
         if (origKey.contains("count(")) {
             return "count";
+        } else if (origKey.contains("max(")) {
+            return "max";
+        } else if (origKey.contains("min(")) {
+            return "min";
+        } else if (origKey.contains("sum(")) {
+            return "sum";
+        } else if (origKey.contains("avg(")) {
+            return "avg";
         } else if (origKey.contains(".")) {
             StringBuilder newKey = new StringBuilder();
             String[] parts = origKey.split("\\.");

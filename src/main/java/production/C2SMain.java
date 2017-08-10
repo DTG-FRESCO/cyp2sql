@@ -247,15 +247,21 @@ public class C2SMain {
      * @throws IOException Some issue with the Buffered Reader object.
      */
     private static void runDirectPG(String sql, String dbName) throws IOException {
-        String locOfScript;
-        if (isWindows())
-            locOfScript = System.getProperty("user.dir") + "/pgdbPlay.bat";
-        else
-            locOfScript = System.getProperty("user.dir") + "/auto_run_pg.sh";
+        String scriptLocation;
 
-        ProcessBuilder b = new ProcessBuilder(locOfScript, dbName, sql);
+        // deduce the correct OS, and from this, the correct .bat/shell file to execute.
+        if (isWindows())
+            scriptLocation = System.getProperty("user.dir") + "/pgdbPlay.bat";
+        else
+            scriptLocation = System.getProperty("user.dir") + "/auto_run_pg.sh";
+
+        // run the script with two arguments - see the code in the scripts for more information.
+        ProcessBuilder b = new ProcessBuilder(scriptLocation, dbName, sql);
+
         b.redirectErrorStream(true);
         Process process = b.start();
+
+        // output the results from the process back into this console.
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder builder = new StringBuilder();
         String line;
@@ -433,10 +439,20 @@ public class C2SMain {
         PostgresDriver.lastExecTimeInsert = 0;
     }
 
+    /**
+     * Returns true if the user is running a Windows OS.
+     *
+     * @return True if OS is Windows; false otherwise.
+     */
     private static boolean isWindows() {
         return (OS.contains("win"));
     }
 
+    /**
+     * Returns true if the user is running some Unix based OS.
+     *
+     * @return True if the OS is Unix based; false otherwise.
+     */
     public static boolean isUnix() {
         return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
     }

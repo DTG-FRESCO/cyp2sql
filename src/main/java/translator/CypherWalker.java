@@ -26,6 +26,11 @@ public class CypherWalker extends CypherBaseListener {
     // MATCH (n) DETACH DELETE n
     private boolean hasDelete = false;
 
+    private boolean hasAverage = false;
+    private boolean hasSum = false;
+    private boolean hasMin = false;
+    private boolean hasMax = false;
+
     // Contains String representation of the MATCH clause of the Cypher input.
     private String matchClause = null;
     // Contains String representation of the WHERE clause of the Cypher input.
@@ -104,14 +109,26 @@ public class CypherWalker extends CypherBaseListener {
         if (ctx.getText().toLowerCase().contains(" distinct "))
             hasDistinct = true;
         // is the return query looking at a count
-        if (ctx.getText().toLowerCase().contains("count"))
+        if (ctx.getText().toLowerCase().contains("count("))
             hasCount = true;
         // is the return query looking at a collect
-        if (ctx.getText().toLowerCase().contains("collect"))
+        if (ctx.getText().toLowerCase().contains("collect("))
             hasCollect = true;
         // is the return query looking at a case expression
         if (ctx.getText().toLowerCase().contains("case"))
             hasCase = true;
+        // is the return query looking at a average function
+        if (ctx.getText().toLowerCase().contains("avg("))
+            hasAverage = true;
+        // is the return query looking at a sum function
+        if (ctx.getText().toLowerCase().contains("sum("))
+            hasSum = true;
+        // is the return query looking at a min function
+        if (ctx.getText().toLowerCase().contains("min("))
+            hasMin = true;
+        // is the return query looking at a max function
+        if (ctx.getText().toLowerCase().contains("max("))
+            hasMax = true;
     }
 
     /**
@@ -219,5 +236,21 @@ public class CypherWalker extends CypherBaseListener {
 
     public boolean hasDelete() {
         return hasDelete;
+    }
+
+    public boolean hasAverage() {
+        return hasAverage;
+    }
+
+    public boolean hasSum() {
+        return hasSum;
+    }
+
+    public boolean hasMin() {
+        return hasMin;
+    }
+
+    public boolean hasMax() {
+        return hasMax;
     }
 }

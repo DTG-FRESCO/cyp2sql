@@ -249,8 +249,13 @@ public class MultipleRel extends AbstractTranslation {
                 if (cR.getNodeID().equals(z)) {
                     usesExistingWith = true;
                     String prop = cR.getField();
-                    if (cR.getCollect()) sql.append("array_agg(");
-                    if (cR.getCount()) sql.append("count(");
+                    if (cR.hasAggFunc()) {
+                        sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                    }
+                    if (cR.getCount() > 0) {
+                        sql.append("count(");
+                        if (cR.getCount() == 2) sql.append("distinct ");
+                    }
                     if (cR.getCaseString() != null) {
                         String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
                                 WithSQL.withMapping.get(z) + "." + cR.getField());
@@ -266,7 +271,7 @@ public class MultipleRel extends AbstractTranslation {
                                     .append(", ");
                         }
                     }
-                    if (cR.getCollect() || cR.getCount()) {
+                    if (cR.hasAggFunc() || cR.getCount() > 0) {
                         sql.setLength(sql.length() - 2);
                         sql.append(")");
                         sql.append(
@@ -289,8 +294,13 @@ public class MultipleRel extends AbstractTranslation {
                         nodeTableCount++;
                     }
 
-                    if (cR.getCollect()) sql.append("array_agg(");
-                    if (cR.getCount()) sql.append("count(");
+                    if (cR.hasAggFunc()) {
+                        sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                    }
+                    if (cR.getCount() > 0) {
+                        sql.append("count(");
+                        if (cR.getCount() == 2) sql.append("distinct ");
+                    }
 
                     if (cR.getCaseString() != null) {
                         String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
@@ -307,7 +317,7 @@ public class MultipleRel extends AbstractTranslation {
                                     .append(", ");
                         }
                     }
-                    if (cR.getCollect() || cR.getCount()) {
+                    if (cR.hasAggFunc() || cR.getCount() > 0) {
                         sql.setLength(sql.length() - 2);
                         sql.append(")");
                         sql.append(
@@ -328,8 +338,10 @@ public class MultipleRel extends AbstractTranslation {
                         String idRel = String.valueOf(alphabet[relPos - 1]);
                         relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, idRel);
 
-                        if (cR.getCollect()) sql.append("array_agg(");
-                        if (cR.getCount()) sql.append("count(");
+                        if (cR.hasAggFunc()) {
+                            sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                        }
+                        if (cR.getCount() > 0) sql.append("count(");
 
                         if (cR.getCaseString() != null) {
                             String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
@@ -346,10 +358,10 @@ public class MultipleRel extends AbstractTranslation {
                                         .append(", ");
                             }
                         }
-                        if (cR.getCollect() || cR.getCount()) {
+                        if (cR.hasAggFunc() || cR.getCount() > 0) {
                             sql.setLength(sql.length() - 2);
                             sql.append(")");
-                            if (cR.getCollect())
+                            if (cR.hasAggFunc())
                                 sql.append(
                                         TranslateUtils.useAlias(
                                                 "collect(" + cR.getNodeID() + ")", null, alias))
@@ -449,7 +461,7 @@ public class MultipleRel extends AbstractTranslation {
             if (cR.getType() != null) {
                 switch (cR.getType()) {
                     case "node":
-                        if (!(cR.getCount() && returnC.getItems().size() > 1)) {
+                        if (!(cR.getCount() > 0 && returnC.getItems().size() > 1)) {
                             if (!nodesSeenSoFar.contains(cR.getNodeID())) {
                                 nodesSeenSoFar.add(cR.getNodeID());
                                 nodeTableCount++;
