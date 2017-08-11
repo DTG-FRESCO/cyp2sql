@@ -430,16 +430,17 @@ public class MultipleRel extends AbstractTranslation {
 
         if ((numRels == 1)) {
             if (matchC.getRels().get(0).getDirection().equals("none")) {
-                int posInCl = returnC.getItems().get(0).getPosInClause();
-                if (posInCl == 1) return sql.append(" n01.id = a.a1");
-                else return sql.append("n01.id = a.a2");
-//                if (!returnC.getItems().get(0).getCount()) {
-//                    int posInCl = returnC.getItems().get(0).getPosInClause();
-//                    if (posInCl == 1) return sql.append(" n01.id = a.a1");
-//                    else return sql.append("n01.id = a.a2");
-//                } else {
-//                    sql.setLength(sql.length() - 7);
-//                }
+                if (returnC.getItems().size() == 2
+                        && (!returnC.getItems().get(0).getNodeID().equals(returnC.getItems().get(1).getNodeID()))
+                        && returnC.getItems().get(0).getType().equals("node")
+                        && returnC.getItems().get(1).getType().equals("node")) {
+                    sql.append(" n01.id = a.a1 AND n02.id = a.a2");
+                    return sql;
+                } else {
+                    int posInCl = returnC.getItems().get(0).getPosInClause();
+                    if (posInCl == 1) return sql.append(" n01.id = a.a1");
+                    else return sql.append("n01.id = a.a2");
+                }
             }
         }
 

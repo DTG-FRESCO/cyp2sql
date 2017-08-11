@@ -83,6 +83,8 @@ public class SingleVarAdjList extends AbstractTranslation {
             }
         }
 
+        String matView = (direction.equals("right")) ? "adjList_from" : "adjList_to";
+
         CypNode cN1 = matchC.getNodes().get(0);
         CypNode cN2 = matchC.getNodes().get(1);
 
@@ -101,7 +103,7 @@ public class SingleVarAdjList extends AbstractTranslation {
                 sql.setLength(sql.length() - 26);
                 sql.append(")");
             } else {
-                sql.append("unnest(rightnode) AS xx FROM adjList_from INNER JOIN ");
+                sql.append("unnest(rightnode) AS xx FROM ").append(matView).append(" INNER JOIN ");
 
                 if (i == 0) {
                     // use node data

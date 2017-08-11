@@ -163,7 +163,6 @@ class TranslateUtils {
             return sql;
         } else if (value.startsWith("anyeq#")) {
             String currentSQL = sql.toString();
-            System.out.println(currentSQL);
             String[] findParts = currentSQL.split(" ");
 
             int lBrackCount = 0;
@@ -183,7 +182,6 @@ class TranslateUtils {
 
             for (int z = lBrackCount; z > 0; z--) sql.append("(");
             sql.append(v).append(" = ").append(findParts[findParts.length - 1]);
-            System.out.println(sql);
             return sql;
         }
 
