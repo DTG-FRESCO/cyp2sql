@@ -769,12 +769,15 @@ class CypherTranslator {
                 clauseHasLeftBr = true;
             }
 
+            boolean clauseHasRightBr = false;
+
             while (clause.endsWith(")")) {
-                if (numLeftBracketsNotClosed == 0) break;
+                if (numLeftBracketsNotClosed == 0 || numLeftBracketsNotClosed == 1 && clauseHasRightBr) break;
                 if (!clauseHasLeftBr) {
                     cW.addRBrack();
                     clause = clause.substring(0, clause.length() - 1);
                     numLeftBracketsNotClosed--;
+                    clauseHasRightBr = true;
                 } else break;
             }
 
@@ -788,8 +791,14 @@ class CypherTranslator {
             // parse the component according to its keywords
             if (clause.startsWith("any(")) {
                 String collection = clause.substring(clause.indexOf("in") + 3, clause.indexOf("where") - 1);
-                String predicateValue = clause.substring(clause.lastIndexOf("in") + 3, clause.length() - 1);
-                addAnyWhere(collection, predicateValue, matchC, not, cW);
+                if (clause.contains("in [")) {
+                    String predicateValue = clause.substring(clause.lastIndexOf("in [") + 3, clause.length() - 1);
+                    addAnyWhere(collection, predicateValue, matchC, not, cW, "in");
+                } else {
+                    String predicateValue = clause.split(" = ")[1];
+                    predicateValue = predicateValue.substring(0, predicateValue.length() - 1);
+                    addAnyWhere(collection, predicateValue, matchC, not, cW, "=");
+                }
             } else if (clause.contains("id(") && !clause.contains("[")) {
                 String[] idAndValue = clause.split("\\) ");
                 addIDWhere(idAndValue, matchC, not, cW);
@@ -829,6 +838,10 @@ class CypherTranslator {
                 }
                 String[] idAndValue = clause.split(" in ");
                 addCondition(idAndValue, matchC, "in", not, cW);
+            } else if (clause.contains(" is ")) {
+                String[] idAndValue = clause.split(" is ");
+                String op = (idAndValue[1].contains("not")) ? "is_not_null" : "is_null";
+                addCondition(idAndValue, matchC, op, not, cW);
             }
         }
     }
@@ -843,10 +856,11 @@ class CypherTranslator {
      * @param matchC         MatchClause of the Cypher input.
      * @param not            If the NOT keyword is used in this component, this flag is set to true.
      * @param cW             CypWhere object.
+     * @param typeAny
      * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addAnyWhere(String collection, String predicateValue, MatchClause matchC, boolean not,
-                                    CypWhere cW) throws Exception {
+                                    CypWhere cW, String typeAny) throws Exception {
         String[] idAndProp;
 
         if (collection.startsWith("labels(")) {
@@ -858,9 +872,13 @@ class CypherTranslator {
             idAndProp[1] = "label";
         } else idAndProp = collection.split("\\.");
 
+        String op;
+        if (typeAny.equals("in")) op = "anyin";
+        else op = "any=";
+
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, "any", not, cW);
+                JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, op, not, cW);
                 cN.setProps(obj);
                 return;
             }
@@ -868,7 +886,7 @@ class CypherTranslator {
 
         for (CypRel cR : matchC.getRels()) {
             if (cR.getId() != null && cR.getId().equals(idAndProp[0])) {
-                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], predicateValue, "any", not, cW);
+                JsonObject obj = addToJSONObject(cR.getProps(), idAndProp[1], predicateValue, op, not, cW);
                 cR.setProps(obj);
                 return;
             }
@@ -1086,8 +1104,20 @@ class CypherTranslator {
                 valueToAdd += metaString + "in#" + value.replace("\"", "").toLowerCase() + "#ni";
                 obj.addProperty(prop, valueToAdd);
                 break;
-            case "any":
-                valueToAdd += metaString + "any#" + value.replace("\"", "").toLowerCase() + "#yna";
+            case "anyin":
+                valueToAdd += metaString + "anyin#" + value.replace("\"", "").toLowerCase() + "#niyna";
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "any=":
+                valueToAdd += metaString + "anyeq#" + value.replace("\"", "").toLowerCase() + "#qeyna";
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "is_null":
+                valueToAdd += metaString + "isn#" + value.replace("\"", "").toLowerCase() + "#nsi";
+                obj.addProperty(prop, valueToAdd);
+                break;
+            case "is_not_null":
+                valueToAdd += metaString + "non#" + value.replace("\"", "").toLowerCase() + "#non";
                 obj.addProperty(prop, valueToAdd);
                 break;
         }
@@ -1135,6 +1165,12 @@ class CypherTranslator {
                 break;
             case "not exists":
                 invertedOp = "exists";
+                break;
+            case "is_null":
+                invertedOp = "is_not_null";
+                break;
+            case "is_not_null":
+                invertedOp = "is_null";
                 break;
         }
         return invertedOp;

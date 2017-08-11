@@ -157,6 +157,12 @@ class TranslateUtils {
         } else if (value.startsWith("ex#")) {
             sql.append(" IS NOT NULL ");
             return sql;
+        } else if (value.startsWith("isn#")) {
+            sql.append(" IS NULL ");
+            return sql;
+        } else if (value.startsWith("non#")) {
+            sql.append(" IS NOT NULL ");
+            return sql;
         } else if (value.startsWith("nx#")) {
             sql.append(" IS NULL ");
             return sql;
@@ -165,11 +171,35 @@ class TranslateUtils {
             list = true;
             v = value.substring(3, value.indexOf("#ni"))
                     .replace("[", "(").replace("]", ")");
-        } else if (value.startsWith("any#")) {
-            sql.append(" IN ");
-            list = true;
-            v = value.substring(4, value.indexOf("#yna"))
-                    .replace("[", "(").replace("]", ")");
+        } else if (value.startsWith("anyin#")) {
+            sql.append(" = any(ARRAY");
+            v = value.substring(6, value.indexOf("#niyna"));
+            sql.append(v).append(")");
+            return sql;
+        } else if (value.startsWith("anyeq#")) {
+            String currentSQL = sql.toString();
+            System.out.println(currentSQL);
+            String[] findParts = currentSQL.split(" ");
+
+            int lBrackCount = 0;
+            while (findParts[findParts.length - 1].startsWith("(")) {
+                lBrackCount++;
+                findParts[findParts.length - 1] = findParts[findParts.length - 1].substring(1);
+            }
+
+            findParts[findParts.length - 1] = "any(" + findParts[findParts.length - 1] + ") ";
+
+            v = value.substring(6, value.indexOf("#qeyna"));
+            sql = new StringBuilder();
+
+            for (int i = 0; i < findParts.length - 1; i++) {
+                sql.append(findParts[i]).append(" ");
+            }
+
+            for (int z = lBrackCount; z > 0; z--) sql.append("(");
+            sql.append(v).append(" = ").append(findParts[findParts.length - 1]);
+            System.out.println(sql);
+            return sql;
         }
 
 
