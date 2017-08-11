@@ -238,19 +238,19 @@ public class CypherWalker extends CypherBaseListener {
         return hasDelete;
     }
 
-    public boolean hasAverage() {
+    boolean hasAverage() {
         return hasAverage;
     }
 
-    public boolean hasSum() {
+    boolean hasSum() {
         return hasSum;
     }
 
-    public boolean hasMin() {
+    boolean hasMin() {
         return hasMin;
     }
 
-    public boolean hasMax() {
+    boolean hasMax() {
         return hasMax;
     }
 }

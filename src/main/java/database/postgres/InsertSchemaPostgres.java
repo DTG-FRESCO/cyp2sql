@@ -155,7 +155,6 @@ public class InsertSchemaPostgres {
             sb.setLength(sb.length() - 2);
             sb.append("); ");
         }
-
         return sb.toString();
     }
 

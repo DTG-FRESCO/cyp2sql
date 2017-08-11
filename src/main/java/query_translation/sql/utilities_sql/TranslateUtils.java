@@ -105,22 +105,7 @@ class TranslateUtils {
     private static StringBuilder addWhereClause(StringBuilder sql, String value, String sqlLabel) {
         // format part of the where clause correctly for further parsing.
         if (!value.contains("#")) value = "eq#" + value + "#qe";
-
-        String prop = sql.toString().substring(sql.toString().lastIndexOf(" ") + 1);
-
         sql = getProperWhereValue(value, sql, sqlLabel);
-
-        while (value.contains("~")) {
-            sql.append(value.split("~")[1]).append(" ").append(prop);
-            String[] valueSplit = value.split("~");
-            value = "";
-            for (int i = 2; i < valueSplit.length; i++) {
-                value += valueSplit[i] + "~";
-            }
-            value = value.substring(0, value.length() - 1);
-            sql = getProperWhereValue(value, sql, sqlLabel);
-        }
-
         return sql;
     }
 

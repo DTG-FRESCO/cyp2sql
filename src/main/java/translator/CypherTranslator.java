@@ -95,9 +95,7 @@ class CypherTranslator {
             int skipAmount = (posOfSkip != -1) ? cypWalker.getSkipAmount() : -1;
             int limitAmount = (posOfLimit != -1) ? cypWalker.getLimitAmount() : -1;
 
-            if (cypWalker.doesCluaseHaveWhere()) {
-                whereDecode(matchC, cypWalker);
-            }
+            if (cypWalker.doesCluaseHaveWhere()) whereDecode(matchC, cypWalker);
 
             return new DecodedQuery(matchC, returnC, orderC, skipAmount, limitAmount, cypWalker);
         }
@@ -564,7 +562,6 @@ class CypherTranslator {
 
         1.  id(n) = [id, (, n, )] --> ID: n, FIELD: id, COUNT: false, COLLECT: false, CASE: null
         2.  a.name = [a, ., name] --> ID: a, FIELD: name, COUNT: false, COLLECT: false, CASE: null
-        3.  * = [*] --> ID: null, FIELD: *, COUNT: false, COLLECT: false, CASE: null
         4.  a = [a] --> ID: a, FIELD: null, COUNT: false, COLLECT: false, CASE: null
         5.  count(a) = [count, (, a, )] --> ID: a, FIELD: null, COUNT: true, COLLECT: false, CASE: null
         6.  count(a.name) = [count, (, a, ., name, )] --> ID: a, FIELD: name, COUNT: true, COLLECT: false, CASE: null
@@ -586,15 +583,10 @@ class CypherTranslator {
         // 2.
         else if (clause.size() == 3 && clause.contains(".")) {
             return new CypReturn(clause.get(0), clause.get(2), COUNT_FALSE, AGG_NONE, null, matchC);
-        } else if (clause.size() == 1) {
-            // 3.
-            if (clause.get(0).equals("*")) {
-                return new CypReturn(null, "*", COUNT_FALSE, AGG_NONE, null, matchC);
-            }
-            // 4.
-            else {
-                return new CypReturn(clause.get(0), null, COUNT_FALSE, AGG_NONE, null, matchC);
-            }
+        }
+        // 4.
+        else if (clause.size() == 1) {
+            return new CypReturn(clause.get(0), null, COUNT_FALSE, AGG_NONE, null, matchC);
         }
         // 5. and 6. and 6a.
         else if (cypWalker.hasCount()) {
@@ -856,7 +848,10 @@ class CypherTranslator {
      * @param matchC         MatchClause of the Cypher input.
      * @param not            If the NOT keyword is used in this component, this flag is set to true.
      * @param cW             CypWhere object.
-     * @param typeAny
+     * @param typeAny        Either set to 'in' or '='; in the former case of 'in', this is true when the WHERE
+     *                       component is of the format (any(... IN [...])). In the latter case of 'in', the
+     *                       WHERE component is of the form (any(... = ...)). See a list of the example queries
+     *                       for more info.
      * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addAnyWhere(String collection, String predicateValue, MatchClause matchC, boolean not,
