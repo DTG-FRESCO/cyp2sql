@@ -1,7 +1,6 @@
 package query_translation.sql.utilities_sql;
 
 import intermediate_rep.*;
-import production.C2SMain;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -11,60 +10,67 @@ import java.util.Map;
  */
 public class NoRels extends AbstractTranslation {
 
-    private static StringBuilder getSelect(ReturnClause rc, MatchClause mc, StringBuilder sql,
-                                           boolean hasDistinct, Map<String, String> alias) {
-        sql.append("SELECT ");
-        if (hasDistinct) sql.append("DISTINCT ");
+    private static StringBuilder getSelect(ReturnClause rc, MatchClause mc, boolean hasDistinct,
+                                           Map<String, String> alias) {
+        StringBuilder selectSQL = new StringBuilder();
 
-        for (CypReturn r : rc.getItems()) {
-            if (r.getNodeID() == null && r.getField().equals("*")) {
-                sql.append("*");
-            } else if (r.getCaseString() != null) {
-                String caseString = r.getCaseString();
-                sql.append(caseString.replace(r.getNodeID() + "." + r.getField(),
-                        "n01." + r.getField()));
+        // add the initial keywords to the translation.
+        selectSQL.append("SELECT ");
+        if (hasDistinct) selectSQL.append("DISTINCT ");
+
+        // loop through all the return components, and add them to the SELECT clause individually.
+        for (CypReturn cR : rc.getItems()) {
+            // check for CASE string first.
+            if (cR.getCaseString() != null) {
+                String caseString = cR.getCaseString();
+                selectSQL.append(caseString.replace(cR.getNodeID() + "." + cR.getField(),
+                        "n01." + cR.getField()));
             } else {
-                for (CypNode cN : mc.getNodes()) {
-                    if (r.getNodeID().equals(cN.getId())) {
-                        String prop = r.getField();
-                        if (r.hasAggFunc()) {
-                            sql.append(CypAggFuncs.sqlEquiv(r.getAggFunc()));
-                        }
-                        if (r.getCount() > 0) {
-                            sql.append("count(");
-                            if (r.getCount() == 2) sql.append("distinct ");
-                        }
-                        if (prop != null) {
-                            sql.append("n01").append(".").append(prop);
-                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
-                            sql.append(TranslateUtils.useAlias(r.getNodeID(), r.getField(), alias)).append(", ");
-                        } else {
-                            sql.append("n01.*");
-                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
-                            sql.append(TranslateUtils.useAlias("count(" + r.getNodeID() + ")", r.getField(), alias))
-                                    .append(", ");
-                        }
-                        break;
+                CypNode cN = mc.getNodes().get(0);
+
+                if (cR.getNodeID().equals(cN.getId())) {
+                    String prop = cR.getField();
+
+                    if (cR.hasAggFunc()) {
+                        selectSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                    } else if (cR.getCount() > 0) {
+                        selectSQL.append("count(");
+                        if (cR.getCount() == 2) selectSQL.append("distinct ");
+                    }
+
+                    if (prop != null) {
+                        selectSQL.append("n01").append(".").append(prop);
+                        if (cR.hasAggFunc() || cR.getCount() > 0) selectSQL.append(") ");
+                        selectSQL.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
+                    } else {
+                        selectSQL.append("n01.*");
+                        if (cR.hasAggFunc() || cR.getCount() > 0) selectSQL.append(") ");
+                        selectSQL.append(TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
+                                .append(", ");
                     }
                 }
+
                 for (String s : WithSQL.withMapping.keySet()) {
-                    if (r.getNodeID().equals(s)) {
-                        String prop = r.getField();
-                        if (r.hasAggFunc()) {
-                            sql.append(CypAggFuncs.sqlEquiv(r.getAggFunc()));
+                    if (cR.getNodeID().equals(s)) {
+                        String prop = cR.getField();
+
+                        if (cR.hasAggFunc()) {
+                            selectSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
                         }
-                        if (r.getCount() > 0) {
-                            sql.append("count(");
-                            if (r.getCount() == 2) sql.append("distinct ");
+
+                        if (cR.getCount() > 0) {
+                            selectSQL.append("count(");
+                            if (cR.getCount() == 2) selectSQL.append("distinct ");
                         }
+
                         if (prop != null) {
-                            sql.append(WithSQL.withMapping.get(s)).append(".").append(prop);
-                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
-                            sql.append(TranslateUtils.useAlias(r.getNodeID(), r.getField(), alias)).append(", ");
+                            selectSQL.append(WithSQL.withMapping.get(s)).append(".").append(prop);
+                            if (cR.hasAggFunc() || cR.getCount() > 0) selectSQL.append(") ");
+                            selectSQL.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
                         } else {
-                            sql.append(WithSQL.withMapping.get(s)).append(".*");
-                            if (r.hasAggFunc() || r.getCount() > 0) sql.append(") ");
-                            sql.append(TranslateUtils.useAlias("count(" + r.getNodeID() + ")", r.getField(), alias))
+                            selectSQL.append(WithSQL.withMapping.get(s)).append(".*");
+                            if (cR.hasAggFunc() || cR.getCount() > 0) selectSQL.append(") ");
+                            selectSQL.append(TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                     .append(", ");
                         }
                         break;
@@ -73,48 +79,32 @@ public class NoRels extends AbstractTranslation {
             }
         }
 
-
-        if (sql.toString().endsWith(", ")) sql.setLength(sql.length() - 2);
-        sql.append(" ");
-        return sql;
+        if (selectSQL.toString().endsWith(", ")) selectSQL.setLength(selectSQL.length() - 2);
+        selectSQL.append(" ");
+        return selectSQL;
     }
 
-    private static StringBuilder getFrom(StringBuilder sql, MatchClause mc, ReturnClause rc) {
-        sql.append("FROM ");
+    private static StringBuilder getFrom(MatchClause mc, ReturnClause rc) {
+        StringBuilder fromSQL = new StringBuilder();
+
+        fromSQL.append("FROM ");
         String table = TranslateUtils.getLabelType(mc.getNodes().get(0).getType());
 
         if (!table.equals("nodes")) {
-            useOptimalTable = true;
+            usesOptimalTable = true;
         } else {
-            boolean possibleOpti = true;
-            String possTable = "nodes";
-
-            for (CypReturn cR : rc.getItems()) {
-                if (!C2SMain.labelProps.containsKey(cR.getField())) {
-                    possibleOpti = false;
-                    break;
-                } else {
-                    String newTable = C2SMain.labelProps.get(cR.getField());
-                    if (!possTable.equals(newTable) && !possTable.equals("nodes")) {
-                        possibleOpti = false;
-                        break;
-                    }
-                    possTable = newTable;
-                }
-            }
-
-            if (possibleOpti) table = possTable;
-            else table = "nodes";
+            table = TranslateUtils.findOptimisedTable(rc);
         }
-        sql.append(table);
-        sql.append(" n01");
 
-        if (!WithSQL.withMapping.isEmpty()) sql.append(", wA");
+        fromSQL.append(table).append(" n01");
 
-        return sql;
+        if (!WithSQL.withMapping.isEmpty()) fromSQL.append(", wA");
+        return fromSQL;
     }
 
-    private static StringBuilder getWhere(StringBuilder sql, ReturnClause returnC, MatchClause matchC) {
+    private static StringBuilder getWhere(ReturnClause returnC, MatchClause matchC) {
+        StringBuilder where = new StringBuilder();
+
         boolean hasWhere = false;
         ArrayList<String> nodesScanned = new ArrayList<>();
 
@@ -125,10 +115,10 @@ public class NoRels extends AbstractTranslation {
 
             if (cR.getNodeID() == null && cR.getField().equals("*")) {
                 CypNode cN = matchC.getNodes().get(0);
-                sql.append(" WHERE n01.label LIKE ").append(TranslateUtils.genLabelLike(cN, "n01"));
+                where.append(" WHERE n01.label LIKE ").append(TranslateUtils.genLabelLike(cN, "n01"));
                 if (cN.getProps() != null) {
-                    sql.append(" AND ");
-                    sql = TranslateUtils.getWholeWhereClause(sql, cN);
+                    where.append(" AND ");
+                    where = TranslateUtils.getWholeWhereClause(where, cN);
                 }
             } else {
                 CypNode cN = null;
@@ -143,46 +133,49 @@ public class NoRels extends AbstractTranslation {
                 if (cN != null) {
                     if (cN.getProps() != null) {
                         if (!hasWhere) {
-                            sql.append(" WHERE ");
+                            where.append(" WHERE ");
                             hasWhere = true;
                         }
-                        sql = TranslateUtils.getWholeWhereClause(sql, cN);
+                        where = TranslateUtils.getWholeWhereClause(where, cN);
                     }
 
-                    if (cN.getType() != null && !useOptimalTable) {
+                    if (cN.getType() != null && !usesOptimalTable) {
                         if (!hasWhere) {
-                            sql.append(" WHERE n01.label LIKE");
+                            where.append(" WHERE n01.label LIKE");
                             hasWhere = true;
                         } else {
-                            if (!sql.toString().endsWith("AND ")) sql.append(" AND ");
-                            sql.append("n01.label LIKE");
+                            if (!where.toString().endsWith("AND ")) where.append(" AND ");
+                            where.append("n01.label LIKE");
                         }
-                        sql.append(" ").append(TranslateUtils.genLabelLike(cN, "n01"));
+                        where.append(" ").append(TranslateUtils.genLabelLike(cN, "n01"));
                     }
                 } else if (!WithSQL.withMapping.isEmpty()) {
                     cN = matchC.getNodes().get(0);
                     if (cN.getProps() != null) {
                         if (!hasWhere) {
-                            sql.append(" WHERE ");
+                            where.append(" WHERE ");
                             hasWhere = true;
                         }
-                        sql = TranslateUtils.getWholeWhereClause(sql, cN);
+                        where = TranslateUtils.getWholeWhereClause(where, cN);
                     }
                 }
             }
         }
 
-        return sql;
+        return where;
     }
 
     @Override
     public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
-        useOptimalTable = false;
-        sql = getSelect(decodedQuery.getRc(), decodedQuery.getMc(), sql,
+        usesOptimalTable = false;
+        StringBuilder select = getSelect(decodedQuery.getRc(), decodedQuery.getMc(),
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
-        sql = getFrom(sql, decodedQuery.getMc(), decodedQuery.getRc());
-        sql = getWhere(sql, decodedQuery.getRc(), decodedQuery.getMc());
+
+        StringBuilder from = getFrom(decodedQuery.getMc(), decodedQuery.getRc());
+        StringBuilder where = getWhere(decodedQuery.getRc(), decodedQuery.getMc());
+
+        sql.append(select).append(from).append(where);
         return sql;
     }
 }

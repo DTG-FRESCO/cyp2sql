@@ -187,7 +187,7 @@ public class ShortestPath extends AbstractTranslation {
                 dQMainPath.getCypherAdditionalInfo().getAliasMap()));
 
         if (dQMainPath.getOc() != null)
-            shortPath = SQLTranslate.obtainOrderByClause(dQMainPath.getOc(), dQMainPath.getRc(), shortPath);
+            shortPath = SQLTranslate.obtainOrderByClause(dQMainPath.getOc(), dQMainPath.getRc(), shortPath, "n01");
 
         int skipAmount = dQMainPath.getSkipAmount();
         int limitAmount = dQMainPath.getLimitAmount();

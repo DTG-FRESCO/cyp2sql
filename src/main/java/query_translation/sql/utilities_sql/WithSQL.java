@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static query_translation.sql.utilities_sql.SQLTranslate.obtainOrderByClause;
+
 public class WithSQL {
     private static final String o = "order";
     private static final String r = "return";
@@ -186,6 +188,9 @@ public class WithSQL {
             MultipleRel mr = new MultipleRel();
             resSecWith = mr.translate(resSecWith, dQSecWith);
         }
+
+        if (dQSecWith.getOc() != null)
+            resSecWith = obtainOrderByClause(dQSecWith.getOc(), dQSecWith.getRc(), resSecWith, "wA");
 
         int skipAmount = dQSecWith.getSkipAmount();
         int limitAmount = dQSecWith.getLimitAmount();

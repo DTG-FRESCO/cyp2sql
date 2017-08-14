@@ -312,7 +312,9 @@ class TranslateUtils {
         } else {
             for (String s : alias.keySet()) {
                 String key = s.split(" AS ")[0];
+                // TODO: extend for more of the aggregate functions.
                 if (key.startsWith("collect")) key = key.substring(8, key.length() - 1);
+                if (key.startsWith("sum")) key = key.substring(4, key.length() - 1);
                 if (field != null) {
                     if (key.equals((nodeID) + "." + (field))) {
                         return (" AS " + alias.get(s));
@@ -325,5 +327,27 @@ class TranslateUtils {
             }
         }
         return "";
+    }
+
+    static String findOptimisedTable(ReturnClause rc) {
+        boolean possibleOpti = true;
+        String possTable = "nodes";
+
+        for (CypReturn cR : rc.getItems()) {
+            if (!C2SMain.labelProps.containsKey(cR.getField())) {
+                possibleOpti = false;
+                break;
+            } else {
+                String newTable = C2SMain.labelProps.get(cR.getField());
+                if (!possTable.equals(newTable) && !possTable.equals("nodes")) {
+                    possibleOpti = false;
+                    break;
+                }
+                possTable = newTable;
+            }
+        }
+
+        if (possibleOpti) return possTable;
+        else return "nodes";
     }
 }

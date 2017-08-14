@@ -15,21 +15,23 @@ public class MultipleRel extends AbstractTranslation {
     /**
      * Obtain WITH clause (Common Table Expression) for query with relationships.
      *
-     * @param sql    Existing SQL
      * @param matchC Match Clause of the original Cypher query.
      * @return New SQL.
      */
-    private static StringBuilder obtainWithClause(StringBuilder sql, MatchClause matchC) {
-        sql.append("WITH ");
+    private static StringBuilder obtainWithClause(MatchClause matchC) {
+        StringBuilder withSQL = new StringBuilder();
+        withSQL.append("WITH ");
 
         int indexRel = 0;
 
+        // go through each relationship in the MatchClause, and generate the correct CTE to
+        // add to the SQL statement.
         for (CypRel cR : matchC.getRels()) {
             String withAlias = String.valueOf(alphabet[indexRel]);
-            sql.append(withAlias).append(" AS ");
-            sql.append("(SELECT n1.id AS ").append(withAlias).append(1).append(", ");
-            sql.append("n2.id AS ").append(withAlias).append(2);
-            sql.append(", e").append(indexRel + 1).append(".*");
+            withSQL.append(withAlias).append(" AS ");
+            withSQL.append("(SELECT n1.id AS ").append(withAlias).append(1).append(", ");
+            withSQL.append("n2.id AS ").append(withAlias).append(2);
+            withSQL.append(", e").append(indexRel + 1).append(".*");
 
             int posInClause = cR.getPosInClause();
             CypNode c1 = matchC.getNodes().get(posInClause - 1);
@@ -44,46 +46,46 @@ public class MultipleRel extends AbstractTranslation {
 
             switch (cR.getDirection()) {
                 case "right":
-                    sql.append(" FROM ").append(labelC1).append(" n1 " + "INNER JOIN ").append(typeRel).append(" e")
+                    withSQL.append(" FROM ").append(labelC1).append(" n1 " + "INNER JOIN ").append(typeRel).append(" e")
                             .append(indexRel + 1)
                             .append(" on n1.id = e").append(indexRel + 1).append(".idl ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idr = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
+                    withSQL = obtainWhereInWithClause(cR, matchC, withSQL, false, indexRel, labelC1, labelC2);
                     break;
                 case "left":
-                    sql.append(" FROM ").append(labelC1).append(" n1 " + "INNER JOIN ").append(typeRel).append(" e")
+                    withSQL.append(" FROM ").append(labelC1).append(" n1 " + "INNER JOIN ").append(typeRel).append(" e")
                             .append(indexRel + 1)
                             .append(" on n1.id = e").append(indexRel + 1).append(".idr ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idl = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
+                    withSQL = obtainWhereInWithClause(cR, matchC, withSQL, false, indexRel, labelC1, labelC2);
                     break;
                 case "none":
-                    sql.append(" FROM ").append(labelC1).append(" n1 INNER JOIN ").append(typeRel).append(" e")
+                    withSQL.append(" FROM ").append(labelC1).append(" n1 INNER JOIN ").append(typeRel).append(" e")
                             .append(indexRel + 1)
                             .append(" on n1.id = e").append(indexRel + 1).append(".idl ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idr = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, true, indexRel, labelC1, labelC2);
-                    sql.append("SELECT n1.id AS ").append(withAlias).append(1).append(", ");
-                    sql.append("n2.id AS ").append(withAlias).append(2);
-                    sql.append(", e").append(indexRel + 1).append(".*");
-                    sql.append(" FROM ").append(labelC1).append(" n1 INNER JOIN ").append(typeRel).append(" e")
+                    withSQL = obtainWhereInWithClause(cR, matchC, withSQL, true, indexRel, labelC1, labelC2);
+                    withSQL.append("SELECT n1.id AS ").append(withAlias).append(1).append(", ");
+                    withSQL.append("n2.id AS ").append(withAlias).append(2);
+                    withSQL.append(", e").append(indexRel + 1).append(".*");
+                    withSQL.append(" FROM ").append(labelC1).append(" n1 INNER JOIN ").append(typeRel).append(" e")
                             .append(indexRel + 1)
                             .append(" on n1.id = e").append(indexRel + 1).append(".idr ")
                             .append("INNER JOIN ").append(labelC2).append(" n2 on e").append(indexRel + 1)
                             .append(".idl = n2.id");
-                    sql = obtainWhereInWithClause(cR, matchC, sql, false, indexRel, labelC1, labelC2);
+                    withSQL = obtainWhereInWithClause(cR, matchC, withSQL, false, indexRel, labelC1, labelC2);
                     break;
             }
 
             indexRel++;
         }
 
-        sql.setLength(sql.length() - 2);
-        sql.append(" ");
-        return sql;
+        withSQL.setLength(withSQL.length() - 2);
+        withSQL.append(" ");
+        return withSQL;
     }
 
     /**
@@ -186,33 +188,27 @@ public class MultipleRel extends AbstractTranslation {
     }
 
     private static StringBuilder obtainSelectAndFromClause(ReturnClause returnC, MatchClause matchC,
-                                                           StringBuilder sql, boolean hasDistinct,
+                                                           boolean hasDistinct,
                                                            Map<String, String> alias) {
-        sql.append("SELECT ");
-        if (hasDistinct) sql.append("DISTINCT ");
+        StringBuilder safSQL = new StringBuilder();
+
+        safSQL.append("SELECT ");
+        if (hasDistinct) safSQL.append("DISTINCT ");
 
         int nodeTableCount = 0;
         ArrayList<String> nodesSoFar = new ArrayList<>();
-
         String relsNeeded = "";
         needNodeTable = false;
 
         for (CypReturn cR : returnC.getItems()) {
             boolean isNode = false;
 
-            if (cR.getNodeID() == null && cR.getField().equals("*")) {
-                sql.append("*  ");
-                needNodeTable = true;
-                nodeTableCount++;
-                break;
-            }
-
             if (cR.getCaseString() != null) {
                 // if caseNode is false, then the type must be a relationship.
                 boolean caseNode = (cR.getType().equals("node"));
                 String replacement = caseNode ? "n01." + cR.getField() : "a." + cR.getField();
                 String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(), replacement);
-                sql.append(caseString).append("  ");
+                safSQL.append(caseString).append(" ");
                 if (caseNode) {
                     needNodeTable = true;
                     nodeTableCount++;
@@ -222,62 +218,39 @@ public class MultipleRel extends AbstractTranslation {
                 break;
             }
 
-            if (cR.getField() != null && cR.getField().startsWith("count")) {
-                String toAdd;
-                int posInCluase = cR.getPosInClause();
-                if (posInCluase == 1) toAdd = "a1";
-                else toAdd = "a2";
-                sql.append("count(").append(toAdd).append(")");
-                sql.append(TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
-                        .append(", ");
-                needNodeTable = true;
-                nodeTableCount++;
-                break;
-            }
-
-            if (cR.getField() != null && cR.getField().startsWith("collect")) {
-                String toAdd;
-                int posInCluase = cR.getPosInClause();
-                if (posInCluase == 1) toAdd = "a1";
-                else toAdd = "a2";
-                sql.append("array_agg(").append(toAdd).append(")");
-                sql.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
-                needNodeTable = true;
-                nodeTableCount++;
-                break;
-            }
-
             boolean usesExistingWith = false;
+
             for (String z : WithSQL.withMapping.keySet()) {
                 if (cR.getNodeID().equals(z)) {
                     usesExistingWith = true;
+
                     String prop = cR.getField();
                     if (cR.hasAggFunc()) {
-                        sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                        safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
                     }
                     if (cR.getCount() > 0) {
-                        sql.append("count(");
-                        if (cR.getCount() == 2) sql.append("distinct ");
+                        safSQL.append("count(");
+                        if (cR.getCount() == 2) safSQL.append("distinct ");
                     }
                     if (cR.getCaseString() != null) {
                         String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
                                 WithSQL.withMapping.get(z) + "." + cR.getField());
-                        sql.append(caseString).append(", ");
+                        safSQL.append(caseString).append(", ");
                     } else {
                         if (prop != null) {
-                            sql.append(WithSQL.withMapping.get(z)).append(".").append(prop)
+                            safSQL.append(WithSQL.withMapping.get(z)).append(".").append(prop)
                                     .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                     .append(", ");
                         } else {
-                            sql.append(WithSQL.withMapping.get(z))
+                            safSQL.append(WithSQL.withMapping.get(z))
                                     .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                     .append(", ");
                         }
                     }
                     if (cR.hasAggFunc() || cR.getCount() > 0) {
-                        sql.setLength(sql.length() - 2);
-                        sql.append(")");
-                        sql.append(
+                        safSQL.setLength(safSQL.length() - 2);
+                        safSQL.append(")");
+                        safSQL.append(
                                 TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                 .append(", ");
                     }
@@ -298,32 +271,33 @@ public class MultipleRel extends AbstractTranslation {
                     }
 
                     if (cR.hasAggFunc()) {
-                        sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                        safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
                     }
+
                     if (cR.getCount() > 0) {
-                        sql.append("count(");
-                        if (cR.getCount() == 2) sql.append("distinct ");
+                        safSQL.append("count(");
+                        if (cR.getCount() == 2) safSQL.append("distinct ");
                     }
 
                     if (cR.getCaseString() != null) {
                         String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
                                 "n0" + nodeTableCount + "." + cR.getField());
-                        sql.append(caseString).append(", ");
+                        safSQL.append(caseString).append(", ");
                     } else {
                         if (prop != null) {
-                            sql.append("n0").append(nodeTableCount).append(".").append(prop)
+                            safSQL.append("n0").append(nodeTableCount).append(".").append(prop)
                                     .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                     .append(", ");
                         } else {
-                            sql.append("n0").append(nodeTableCount)
+                            safSQL.append("n0").append(nodeTableCount)
                                     .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                     .append(", ");
                         }
                     }
                     if (cR.hasAggFunc() || cR.getCount() > 0) {
-                        sql.setLength(sql.length() - 2);
-                        sql.append(")");
-                        sql.append(
+                        safSQL.setLength(safSQL.length() - 2);
+                        safSQL.append(")");
+                        safSQL.append(
                                 TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                 .append(", ");
                     }
@@ -342,34 +316,34 @@ public class MultipleRel extends AbstractTranslation {
                         relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, idRel);
 
                         if (cR.hasAggFunc()) {
-                            sql.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                            safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
                         }
-                        if (cR.getCount() > 0) sql.append("count(");
+                        if (cR.getCount() > 0) safSQL.append("count(");
 
                         if (cR.getCaseString() != null) {
                             String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
                                     idRel + "." + cR.getField());
-                            sql.append(caseString).append(", ");
+                            safSQL.append(caseString).append(", ");
                         } else {
                             if (field != null) {
-                                sql.append(idRel).append(".").append(field)
+                                safSQL.append(idRel).append(".").append(field)
                                         .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                         .append(", ");
                             } else {
-                                sql.append(idRel).append(".*")
+                                safSQL.append(idRel).append(".*")
                                         .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                         .append(", ");
                             }
                         }
                         if (cR.hasAggFunc() || cR.getCount() > 0) {
-                            sql.setLength(sql.length() - 2);
-                            sql.append(")");
+                            safSQL.setLength(safSQL.length() - 2);
+                            safSQL.append(")");
                             if (cR.hasAggFunc())
-                                sql.append(
+                                safSQL.append(
                                         TranslateUtils.useAlias(
                                                 "collect(" + cR.getNodeID() + ")", null, alias))
                                         .append(", ");
-                            else sql.append(
+                            else safSQL.append(
                                     TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", null, alias))
                                     .append(", ");
                         }
@@ -379,69 +353,83 @@ public class MultipleRel extends AbstractTranslation {
             }
         }
 
-        sql.setLength(sql.length() - 2);
+        safSQL.setLength(safSQL.length() - 2);
 
         String table = TranslateUtils.getTable(returnC);
 
         boolean fromAdded = false;
         if (needNodeTable) {
-            sql.append(" FROM ");
+            safSQL.append(" FROM ");
             fromAdded = true;
             for (int k = nodeTableCount; k > 0; k--) {
-                sql.append(table).append(" n0").append(k).append(", ");
+                safSQL.append(table).append(" n0").append(k).append(", ");
             }
-            sql.append(relsNeeded);
+            safSQL.append(relsNeeded);
         } else if (!relsNeeded.isEmpty()) {
-            sql.append(" FROM ").append(relsNeeded);
+            safSQL.append(" FROM ").append(relsNeeded);
             fromAdded = true;
         }
 
         if (!WithSQL.withMapping.isEmpty()) {
-            sql.append((!fromAdded) ? " FROM " : " ").append("wA, ");
+            safSQL.append((!fromAdded) ? " FROM " : " ").append("wA, ");
         }
 
         int numRels = matchC.getRels().size();
 
         for (int i = 0; i < numRels; i++)
             if (!relsNeeded.contains(String.valueOf(alphabet[i])))
-                sql.append(alphabet[i]).append(", ");
+                safSQL.append(alphabet[i]).append(", ");
 
-        sql.setLength(sql.length() - 2);
-        sql.append(" ");
-        return sql;
+        safSQL.setLength(safSQL.length() - 2);
+        safSQL.append(" ");
+        return safSQL;
     }
 
-    private static StringBuilder obtainWhereClause(StringBuilder sql,
-                                                   ReturnClause returnC, MatchClause matchC, boolean partOfWithQ) {
-        sql.append(" WHERE ");
+    private static StringBuilder obtainWhereClause(ReturnClause returnC, MatchClause matchC,
+                                                   boolean partOfWithQ) {
+        StringBuilder whereSQL = new StringBuilder();
+
+        whereSQL.append(" WHERE ");
         int numRels = matchC.getRels().size();
 
-        for (int i = 0; i < numRels - 1; i++) {
-            sql.append(alphabet[i]).append(".").append(alphabet[i]).append(2);
-            sql.append(" = ");
-            sql.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(1);
-            sql.append(" AND ");
-        }
-
-        if (partOfWithQ) {
-            sql.setLength(sql.length() - 5);
-            return sql;
-        }
-
+        // in the case of only one relationship in the MATCH clause.
         if ((numRels == 1)) {
             if (matchC.getRels().get(0).getDirection().equals("none")) {
                 if (returnC.getItems().size() == 2
                         && (!returnC.getItems().get(0).getNodeID().equals(returnC.getItems().get(1).getNodeID()))
                         && returnC.getItems().get(0).getType().equals("node")
                         && returnC.getItems().get(1).getType().equals("node")) {
-                    sql.append(" n01.id = a.a1 AND n02.id = a.a2");
-                    return sql;
+                    whereSQL.append(" n01.id = a.a1 AND n02.id = a.a2");
+                    return whereSQL;
                 } else {
                     int posInCl = returnC.getItems().get(0).getPosInClause();
-                    if (posInCl == 1) return sql.append(" n01.id = a.a1");
-                    else return sql.append("n01.id = a.a2");
+                    if (posInCl == 1) return whereSQL.append(" n01.id = a.a1");
+                    else return whereSQL.append("n01.id = a.a2");
                 }
             }
+        }
+
+        // where there is more than one relationship, the CTEs need to join together appropriately,
+        // to make sure the semantics are correct.
+        for (int i = 0; i < numRels - 1; i++) {
+            whereSQL.append(alphabet[i]).append(".").append(alphabet[i]).append(2);
+            whereSQL.append(" = ");
+            whereSQL.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(1);
+            whereSQL.append(" AND ");
+
+            if (i == 0) {
+                whereSQL.append("a.a1 != b.b2");
+            } else {
+                whereSQL.append(alphabet[i - 1]).append(".").append(alphabet[i - 1]).append(2);
+                whereSQL.append(" != ");
+                whereSQL.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(2);
+            }
+            whereSQL.append(" AND ");
+        }
+
+        if (partOfWithQ) {
+            whereSQL.setLength(whereSQL.length() - 5);
+            return whereSQL;
         }
 
         ArrayList<String> nodeIDS = new ArrayList<>();
@@ -472,34 +460,21 @@ public class MultipleRel extends AbstractTranslation {
                             }
 
                             int posInClause = cR.getPosInClause();
-                            sql.append("n0").append(nodeTableCount).append(".id = ");
+                            whereSQL.append("n0").append(nodeTableCount).append(".id = ");
 
                             if (posInClause == 1) {
-                                sql.append("a.a1");
-                                sql.append(" AND ");
+                                whereSQL.append("a.a1");
+                                whereSQL.append(" AND ");
                             } else {
-                                sql.append(alphabet[posInClause - 2]).append(".").append(alphabet[posInClause - 2])
+                                whereSQL.append(alphabet[posInClause - 2]).append(".").append(alphabet[posInClause - 2])
                                         .append(2);
-                                sql.append(" AND ");
+                                whereSQL.append(" AND ");
                             }
                         }
                         break;
                     default:
                         break;
                 }
-            }
-        }
-
-        if (numRels > 1) {
-            for (int i = 0; i < numRels - 1; i++) {
-                if (i == 0) {
-                    sql.append("a.a1 != b.b2");
-                } else {
-                    sql.append(alphabet[i - 1]).append(".").append(alphabet[i - 1]).append(2);
-                    sql.append(" != ");
-                    sql.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(2);
-                }
-                sql.append(" AND ");
             }
         }
 
@@ -514,39 +489,46 @@ public class MultipleRel extends AbstractTranslation {
                 if (indices[0] == 0) a = "a.a1";
                 else a = alphabet[indices[0] - 1] + "." + alphabet[indices[0] - 1] + "2";
                 b = alphabet[indices[1] - 1] + "." + alphabet[indices[1] - 1] + "2";
-                sql.append(a).append(" = ").append(b).append(" AND ");
+                whereSQL.append(a).append(" = ").append(b).append(" AND ");
 
                 // EXPERIMENTAL LOGIC!
                 if (numRels > indices[1]) {
-                    indices[0]++;
-                    indices[1]++;
-                    a = alphabet[indices[0] - 1] + "." + alphabet[indices[0] - 1] + "2";
-                    b = alphabet[indices[1] - 1] + "." + alphabet[indices[1] - 1] + "2";
-                    sql.append(a).append(" != ").append(b).append(" AND ");
+                    a = alphabet[indices[0]] + "." + alphabet[indices[0]] + "2";
+                    b = alphabet[indices[1]] + "." + alphabet[indices[1]] + "2";
+                    whereSQL.append(a).append(" != ").append(b).append(" AND ");
                 }
             }
         }
 
-        if (sql.toString().endsWith(" AND ")) sql.setLength(sql.length() - 5);
-        if (sql.toString().endsWith(" WHERE ")) sql.setLength(sql.length() - 7);
-        return sql;
+        if (whereSQL.toString().endsWith(" AND ")) whereSQL.setLength(whereSQL.length() - 5);
+        if (whereSQL.toString().endsWith(" WHERE ")) whereSQL.setLength(whereSQL.length() - 7);
+        return whereSQL;
     }
 
     @Override
     public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
-        sql = obtainWithClause(sql, decodedQuery.getMc());
-        sql = obtainSelectAndFromClause(decodedQuery.getRc(), decodedQuery.getMc(), sql,
+        StringBuilder withParts = obtainWithClause(decodedQuery.getMc());
+
+        StringBuilder selectAndFrom = obtainSelectAndFromClause(decodedQuery.getRc(), decodedQuery.getMc(),
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
+
+        StringBuilder where = null;
         if (needNodeTable)
-            sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);
+            where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), false);
         else if (!WithSQL.withMapping.isEmpty()) {
             if (decodedQuery.getMc().getRels().size() > 1) {
-                sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), true)
+                where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), true)
                         .append(" AND wA.id = a.a2");
-            } else sql.append(" WHERE wA.id = a.a2");
+            } else {
+                where = new StringBuilder();
+                where.append(" WHERE wA.id = a.a2");
+            }
         } else if (decodedQuery.getMc().getRels().size() > 1)
-            sql = obtainWhereClause(sql, decodedQuery.getRc(), decodedQuery.getMc(), false);
+            where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), false);
+
+        sql.append(withParts).append(selectAndFrom);
+        if (where != null) sql.append(where);
         return sql;
     }
 }

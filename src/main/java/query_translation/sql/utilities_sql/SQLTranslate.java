@@ -46,7 +46,8 @@ public class SQLTranslate {
                 sql = obtainGroupByClause(decodedQuery.getRc(), sql);
         }
 
-        if (decodedQuery.getOc() != null) sql = obtainOrderByClause(decodedQuery.getOc(), decodedQuery.getRc(), sql);
+        if (decodedQuery.getOc() != null)
+            sql = obtainOrderByClause(decodedQuery.getOc(), decodedQuery.getRc(), sql, "n01");
 
         int skipAmount = decodedQuery.getSkipAmount();
         int limitAmount = decodedQuery.getLimitAmount();
@@ -200,7 +201,7 @@ public class SQLTranslate {
         return sql;
     }
 
-    static StringBuilder obtainOrderByClause(OrderClause orderC, ReturnClause rc, StringBuilder sql) {
+    static StringBuilder obtainOrderByClause(OrderClause orderC, ReturnClause rc, StringBuilder sql, String nodeID) {
         sql.append(" ");
         sql.append("ORDER BY ");
 
@@ -212,10 +213,10 @@ public class SQLTranslate {
 
         for (CypOrder cO : orderC.getItems()) {
             if (cO.getField().startsWith("count")) {
-                sql.append("count(n01) ").append(cO.getAscOrDesc()).append(", ");
+                sql.append("count(").append(nodeID).append(")").append(cO.getAscOrDesc()).append(", ");
                 break;
             }
-            sql.append("n0").append("1").append(".").append(cO.getField()).append(" ")
+            sql.append(nodeID).append(".").append(cO.getField()).append(" ")
                     .append(cO.getAscOrDesc());
             sql.append(", ");
         }
