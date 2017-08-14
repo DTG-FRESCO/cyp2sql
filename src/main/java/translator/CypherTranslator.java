@@ -872,7 +872,7 @@ class CypherTranslator {
         else op = "any=";
 
         for (CypNode cN : matchC.getNodes()) {
-            if (cN.getId().equals(idAndProp[0])) {
+            if (cN.getId() != null && cN.getId().equals(idAndProp[0])) {
                 JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], predicateValue, op, not, cW);
                 cN.setProps(obj);
                 return;
@@ -910,7 +910,7 @@ class CypherTranslator {
         String opAndValue[] = idAndValue[1].split(" ");
 
         for (CypNode cN : matchC.getNodes()) {
-            if (cN.getId().equals(id)) {
+            if (cN.getId() != null && cN.getId().equals(id)) {
                 JsonObject obj = addToJSONObject(cN.getProps(), "id", opAndValue[1], opAndValue[0], not, cW);
                 cN.setProps(obj);
                 return;
@@ -944,7 +944,7 @@ class CypherTranslator {
         String[] idAndProp = clause.split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
-            if (cN.getId().equals(idAndProp[0])) {
+            if (cN.getId() != null && cN.getId().equals(idAndProp[0])) {
                 JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], "null", "exists", not, cW);
                 cN.setProps(obj);
                 return;
@@ -979,7 +979,7 @@ class CypherTranslator {
         String val = idAndValue[0].replace("'", "");
 
         for (CypNode cN : matchC.getNodes()) {
-            if (cN.getId().equals(id)) {
+            if (cN.getId() != null && cN.getId().equals(id)) {
                 JsonObject obj = addToJSONObject(cN.getProps(), "label", val, "=", not, cW);
                 cN.setProps(obj);
                 return;
@@ -1004,7 +1004,7 @@ class CypherTranslator {
         String[] idAndProp = idAndValue[0].split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
-            if (cN.getId().equals(idAndProp[0])) {
+            if (cN.getId() != null && cN.getId().equals(idAndProp[0])) {
                 JsonObject obj = addToJSONObject(cN.getProps(), idAndProp[1], idAndValue[1], op, not, cW);
                 cN.setProps(obj);
                 return;

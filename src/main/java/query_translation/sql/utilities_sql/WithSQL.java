@@ -26,7 +26,9 @@ public class WithSQL {
         String resultingView = initial + query.substring(0, query.length() - 1) + ");";
         if (numWith > 0 && withPartDQ.getMc().getRels().size() > 0) {
             String prevView = String.valueOf(alphabet[numWith - 1]);
-            resultingView = resultingView.replace(" WHERE", ", w" + prevView + " WHERE ");
+            int indexLastWhere = resultingView.lastIndexOf("WHERE");
+            resultingView = resultingView.substring(0, indexLastWhere) + ", w" + prevView + " WHERE " +
+                    resultingView.substring(indexLastWhere + 6);
             for (String s : Multiple_With_Cypher.mappingMultipleWith.keySet()) {
                 if (Multiple_With_Cypher.mappingMultipleWith.get(s).endsWith(String.valueOf(alphabet[numWith - 1]).toUpperCase())) {
                     resultingView = resultingView.substring(0, resultingView.length() - 2);

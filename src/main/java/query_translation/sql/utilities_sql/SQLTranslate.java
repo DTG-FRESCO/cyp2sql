@@ -46,8 +46,9 @@ public class SQLTranslate {
                 sql = obtainGroupByClause(decodedQuery.getRc(), sql);
         }
 
-        if (decodedQuery.getOc() != null)
+        if (decodedQuery.getOc() != null) {
             sql = obtainOrderByClause(decodedQuery.getOc(), decodedQuery.getRc(), sql, "n01");
+        }
 
         int skipAmount = decodedQuery.getSkipAmount();
         int limitAmount = decodedQuery.getLimitAmount();

@@ -16,8 +16,10 @@ public class Multiple_With_Cypher extends AbstractConversion {
     @Override
     public String convertQuery(String cypher) {
         mappingMultipleWith = new HashMap<>();
+
         ArrayList<String> withParts = new ArrayList<>();
         String cypherCopy = cypher.toLowerCase();
+
         while (!cypherCopy.isEmpty()) {
             int lastMatchIndex = cypherCopy.lastIndexOf("match");
             withParts.add(cypherCopy.substring(lastMatchIndex, cypherCopy.length() - 1) + ";");
@@ -50,7 +52,9 @@ public class Multiple_With_Cypher extends AbstractConversion {
 
         String letter = String.valueOf(alphabet[numParts - 2]).toUpperCase();
         if (finalPartDQ.getMc().getRels().size() > 0) {
-            finalSQL = finalSQL.replace(" nodes n01, a ", " nodes n01, a, w" + letter);
+            int indexLastWhere = finalSQL.lastIndexOf("WHERE");
+            finalSQL = finalSQL.substring(0, indexLastWhere) + ", w" + letter + " WHERE " +
+                    finalSQL.substring(indexLastWhere + 6);
             finalSQL = finalSQL.substring(0, finalSQL.length() - 1);
             String correctPart = (mappingMultipleWith.keySet().contains(finalPartDQ.getMc().getNodes().get(0).getId()))
                     ? "a.a1" : "a.a2";
