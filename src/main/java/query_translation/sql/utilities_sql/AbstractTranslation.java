@@ -1,6 +1,7 @@
 package query_translation.sql.utilities_sql;
 
 import intermediate_rep.DecodedQuery;
+import production.C2SProperties;
 
 /**
  * For classes that take a DecodedQuery object and convert to SQL, they should extend this class. Included
@@ -12,5 +13,5 @@ abstract class AbstractTranslation {
     static char[] extendID = "123456789".toCharArray();
     static boolean usesOptimalTable = false;
 
-    public abstract StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery);
+    public abstract StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props);
 }

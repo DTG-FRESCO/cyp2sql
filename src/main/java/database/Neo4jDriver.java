@@ -3,9 +3,12 @@ package database;
 import org.neo4j.driver.v1.*;
 import org.neo4j.driver.v1.types.Node;
 import production.C2SMain;
+import production.C2SProperties;
 
-import java.io.*;
-import java.util.ArrayList;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
@@ -25,10 +28,10 @@ public class Neo4jDriver {
      * @param cypher_results File to store the results.
      * @param printOutput    Set to true to store the outputs of the query on disk.
      */
-    public static void run(String query, File cypher_results, boolean printOutput) {
+    public static void run(String query, File cypher_results, boolean printOutput, C2SProperties props) {
         // database essentials
         Driver driver = GraphDatabase.driver("bolt://localhost",
-                AuthTokens.basic(C2SMain.props.getNeoUN(), C2SMain.props.getNeoPW()));
+                AuthTokens.basic(props.getNeoUN(), props.getNeoPW()));
         Session session = driver.session();
 
         // print to file if the result being returned is a count, so that the tool can
@@ -65,7 +68,7 @@ public class Neo4jDriver {
                                 Node n = record.get(key).asNode();
 
                                 for (String s : n.keys()) {
-                                    if (C2SMain.props.getListFields().contains(s)) {
+                                    if (props.getListFields().contains(s)) {
                                         writer.println(s + " : {" + formatVal(n.get(s))
                                                 .toString()
                                                 .replace("[", "")
@@ -73,7 +76,7 @@ public class Neo4jDriver {
                                     } else writer.println(s + " : " + formatVal(n.get(s)));
                                 }
                             } else {
-                                if (C2SMain.props.getListFields().contains(key)) {
+                                if (props.getListFields().contains(key)) {
                                     writer.println(key + " : {" + entry.getValue()
                                             .toString()
                                             .replace("[", "")
@@ -159,53 +162,13 @@ public class Neo4jDriver {
      * Warm up the Neo4J database by running the following query:
      * MATCH (n) OPTIONAL MATCH (n)-[r]-{@literal >}() RETURN count(n.prop) + count(r.prop);
      */
-    public static void warmUp() {
+    public static void warmUp(C2SProperties props) {
         Driver driver = GraphDatabase.driver("bolt://localhost",
-                AuthTokens.basic(C2SMain.props.getNeoUN(), C2SMain.props.getNeoPW()));
+                AuthTokens.basic(props.getNeoUN(), props.getNeoPW()));
         Session session = driver.session();
         String warm_up_query = "MATCH (n) OPTIONAL MATCH (n)-[r]->() RETURN count(n.prop) + count(r.prop);";
         session.run(warm_up_query).consume();
         session.close();
         driver.close();
-    }
-
-
-    /**
-     * Erase contents of this file to reset the SSL settings for Neo4J. This might be a Windows issue only.
-     */
-    public static void resetSSLNeo4J() {
-        // need to work out a more general way of locating this file...
-        String file = "C:/Users/ocraw/.neo4j/known_hosts";
-
-        ArrayList<String> contents = new ArrayList<>();
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-            String line;
-            while ((line = br.readLine()) != null) {
-                contents.add(line);
-            }
-            br.close();
-            fis.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        FileOutputStream fos;
-        try {
-            fos = new FileOutputStream(file);
-
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-            for (String s : contents) {
-                if (s.startsWith("#")) {
-                    bw.write(s);
-                    bw.newLine();
-                }
-            }
-            bw.close();
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

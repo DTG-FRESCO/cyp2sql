@@ -3,7 +3,7 @@ package schema_conversion;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import production.C2SMain;
+import production.C2SProperties;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -21,6 +21,7 @@ class PerformWork implements Runnable {
     private ArrayList<String> lines;
     private BufferedWriter bwNodes;
     private BufferedWriter bwEdges;
+    private C2SProperties propsX;
 
     /**
      * Constructor for setting up a worker thread.
@@ -29,8 +30,9 @@ class PerformWork implements Runnable {
      * @param file    Index (letter/char) of file to store results from this thread. File should be a single
      *                letter such as a, b, or c.
      */
-    PerformWork(ArrayList<String> strings, String file) {
+    PerformWork(ArrayList<String> strings, String file, C2SProperties props) {
         this.lines = strings;
+        this.propsX = props;
 
         FileOutputStream fosNodes;
         FileOutputStream fosEdges;
@@ -132,7 +134,7 @@ class PerformWork implements Runnable {
                     !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " BIGINT") &&
                     !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " TEXT[]")) {
                 String textToAdd = entry.getKey() + " " + type;
-                if (C2SMain.props.getListFields().contains(entry.getKey()))
+                if (propsX.getListFields().contains(entry.getKey()))
                     textToAdd = textToAdd + "[]";
                 SchemaConvert.edgesRelLabels.add(textToAdd);
             }
@@ -173,7 +175,7 @@ class PerformWork implements Runnable {
         JsonObject o = (JsonObject) SchemaConvert.parser.parse(props.substring(0, props.length() - 1));
 
         // For each possible key that *may* contain a list...
-        for (String l : C2SMain.props.getListFields()) {
+        for (String l : propsX.getListFields()) {
             if (o.has(l) && !o.get(l).isJsonArray()) {
                 String list_val = o.get(l).getAsString();
                 JsonArray j_array = new JsonArray();

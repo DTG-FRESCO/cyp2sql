@@ -1,6 +1,7 @@
 package database.postgres;
 
 import production.C2SMain;
+import production.C2SProperties;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,10 +26,10 @@ public class PostgresDriver {
      *
      * @param dbName Name of the database to connect to.
      */
-    static void createConnection(String dbName) {
+    static void createConnection(String dbName, C2SProperties props) {
         try {
-            String sqlDBUsername = C2SMain.props.getPostUN();
-            String sqlDBPassword = C2SMain.props.getPostPW();
+            String sqlDBUsername = props.getPostUN();
+            String sqlDBPassword = props.getPostPW();
             Class.forName("org.postgresql.Driver");
             c = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + dbName, sqlDBUsername,
                     sqlDBPassword);
@@ -60,8 +61,8 @@ public class PostgresDriver {
      * @param dbName Database name to execute on.
      * @throws SQLException Error with the SQL query being executed.
      */
-    public static void executeCreateView(String query, String dbName) throws SQLException {
-        if (!DB_OPEN) PostgresDriver.createConnection(dbName);
+    public static void executeCreateView(String query, String dbName, C2SProperties props) throws SQLException {
+        if (!DB_OPEN) PostgresDriver.createConnection(dbName, props);
         Statement stmt = c.createStatement();
 
         // timing unit for creating statements.
@@ -82,9 +83,9 @@ public class PostgresDriver {
      * @param printOutput Set to true if the output of the SQL statement should be stored in a local file.
      * @throws SQLException Thrown if there is an error in the SQL statement.
      */
-    public static void select(String query, String database, File pg_results, boolean printOutput)
+    public static void select(String query, String database, File pg_results, boolean printOutput, C2SProperties props)
             throws SQLException {
-        if (!DB_OPEN) PostgresDriver.createConnection(database);
+        if (!DB_OPEN) PostgresDriver.createConnection(database, props);
         Statement stmt;
         stmt = c.createStatement();
 
@@ -191,8 +192,8 @@ public class PostgresDriver {
      * @param dbName Database name of the database to execute the statement on.
      * @throws SQLException Error with the transaction.
      */
-    public static void insertOrDelete(String query, String dbName) throws SQLException {
-        if (!DB_OPEN) createConnection(dbName);
+    public static void insertOrDelete(String query, String dbName, C2SProperties props) throws SQLException {
+        if (!DB_OPEN) createConnection(dbName, props);
         Statement stmt = c.createStatement();
 
         // timing unit for creating statements.

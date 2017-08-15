@@ -25,14 +25,14 @@ class C2SBenchmark {
      */
     boolean queryTest(String originalCypherInput, File f_cypher, File f_sql, String dbName, String propsLocation) {
         // setup the translation tool
-        C2SMain.props = new C2SProperties(propsLocation);
+        C2SProperties props = new C2SProperties(propsLocation);
         C2SMain.printBool = true;
-        C2SMain.getLabelMapping();
-        C2SMain.warmUpResetSSL();
+        C2SMain.getLabelMapping(props);
+        C2SMain.warmUpResetSSL(props);
 
         // translate the Cypher
         try {
-            C2SMain.translateCypherToSQL(originalCypherInput, f_cypher, f_sql, dbName, true);
+            C2SMain.translateCypherToSQL(originalCypherInput, f_cypher, f_sql, dbName, true, props);
         } catch (Exception e) {
             System.err.println("*** Error with the last query... ***");
             e.printStackTrace();

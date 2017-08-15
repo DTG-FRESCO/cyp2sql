@@ -1,5 +1,60 @@
 # Cypher to SQL Translation (Cyp2SQL)
 
+## Quick Usage
+To use this tool without going near the code, include the .jar in your classpath and use the tool as indicated by the tutorial below:
+
+```java
+import database.postgres.InsertSchemaPostgres;
+import production.C2SMain;
+import production.C2SProperties;
+import schema_conversion.SchemaConvert;
+
+import java.io.IOException;
+
+public class C2STestUsage {
+    public static void main(String args[]) {
+        // these need to be set before anything can occur.
+        String propsFile = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/c2s_props.properties";
+        C2SProperties props = new C2SProperties(propsFile);
+
+        // name of the blank database to either:
+        //     - convert the schema too
+        //     - execute the translated Cypher on
+        String dbName = "testb";
+
+        String thingToDo = "translate";
+
+        switch (thingToDo) {
+            case "convert":
+                // the properties file needs to be edited first with all the correct values.
+                // a dump from Neo4j is also needed.
+                boolean successConvert = SchemaConvert.translate(props);
+                if (successConvert) InsertSchemaPostgres.executeSchemaChange(dbName, props);
+                break;
+            case "translate":
+                // location of the script to allow results from Postgres to be piped back 
+                // to this class. View and adapt the scripts if necessary.
+                String scriptLoc = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/pgdbPlay.bat";
+
+                // Cypher query to translate and then execute.
+                String cypher = "MATCH (n) RETURN count(n);";
+
+                try {
+                    String sql = C2SMain.getTranslation(cypher, props);
+                    String postgresOutput = C2SMain.runPostgres(sql, dbName, scriptLoc);
+                    System.out.println(postgresOutput);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+            default:
+                System.err.println("Not a valid option...");
+                System.exit(1);
+        }
+    }
+}
+```
+
 ## Installation
 
 1. Clone the repository. 
@@ -14,9 +69,9 @@ the existing Neo4j graph that *may* handle values of type list.
 
 The properties file, `c2s_props.properties` then needs to be edited with the correct details (view the main documentation for more information).
 
-A new, blank database in Postgres should also be setup.
+A new, blank database in Postgres should also be setup. For the results from Postgres to be placed into the console, a password may need to be entered into a local Postgres config file - https://www.postgresql.org/docs/8.3/static/libpq-pgpass.html provides more information. 
 
-###Obtaining a dump from an existing Neo4j graph
+### Obtaining a dump from an existing Neo4j graph
 The path should point to the folder containing the Neo4j graph. For Windows:
 
 ```

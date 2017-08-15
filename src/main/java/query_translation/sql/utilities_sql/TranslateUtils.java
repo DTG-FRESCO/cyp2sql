@@ -7,6 +7,7 @@ import intermediate_rep.CypRel;
 import intermediate_rep.CypReturn;
 import intermediate_rep.ReturnClause;
 import production.C2SMain;
+import production.C2SProperties;
 import query_translation.sql.conversion_types.Multiple_With_Cypher;
 
 import java.io.BufferedReader;
@@ -240,7 +241,7 @@ class TranslateUtils {
         return stmt;
     }
 
-    static String getLabelType(String type) {
+    static String getLabelType(String type, C2SProperties props) {
         if (type == null) return "nodes";
 
         // nodes is the default table with all the data inside it.
@@ -252,7 +253,7 @@ class TranslateUtils {
         int changed = 0;
 
         try {
-            fis = new FileInputStream(C2SMain.props.getWspace() + "/meta_labelNames.txt");
+            fis = new FileInputStream(props.getWspace() + "/meta_labelNames.txt");
             br = new BufferedReader(new InputStreamReader(fis));
             String line;
             while ((line = br.readLine()) != null) {

@@ -1,6 +1,7 @@
 package query_translation.sql.utilities_sql;
 
 import intermediate_rep.*;
+import production.C2SProperties;
 
 import java.util.Map;
 
@@ -131,7 +132,7 @@ public class ShortestPath extends AbstractTranslation {
     }
 
     @Override
-    public StringBuilder translate(StringBuilder shortPath, DecodedQuery dQMainPath) {
+    public StringBuilder translate(StringBuilder shortPath, DecodedQuery dQMainPath, C2SProperties props) {
         shortPath.append("WITH a AS(SELECT unnest(rightnode) AS xx, 1 AS Depth, ARRAY[id] AS Path, id AS Start ");
         shortPath.append("FROM adjList_from INNER JOIN ");
 

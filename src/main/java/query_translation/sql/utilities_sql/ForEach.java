@@ -2,13 +2,14 @@ package query_translation.sql.utilities_sql;
 
 import intermediate_rep.CypForEach;
 import intermediate_rep.DecodedQuery;
+import production.C2SProperties;
 
 /**
  * Method for translating Cypher with FOREACH into SQL.
  */
 public class ForEach extends AbstractTranslation {
     @Override
-    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
+    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) {
         String oldSelect = decodedQuery.getSqlEquiv();
         CypForEach cfe = decodedQuery.getForEachC();
 

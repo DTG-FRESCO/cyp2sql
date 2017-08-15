@@ -2,6 +2,7 @@ package query_translation.sql.conversion_types;
 
 import intermediate_rep.DecodedQuery;
 import production.C2SMain;
+import production.C2SProperties;
 import query_translation.sql.utilities_sql.SQLTranslate;
 import query_translation.sql.utilities_sql.UnionSQL;
 import translator.CypherTokenizer;
@@ -20,7 +21,7 @@ public abstract class AbstractConversion {
      * @param cypher Original Cypher query to translate.
      * @return DecodedQuery object containing all the necessary intermediate representation of the Cypher input.
      */
-    public static DecodedQuery convertCypherToSQL(String cypher) {
+    public static DecodedQuery convertCypherToSQL(String cypher, C2SProperties props) {
         // A DecodedQuery object stores the intermediate representation of the Cypher input.
         // In theory, this same DecodedQuery object could then be translated to different backend implementations.
         DecodedQuery dQ = null;
@@ -32,7 +33,7 @@ public abstract class AbstractConversion {
 
                 for (String s : queries) {
                     dQ = CypherTokenizer.decode(s, false);
-                    unionSQL.add(SQLTranslate.translateRead(dQ));
+                    unionSQL.add(SQLTranslate.translateRead(dQ, props));
                 }
 
                 dQ.setSqlEquiv(UnionSQL.genUnion(unionSQL, "UNION ALL"));
@@ -42,7 +43,7 @@ public abstract class AbstractConversion {
 
                 for (String s : queries) {
                     dQ = CypherTokenizer.decode(s, false);
-                    unionSQL.add(SQLTranslate.translateRead(dQ));
+                    unionSQL.add(SQLTranslate.translateRead(dQ, props));
                 }
 
                 dQ.setSqlEquiv(UnionSQL.genUnion(unionSQL, "UNION"));
@@ -51,7 +52,7 @@ public abstract class AbstractConversion {
 
                 if (dQ.getRc() != null) {
                     // the translation is for a read query.
-                    dQ.setSqlEquiv(SQLTranslate.translateRead(dQ));
+                    dQ.setSqlEquiv(SQLTranslate.translateRead(dQ, props));
                 } else {
                     if (dQ.getCypherAdditionalInfo().hasDelete()) {
                         // the translation is a delete query.
@@ -70,5 +71,5 @@ public abstract class AbstractConversion {
         return dQ;
     }
 
-    public abstract String convertQuery(String cypher);
+    public abstract String convertQuery(String cypher, C2SProperties props);
 }

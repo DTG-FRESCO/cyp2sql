@@ -25,26 +25,19 @@ public class C2SMain {
     public static final Map<String, String> labelProps = new HashMap<>();
     // for use in deleting relationships attached to nodes
     public static final ArrayList<String> allRelTypes = new ArrayList<>();
-
-    public static C2SProperties props;
+    private static final String OS = System.getProperty("os.name").toLowerCase();
     public static int numResultsNeo4j;
     public static int numResultsPostgres;
-
     // stores the current DecodedQuery object so that the Cypher results module can use it,
     // without having to rerun computation.
     public static DecodedQuery currentDQ = null;
-
     // static variable set by the translation unit if the ID needs to be returned from the Postgres database
     // by default it is set to false as this is the same logic as Neo4j
     public static boolean needToPrintID = false;
-
     // variable set at the command line to turn on/off printing to a file the results of a read query.
     static boolean printBool = false;
-
     // cache for previously successful queries (saves time and computation doing repetitive work).
     private static Map<String, String> cache = new HashMap<>();
-
-    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     /**
      * {@literal <}-schema|-translate|-s|-t{@literal >}
@@ -60,7 +53,7 @@ public class C2SMain {
         else if ((args[0].equals("-t") || args[0].equals("-translate")) && args.length != 4) printError(2);
 
         // obtain properties for the program from the properties file.
-        props = new C2SProperties(args[1]);
+        C2SProperties props = new C2SProperties(args[1]);
 
         // find out the database being used, based on the argument from the command line.
         String dbName = args[2];
@@ -70,12 +63,12 @@ public class C2SMain {
             case "-schema":
             case "-s":
                 // perform the schema translation
-                convertGraphSchema(props.getNeo4jSchema(), dbName);
+                convertGraphSchema(dbName, props);
                 break;
             case "-translate":
             case "-t":
-                getLabelMapping();
-                warmUpResetSSL();
+                getLabelMapping(props);
+                warmUpResetSSL(props);
 
                 // create file objects to store results of the file.
                 File f_cypher = new File(props.getNeo4jRes());
@@ -86,14 +79,14 @@ public class C2SMain {
                 switch (args[3]) {
                     case "-dp":
                         printBool = true;
-                        C2SInteractive.run_debug(f_cypher, f_sql, dbName);
+                        C2SInteractive.run_debug(f_cypher, f_sql, dbName, props);
                         break;
                     case "-dn":
                         printBool = false;
-                        C2SInteractive.run_debug(f_cypher, f_sql, dbName);
+                        C2SInteractive.run_debug(f_cypher, f_sql, dbName, props);
                         break;
                     case "-r":
-                        C2SInteractive.run(dbName);
+                        C2SInteractive.run(dbName, props);
                         break;
                     default:
                         printError(3);
@@ -114,8 +107,10 @@ public class C2SMain {
      * <p>
      * - Secondly, it reads in all the possible types of relationships
      * (used for example when deleting nodes from the relational schema).
+     *
+     * @param props
      */
-    static void getLabelMapping() {
+    static void getLabelMapping(C2SProperties props) {
         // open file and read in property keys, removing duplicates as they are of no use.
         FileInputStream fis;
         try {
@@ -165,15 +160,15 @@ public class C2SMain {
      * also, if there is an SSL issue when changing databases, attempt to fix it by running
      * some fix up code.
      */
-    static void warmUpResetSSL() {
+    static void warmUpResetSSL(C2SProperties props) {
         try {
-            Neo4jDriver.warmUp();
+            Neo4jDriver.warmUp(props);
         } catch (ClientException ce) {
             if (ce.getMessage().contains("SSLEngine problem")) {
                 System.out.println("Resetting Neo4j SSL properties...");
                 // Neo4jDriver.resetSSLNeo4J();
                 System.out.println("Reset complete.");
-                Neo4jDriver.warmUp();
+                Neo4jDriver.warmUp(props);
             }
         } catch (ServiceUnavailableException unavail) {
             System.err.println("*** Make sure the Neo4j database is up and running correctly. ***");
@@ -219,22 +214,32 @@ public class C2SMain {
      * Converting a 'dump' from an existing Neo4j graph into a relational schema, before executing
      * on a relational backend.
      *
-     * @param neo4jSchema  The 'dump' file being converted. This location is set in the properties file,
-     *                     under the key 'neo4jSchema'.
      * @param databaseName The name of the database to be used for storing the relational representation.
      */
-    private static void convertGraphSchema(String neo4jSchema, String databaseName) {
+    private static void convertGraphSchema(String databaseName, C2SProperties props) {
         System.out.println("\n***CONVERTING THE SCHEMA***\n");
-        boolean successfulConversion = SchemaConvert.translate(neo4jSchema);
+        boolean successfulConversion = SchemaConvert.translate(props);
         if (successfulConversion) {
             System.out.println("\n***INSERTING THE SCHEMA TO THE DATABASE***\n");
-            InsertSchemaPostgres.executeSchemaChange(databaseName);
+            InsertSchemaPostgres.executeSchemaChange(databaseName, props);
             // KeyValueTest.executeSchemaChange();
         } else {
             // error in the schema conversion - exits the application.
             System.err.println("Conversion of the graph schema to a relational form has failed.");
             System.exit(1);
         }
+    }
+
+    private static String runPostgres(String sql, String dbName) throws IOException {
+        String scriptLocation;
+
+        // deduce the correct OS, and from this, the correct .bat/shell file to execute.
+        if (isWindows())
+            scriptLocation = System.getProperty("user.dir") + "/pgdbPlay.bat";
+        else
+            scriptLocation = System.getProperty("user.dir") + "/auto_run_pg.sh";
+
+        return runPostgres(sql, dbName, scriptLocation);
     }
 
     /**
@@ -246,15 +251,7 @@ public class C2SMain {
      * @param dbName Name of the relational database for the query to be executed on.
      * @throws IOException Some issue with the Buffered Reader object.
      */
-    private static void runDirectPG(String sql, String dbName) throws IOException {
-        String scriptLocation;
-
-        // deduce the correct OS, and from this, the correct .bat/shell file to execute.
-        if (isWindows())
-            scriptLocation = System.getProperty("user.dir") + "/pgdbPlay.bat";
-        else
-            scriptLocation = System.getProperty("user.dir") + "/auto_run_pg.sh";
-
+    public static String runPostgres(String sql, String dbName, String scriptLocation) throws IOException {
         // run the script with two arguments - see the code in the scripts for more information.
         ProcessBuilder b = new ProcessBuilder(scriptLocation, dbName, sql);
 
@@ -269,7 +266,8 @@ public class C2SMain {
             builder.append(line);
             builder.append(System.getProperty("line.separator"));
         }
-        System.out.println(builder.toString());
+
+        return builder.toString();
     }
 
 
@@ -286,37 +284,17 @@ public class C2SMain {
      *                    back to this tool.
      * @throws Exception Something didn't go to plan...
      */
-    static void translateCypherToSQL(String cypherInput, File f_cypher, File f_pg, String dbName, boolean execNeo4j)
+    static void translateCypherToSQL(String cypherInput, File f_cypher, File f_pg, String dbName, boolean execNeo4j,
+                                     C2SProperties props)
             throws Exception {
         String sql;
 
         // either calculate the SQL or retrieve from a cache of valid translations.
         if (cache.containsKey(cypherInput)) sql = cache.get(cypherInput);
-        else {
-            if (cypherInput.toLowerCase().contains(" foreach ")) {
-                ForEach_Cypher fe = new ForEach_Cypher();
-                sql = fe.convertQuery(cypherInput);
-            } else if (cypherInput.toLowerCase().contains(" with ")) {
-                if (cypherInput.toLowerCase().split(" with ").length > 2) {
-                    Multiple_With_Cypher mwc = new Multiple_With_Cypher();
-                    sql = mwc.convertQuery(cypherInput);
-                } else {
-                    With_Cypher wc = new With_Cypher();
-                    sql = wc.convertQuery(cypherInput);
-                }
-            } else if (cypherInput.toLowerCase().contains("shortestpath")) {
-                SP_Cypher spc = new SP_Cypher();
-                sql = spc.convertQuery(cypherInput);
-            } else if (cypherInput.toLowerCase().contains("iterate")) {
-                Iterate_Cypher ic = new Iterate_Cypher();
-                sql = ic.convertQuery(cypherInput);
-            } else {
-                sql = AbstractConversion.convertCypherToSQL(cypherInput).getSqlEquiv();
-            }
-        }
+        else sql = getTranslation(cypherInput, props);
 
         if (!execNeo4j) {
-            runDirectPG(sql, dbName);
+            System.out.println(runPostgres(sql, dbName));
             // cache.put(cypherInput, sql);
             resetExecTimes();
             return;
@@ -324,12 +302,13 @@ public class C2SMain {
 
         boolean sqlExecSuccess;
         if (sql != null && !sql.isEmpty()) {
-            sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypherInput.toLowerCase().contains("count")), dbName);
+            sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypherInput.toLowerCase().contains("count")),
+                    dbName, props);
         } else throw new Exception("Conversion of SQL failed");
 
         // All the Cypher queries other than the extension
         if (!cypherInput.toLowerCase().contains("iterate"))
-            Neo4jDriver.run(cypherInput, f_cypher, printBool);
+            Neo4jDriver.run(cypherInput, f_cypher, printBool, props);
 
         // validate the results
         boolean fileSame = false;
@@ -369,18 +348,19 @@ public class C2SMain {
      * @param dbName      Name of the database the SQL will be executed on.
      * @return True if the execution on Postgres was successful, false otherwise.
      */
-    private static boolean executeSQL(String sql, File pg_results, boolean printOutput, String dbName) {
+    private static boolean executeSQL(String sql, File pg_results, boolean printOutput, String dbName,
+                                      C2SProperties props) {
         try {
             String indivSQL[] = sql.split(";");
             for (String q : indivSQL) {
                 if (q.trim().startsWith("CREATE")) {
-                    PostgresDriver.executeCreateView(q + ";", dbName);
+                    PostgresDriver.executeCreateView(q + ";", dbName, props);
                 } else if (q.trim().startsWith("INSERT")) {
-                    PostgresDriver.insertOrDelete(q + ";", dbName);
+                    PostgresDriver.insertOrDelete(q + ";", dbName, props);
                 } else if (q.trim().startsWith("DELETE")) {
-                    PostgresDriver.insertOrDelete(q + ";", dbName);
+                    PostgresDriver.insertOrDelete(q + ";", dbName, props);
                 } else
-                    PostgresDriver.select(q + ";", dbName, pg_results, printOutput);
+                    PostgresDriver.select(q + ";", dbName, pg_results, printOutput, props);
             }
         } catch (SQLException e) {
             System.out.println("FAILED IN executeSQL -- " + sql);
@@ -453,7 +433,30 @@ public class C2SMain {
      *
      * @return True if the OS is Unix based; false otherwise.
      */
-    public static boolean isUnix() {
+    private static boolean isUnix() {
         return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
+    }
+
+    public static String getTranslation(String cypherInput, C2SProperties props) {
+        if (cypherInput.toLowerCase().contains(" foreach ")) {
+            ForEach_Cypher fe = new ForEach_Cypher();
+            return fe.convertQuery(cypherInput, props);
+        } else if (cypherInput.toLowerCase().contains(" with ")) {
+            if (cypherInput.toLowerCase().split(" with ").length > 2) {
+                Multiple_With_Cypher mwc = new Multiple_With_Cypher();
+                return mwc.convertQuery(cypherInput, props);
+            } else {
+                With_Cypher wc = new With_Cypher();
+                return wc.convertQuery(cypherInput, props);
+            }
+        } else if (cypherInput.toLowerCase().contains("shortestpath")) {
+            SP_Cypher spc = new SP_Cypher();
+            return spc.convertQuery(cypherInput, props);
+        } else if (cypherInput.toLowerCase().contains("iterate")) {
+            Iterate_Cypher ic = new Iterate_Cypher();
+            return ic.convertQuery(cypherInput, props);
+        } else {
+            return AbstractConversion.convertCypherToSQL(cypherInput, props).getSqlEquiv();
+        }
     }
 }

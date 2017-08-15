@@ -1,6 +1,7 @@
 package query_translation.sql.utilities_sql;
 
 import intermediate_rep.*;
+import production.C2SProperties;
 
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class SingleVar extends AbstractTranslation {
     }
 
     @Override
-    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
+    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) {
         MatchClause matchC = decodedQuery.getMc();
 
         String direction = "none";
@@ -107,7 +108,7 @@ public class SingleVar extends AbstractTranslation {
 
                 if (i == 0) {
                     // use node data
-                    String relToUse = TranslateUtils.getLabelType(cN1.getType());
+                    String relToUse = TranslateUtils.getLabelType(cN1.getType(), props);
                     sql.append(relToUse).append(" zz ON leftnode = zz.id");
                     if (cN1.getProps() != null) {
                         sql.append(" WHERE ");

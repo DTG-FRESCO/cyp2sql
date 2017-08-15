@@ -2,6 +2,7 @@ package query_translation.sql.utilities_sql;
 
 import intermediate_rep.*;
 import production.C2SMain;
+import production.C2SProperties;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -22,7 +23,7 @@ import static intermediate_rep.CypCount.COUNT_FALSE;
  * Agnostic to the methods above is appending the ORDER BY, GROUP BY, LIMIT and SKIP elements.
  */
 public class SQLTranslate {
-    public static String translateRead(DecodedQuery decodedQuery) throws Exception {
+    public static String translateRead(DecodedQuery decodedQuery, C2SProperties props) throws Exception {
         // SQL built up from a StringBuilder object.
         StringBuilder sql = new StringBuilder();
 
@@ -35,15 +36,15 @@ public class SQLTranslate {
         // - queries with multiple relationships in (excluding multiple variable length path options).
         if (decodedQuery.getMc().getRels().isEmpty()) {
             NoRels nr = new NoRels();
-            sql = nr.translate(sql, decodedQuery);
+            sql = nr.translate(sql, decodedQuery, props);
         } else if (decodedQuery.getMc().isVarRel() && decodedQuery.getMc().getRels().size() == 1) {
             SingleVar singleV = new SingleVar();
-            sql = singleV.translate(sql, decodedQuery);
+            sql = singleV.translate(sql, decodedQuery, props);
         } else {
             MultipleRel mr = new MultipleRel();
-            sql = mr.translate(sql, decodedQuery);
+            sql = mr.translate(sql, decodedQuery, props);
             if (decodedQuery.getCypherAdditionalInfo().hasCount() && decodedQuery.getRc().getItems().size() > 1)
-                sql = obtainGroupByClause(decodedQuery.getRc(), sql);
+                sql = obtainGroupByClause(decodedQuery.getRc(), sql, props);
         }
 
         if (decodedQuery.getOc() != null) {
@@ -230,12 +231,14 @@ public class SQLTranslate {
      * Appends GROUP BY clause to query. This is needed if COUNT is used.
      * Note - not entirely sure logic is correct for this method, needs more testing.
      *
-     * @param rc  Return Clause of the Cypher query.
-     * @param sql Query before GROUP BY
+     * @param rc    Return Clause of the Cypher query.
+     * @param sql   Query before GROUP BY
+     * @param props Properties file (see C2S_props.properties for further details).
      * @return Query after GROUP BY
      * @throws IOException Error reading the associated metafile from the workarea location.
      */
-    private static StringBuilder obtainGroupByClause(ReturnClause rc, StringBuilder sql) throws IOException {
+    private static StringBuilder obtainGroupByClause(ReturnClause rc, StringBuilder sql,
+                                                     C2SProperties props) throws IOException {
         sql.append(" GROUP BY ");
 
         int nodeTableCount = 0;
@@ -250,7 +253,7 @@ public class SQLTranslate {
             if (cR.getField() != null && cR.getCount() == COUNT_FALSE) {
                 sql.append("n0").append(nodeTableCount).append(".").append(cR.getField()).append(", ");
             } else if (cR.getCount() == COUNT_FALSE) {
-                FileInputStream fis = new FileInputStream(C2SMain.props.getWspace() + "/meta_nodeProps.txt");
+                FileInputStream fis = new FileInputStream(props.getWspace() + "/meta_nodeProps.txt");
                 BufferedReader br = new BufferedReader(new InputStreamReader(fis));
                 String line;
                 while ((line = br.readLine()) != null) {

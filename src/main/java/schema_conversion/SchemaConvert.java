@@ -1,7 +1,7 @@
 package schema_conversion;
 
 import com.google.gson.JsonParser;
-import production.C2SMain;
+import production.C2SProperties;
 
 import java.io.*;
 import java.util.*;
@@ -31,8 +31,8 @@ public class SchemaConvert {
     public static List<String> relTypes = Collections.synchronizedList(new ArrayList<>());
 
     // workspace area for both nodes and edges
-    public static String nodesFile = C2SMain.props.getWspace() + "/nodes.txt";
-    public static String edgesFile = C2SMain.props.getWspace() + "/edges.txt";
+    public static String nodesFile;
+    public static String edgesFile;
 
     // JSON Parser for creating JSON objects from the text files.
     static JsonParser parser = new JsonParser();
@@ -50,14 +50,17 @@ public class SchemaConvert {
     /**
      * Main method for translating the schema.
      *
-     * @param file The dump file to be parsed and converted.
      * @return True if the conversion of the dump file to a more manageable form for inserting into the target
      * database was successful; false otherwise.
      */
-    public static boolean translate(String file) {
+    public static boolean translate(C2SProperties props) {
+        nodesFile = props.getWspace() + "/nodes.txt";
+        edgesFile = props.getWspace() + "/edges.txt";
+
         // perform initial preprocess of the file to remove content such as new file markers
         // and other aspects that will break the schema converter.
         // return number of lines if no issue, else -1
+        String file = props.getNeo4jSchema();
         int count = performPreProcessFile(file);
         if (count == -1) return false;
         boolean success = true;
@@ -105,7 +108,7 @@ public class SchemaConvert {
 
             Thread[] ts = new Thread[segments];
             for (int i = 0; i < ts.length; i++) {
-                ts[i] = new Thread(new PerformWork(group[i], files[i]));
+                ts[i] = new Thread(new PerformWork(group[i], files[i], props));
             }
 
             System.out.println("***PARSING***");

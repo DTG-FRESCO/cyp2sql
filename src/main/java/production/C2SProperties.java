@@ -32,7 +32,7 @@ public class C2SProperties {
      *
      * @param fileLocation File location of the c2s_props.properties file.
      */
-    C2SProperties(String fileLocation) {
+    public C2SProperties(String fileLocation) {
         setPropsLocation(fileLocation);
         getLocalProperties();
     }
@@ -72,7 +72,7 @@ public class C2SProperties {
         this.propsLocation = propsLocation;
     }
 
-    String getNeo4jSchema() {
+    public String getNeo4jSchema() {
         return neo4jSchema;
     }
 

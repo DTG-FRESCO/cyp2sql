@@ -3,6 +3,7 @@ package query_translation.sql.utilities_sql;
 import intermediate_rep.CypAggFuncs;
 import intermediate_rep.CypReturn;
 import intermediate_rep.DecodedQuery;
+import production.C2SProperties;
 import query_translation.sql.conversion_types.AbstractConversion;
 import query_translation.sql.conversion_types.Multiple_With_Cypher;
 import translator.CypherTokenizer;
@@ -183,18 +184,18 @@ public class WithSQL {
         return sWith.toString();
     }
 
-    public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith) {
+    public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith, C2SProperties props) {
         withMapping.put(dqFirstWith.getRc().getItems().get(0).getNodeID(), "wA");
 
         StringBuilder resSecWith = new StringBuilder();
-        DecodedQuery dQSecWith = AbstractConversion.convertCypherToSQL(secondWith);
+        DecodedQuery dQSecWith = AbstractConversion.convertCypherToSQL(secondWith, props);
 
         if (dQSecWith.getMc().getRels().isEmpty()) {
             NoRels nr = new NoRels();
-            resSecWith = nr.translate(resSecWith, dQSecWith);
+            resSecWith = nr.translate(resSecWith, dQSecWith, props);
         } else {
             MultipleRel mr = new MultipleRel();
-            resSecWith = mr.translate(resSecWith, dQSecWith);
+            resSecWith = mr.translate(resSecWith, dQSecWith, props);
         }
 
         if (dQSecWith.getOc() != null)

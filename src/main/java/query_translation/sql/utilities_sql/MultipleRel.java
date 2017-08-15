@@ -2,6 +2,7 @@ package query_translation.sql.utilities_sql;
 
 import com.google.gson.JsonObject;
 import intermediate_rep.*;
+import production.C2SProperties;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -18,7 +19,7 @@ public class MultipleRel extends AbstractTranslation {
      * @param matchC Match Clause of the original Cypher query.
      * @return New SQL.
      */
-    private static StringBuilder obtainWithClause(MatchClause matchC) {
+    private static StringBuilder obtainWithClause(MatchClause matchC, C2SProperties props) {
         StringBuilder withSQL = new StringBuilder();
         withSQL.append("WITH ");
 
@@ -36,8 +37,8 @@ public class MultipleRel extends AbstractTranslation {
             int posInClause = cR.getPosInClause();
             CypNode c1 = matchC.getNodes().get(posInClause - 1);
             CypNode c2 = matchC.getNodes().get(posInClause);
-            String labelC1 = TranslateUtils.getLabelType(c1.getType());
-            String labelC2 = TranslateUtils.getLabelType(c2.getType());
+            String labelC1 = TranslateUtils.getLabelType(c1.getType(), props);
+            String labelC2 = TranslateUtils.getLabelType(c2.getType(), props);
 
             String typeRel = cR.getType();
             if (typeRel == null) {
@@ -524,8 +525,8 @@ public class MultipleRel extends AbstractTranslation {
     }
 
     @Override
-    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
-        StringBuilder withParts = obtainWithClause(decodedQuery.getMc());
+    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) {
+        StringBuilder withParts = obtainWithClause(decodedQuery.getMc(), props);
 
         StringBuilder selectAndFrom = obtainSelectAndFromClause(decodedQuery.getRc(), decodedQuery.getMc(),
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),

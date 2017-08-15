@@ -1,6 +1,7 @@
 package query_translation.sql.utilities_sql;
 
 import intermediate_rep.*;
+import production.C2SProperties;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -84,11 +85,11 @@ public class NoRels extends AbstractTranslation {
         return selectSQL;
     }
 
-    private static StringBuilder getFrom(MatchClause mc, ReturnClause rc) {
+    private static StringBuilder getFrom(MatchClause mc, ReturnClause rc, C2SProperties props) {
         StringBuilder fromSQL = new StringBuilder();
 
         fromSQL.append("FROM ");
-        String table = TranslateUtils.getLabelType(mc.getNodes().get(0).getType());
+        String table = TranslateUtils.getLabelType(mc.getNodes().get(0).getType(), props);
 
         if (!table.equals("nodes")) {
             usesOptimalTable = true;
@@ -166,13 +167,13 @@ public class NoRels extends AbstractTranslation {
     }
 
     @Override
-    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery) {
+    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) {
         usesOptimalTable = false;
         StringBuilder select = getSelect(decodedQuery.getRc(), decodedQuery.getMc(),
                 decodedQuery.getCypherAdditionalInfo().hasDistinct(),
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
 
-        StringBuilder from = getFrom(decodedQuery.getMc(), decodedQuery.getRc());
+        StringBuilder from = getFrom(decodedQuery.getMc(), decodedQuery.getRc(), props);
         StringBuilder where = getWhere(decodedQuery.getRc(), decodedQuery.getMc());
 
         sql.append(select).append(from).append(where);

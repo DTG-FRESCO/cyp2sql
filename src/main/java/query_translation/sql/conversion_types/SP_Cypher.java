@@ -2,6 +2,7 @@ package query_translation.sql.conversion_types;
 
 import intermediate_rep.DecodedQuery;
 import production.C2SMain;
+import production.C2SProperties;
 import query_translation.sql.utilities_sql.ShortestPath;
 import translator.CypherTokenizer;
 
@@ -10,7 +11,7 @@ import translator.CypherTokenizer;
  */
 public class SP_Cypher extends AbstractConversion {
     @Override
-    public String convertQuery(String cypher) {
+    public String convertQuery(String cypher, C2SProperties props) {
         cypher = cypher.toLowerCase();
         int returnIndex = cypher.indexOf("return");
         int whereIndex = cypher.indexOf("where");
@@ -37,6 +38,6 @@ public class SP_Cypher extends AbstractConversion {
         C2SMain.currentDQ = dQMainPath;
         StringBuilder sql = new StringBuilder();
         ShortestPath sp = new ShortestPath();
-        return sp.translate(sql, dQMainPath).toString();
+        return sp.translate(sql, dQMainPath, props).toString();
     }
 }

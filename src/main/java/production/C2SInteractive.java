@@ -16,7 +16,7 @@ class C2SInteractive {
      * @param f_sql    File object to store the results from Postgres.
      * @param dbName   Name of the relational database that the generated SQL will be executed on.
      */
-    static void run_debug(File f_cypher, File f_sql, String dbName) {
+    static void run_debug(File f_cypher, File f_sql, String dbName, C2SProperties props) {
         System.out.println("PRINT TO FILE : " + ((C2SMain.printBool) ? "enabled" : "disabled"));
         System.out.println("Cypher to SQL Translator Tool v1.0");
         System.out.println("To exit, type :exit.");
@@ -31,7 +31,7 @@ class C2SInteractive {
             if (resp.equals(":exit")) break;
             else {
                 try {
-                    C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, dbName, true);
+                    C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, dbName, true, props);
                 } catch (Exception e) {
                     System.err.println("Error with the last query...");
                     e.printStackTrace();
@@ -46,7 +46,7 @@ class C2SInteractive {
      *
      * @param dbName Name of the relational database that the translated query is to be executed on.
      */
-    static void run(String dbName) {
+    static void run(String dbName, C2SProperties props) {
         System.out.println("Cypher to SQL Translator Tool v1.0");
         System.out.println("To exit, type :exit.");
 
@@ -60,7 +60,7 @@ class C2SInteractive {
             if (resp.equals(":exit")) break;
             else {
                 try {
-                    C2SMain.translateCypherToSQL(resp, null, null, dbName, false);
+                    C2SMain.translateCypherToSQL(resp, null, null, dbName, false, props);
                 } catch (Exception e) {
                     System.err.println("Error with the last query...");
                     e.printStackTrace();

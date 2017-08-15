@@ -3,7 +3,7 @@ package database.postgres;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import production.C2SMain;
+import production.C2SProperties;
 import schema_conversion.SchemaConvert;
 
 import java.io.*;
@@ -22,10 +22,10 @@ public class InsertSchemaPostgres {
      *
      * @param database Name of the Postgres database to store the new schema on.
      */
-    public static void executeSchemaChange(String database) {
-        PostgresDriver.createConnection(database);
+    public static void executeSchemaChange(String database, C2SProperties props) {
+        PostgresDriver.createConnection(database, props);
 
-        String createAdditionalNodeTables = insertEachLabel();
+        String createAdditionalNodeTables = insertEachLabel(props);
         String createAdditionalEdgesTables = insertEachRelType();
 
         String sqlInsertNodes = insertNodes();
@@ -46,7 +46,7 @@ public class InsertSchemaPostgres {
             e.printStackTrace();
         }
 
-        addFieldsToMetaFile();
+        addFieldsToMetaFile(props);
         PostgresDriver.closeConnection();
     }
 
@@ -55,10 +55,10 @@ public class InsertSchemaPostgres {
      * meta files (to be used when outputting the results of the queries from both Postgres and
      * Neo4j).
      */
-    private static void addFieldsToMetaFile() {
+    private static void addFieldsToMetaFile(C2SProperties props) {
         FileOutputStream fos;
         try {
-            fos = new FileOutputStream(C2SMain.props.getWspace() + "/meta_nodeProps.txt");
+            fos = new FileOutputStream(props.getWspace() + "/meta_nodeProps.txt");
 
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
             for (String s : fieldsForMetaFile) {
@@ -68,7 +68,7 @@ public class InsertSchemaPostgres {
             bw.close();
             fos.close();
 
-            fos = new FileOutputStream(C2SMain.props.getWspace() + "/meta_rels.txt");
+            fos = new FileOutputStream(props.getWspace() + "/meta_rels.txt");
 
             bw = new BufferedWriter(new OutputStreamWriter(fos));
             for (String s : SchemaConvert.relTypes) {
@@ -88,14 +88,14 @@ public class InsertSchemaPostgres {
      *
      * @return SQL to execute.
      */
-    private static String insertEachLabel() {
+    private static String insertEachLabel(C2SProperties props) {
         StringBuilder sb = new StringBuilder();
         FileOutputStream fos_labelProps;
         FileOutputStream fos_labelNames;
 
         try {
-            fos_labelProps = new FileOutputStream(C2SMain.props.getWspace() + "/meta_labelProps.txt");
-            fos_labelNames = new FileOutputStream(C2SMain.props.getWspace() + "/meta_labelNames.txt");
+            fos_labelProps = new FileOutputStream(props.getWspace() + "/meta_labelProps.txt");
+            fos_labelNames = new FileOutputStream(props.getWspace() + "/meta_labelNames.txt");
 
             BufferedWriter bw_labelProps = new BufferedWriter(new OutputStreamWriter(fos_labelProps));
             BufferedWriter bw_labelNames = new BufferedWriter(new OutputStreamWriter(fos_labelNames));
