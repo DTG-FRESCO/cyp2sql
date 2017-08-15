@@ -1,8 +1,15 @@
 package intermediate_rep;
 
+/**
+ * Stores information linking to an individual predicate contained within a WHERE clause. For example, information
+ * about a statement a.name = 'Ben' would be stored in one CypWhere object.
+ */
 public class CypWhere {
+    // position in the original Cypher WHERE clause of the component.
     private int posInWhere;
+    // stores string of brackets either before or after component.
     private String bracketing;
+    // stores boolean operator that immediately follows this component (will be either and, or, NULL).
     private String boolOp;
 
     public CypWhere(int id) {

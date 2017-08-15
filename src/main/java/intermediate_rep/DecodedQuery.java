@@ -19,15 +19,15 @@ public class DecodedQuery {
 
     /**
      * Create the DecodedQuery object based on the parsing of the Cypher input.
-     *  @param m     MatchClause object.
+     *
+     * @param m     MatchClause object.
      * @param r     ReturnClause object.
      * @param o     OrderClause object.
      * @param skip  SKIP value.
      * @param limit LIMIT value.
      * @param c     The CypherWalker object.
      */
-    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o,
-                        int skip, int limit, CypherWalker c) {
+    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, int skip, int limit, CypherWalker c) {
         this.matchC = m;
         this.returnC = r;
         this.orderC = o;

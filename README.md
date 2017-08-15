@@ -16,6 +16,23 @@ The properties file, `c2s_props.properties` then needs to be edited with the cor
 
 A new, blank database in Postgres should also be setup.
 
+###Obtaining a dump from an existing Neo4j graph
+The path should point to the folder containing the Neo4j graph. For Windows:
+
+```
+java -classpath "C:\Program Files\Neo4j CE 3.0.6\bin\neo4j-desktop-3.2.2.jar" 
+    org.neo4j.shell.StartClient 
+    -path "C:\Users\user\Documents\Neo4j graphs\Test1KOPUS" 
+    -c dump > "C:\Users\user\Documents\Graph Dumps\dumpOPUS1k.txt"
+```
+
+For a Unix based OS:
+
+```
+neo4j-shell -path ../data/databases/dump_prov1000.graphdb/ -c dump > 2017-08-01-dump.txt
+```
+
+
 ## Usage
 To convert an existing Neo4j graph to a relational schema:
 

@@ -55,7 +55,7 @@ public class MatchClause {
 
 
     /**
-     * Prints out information about the nodes and relationships in the match clause.
+     * Prints out information about the nodes and relationships in the MATCH clause.
      */
     @Override
     public String toString() {

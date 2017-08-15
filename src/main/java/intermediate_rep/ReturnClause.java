@@ -3,21 +3,24 @@ package intermediate_rep;
 import java.util.List;
 
 /**
- * Stores the return clause.
+ * Stores the intermediate representation of the original Cypher RETURN clause.
  */
 public class ReturnClause {
+    // the individual components of the RETURN clause.
     private List<CypReturn> items;
 
+    // returns a list of the individual components.
     public List<CypReturn> getItems() {
         return items;
     }
 
+    // sets the individual components of the RETURN clause.
     public void setItems(List<CypReturn> items) {
         this.items = items;
     }
 
     /**
-     * Prints out information about the individual items in the match clause.
+     * Prints out information about the individual items in the RETURN clause.
      */
     @Override
     public String toString() {

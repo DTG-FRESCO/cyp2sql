@@ -26,10 +26,6 @@ public class CypOrder {
         this.ascOrDesc = ascOrDesc;
     }
 
-    public String getNodeId() {
-        return nodeID;
-    }
-
     public String getField() {
         return field;
     }

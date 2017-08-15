@@ -1,20 +1,26 @@
 package intermediate_rep;
 
 /**
- * Class for holding intermediate information about the Cypher extension.
- * -- Part II Project specific code. --
+ * Class for holding intermediate information about the Cypher extension that uses the ITERATE keyword.
  */
 
 public class CypIterate {
+    // String equivalent of Cypher input containing the ITERATE keyword.
     private String sql;
+    // the original Cypher input containing the ITERATE keyword.
     private String originalCypherInput;
+    // the initial MATCH part of the input.
     private String firstQuery;
+    // the loop statement of the input.
     private String loopQuery;
+    // the id between the keywords LOOP and ON.
     private String loopIndexTo;
+    // the id between the keywords ON and COLLECT.
     private String loopIndexFrom;
+    // the id after the keyword COLLECT.
     private String collectIndex;
+    // the RETURN statement of the input.
     private String returnStatement;
-
 
     public CypIterate(String cypher) {
         this.originalCypherInput = cypher;

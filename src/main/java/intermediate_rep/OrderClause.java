@@ -3,15 +3,18 @@ package intermediate_rep;
 import java.util.List;
 
 /**
- * Stores the order clause.
+ * Stores the intermediate representation of the original Cypher ORDER BY clause.
  */
 public class OrderClause {
+    // the individual components of the ORDER BY clause.
     private List<CypOrder> items;
 
+    // returns a list of the individual components.
     public List<CypOrder> getItems() {
         return items;
     }
 
+    // sets the individual components of the ORDER BY clause.
     public void setItems(List<CypOrder> items) {
         this.items = items;
     }

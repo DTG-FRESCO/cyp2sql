@@ -2,7 +2,6 @@ database
 database.key_value_hazelcast
 database.postgres
 intermediate_rep
-parsing_lexing
 production
 query_translation.sql.conversion_types
 query_translation.sql.utilities_sql
