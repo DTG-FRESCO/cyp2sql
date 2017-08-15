@@ -15,12 +15,12 @@ public class With_Cypher extends AbstractConversion {
      */
     @Override
     public String convertQuery(String cypher) {
-        int posOfMatch = cypher.toLowerCase().indexOf("match");
+        int posOfMatch = cypher.toLowerCase().lastIndexOf("match");
         int posOfWhere = cypher.toLowerCase().indexOf("where");
         int posOfOrderBy = cypher.toLowerCase().indexOf("order by");
 
         // from the tokens in the original Cypher query, decide on the most appropriate method for translation.
-        if (posOfMatch != -1) return withMatch(cypher);
+        if (posOfMatch != -1 && posOfMatch != 0) return withMatch(cypher);
         if (posOfOrderBy == -1 || (posOfWhere != -1 && (posOfWhere < posOfOrderBy))) return withWhere(cypher);
         else return withOB(cypher);
     }

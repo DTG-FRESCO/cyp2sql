@@ -37,7 +37,7 @@ public class SQLTranslate {
             NoRels nr = new NoRels();
             sql = nr.translate(sql, decodedQuery);
         } else if (decodedQuery.getMc().isVarRel() && decodedQuery.getMc().getRels().size() == 1) {
-            SingleVarAdjList singleV = new SingleVarAdjList();
+            SingleVar singleV = new SingleVar();
             sql = singleV.translate(sql, decodedQuery);
         } else {
             MultipleRel mr = new MultipleRel();

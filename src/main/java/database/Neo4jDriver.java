@@ -144,6 +144,8 @@ public class Neo4jDriver {
             return "sum";
         } else if (origKey.contains("avg(")) {
             return "avg";
+        } else if (origKey.startsWith("case")) {
+            return "case";
         } else if (origKey.contains(".")) {
             StringBuilder newKey = new StringBuilder();
             String[] parts = origKey.split("\\.");

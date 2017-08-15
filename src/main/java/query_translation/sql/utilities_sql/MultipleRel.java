@@ -206,148 +206,149 @@ public class MultipleRel extends AbstractTranslation {
             if (cR.getCaseString() != null) {
                 // if caseNode is false, then the type must be a relationship.
                 boolean caseNode = (cR.getType().equals("node"));
-                String replacement = caseNode ? "n01." + cR.getField() : "a." + cR.getField();
+                int posInClause = 1;
+                if (caseNode) posInClause = cR.getPosInClause();
+                String replacement = caseNode ? "n0" + posInClause + "." + cR.getField() : "a." + cR.getField();
                 String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(), replacement);
-                safSQL.append(caseString).append(" ");
+                safSQL.append(caseString).append(", ");
                 if (caseNode) {
                     needNodeTable = true;
                     nodeTableCount++;
                 } else {
                     relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, "a");
                 }
-                break;
-            }
+            } else {
+                boolean usesExistingWith = false;
 
-            boolean usesExistingWith = false;
+                for (String z : WithSQL.withMapping.keySet()) {
+                    if (cR.getNodeID().equals(z)) {
+                        usesExistingWith = true;
 
-            for (String z : WithSQL.withMapping.keySet()) {
-                if (cR.getNodeID().equals(z)) {
-                    usesExistingWith = true;
-
-                    String prop = cR.getField();
-                    if (cR.hasAggFunc()) {
-                        safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
-                    }
-                    if (cR.getCount() > 0) {
-                        safSQL.append("count(");
-                        if (cR.getCount() == 2) safSQL.append("distinct ");
-                    }
-                    if (cR.getCaseString() != null) {
-                        String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
-                                WithSQL.withMapping.get(z) + "." + cR.getField());
-                        safSQL.append(caseString).append(", ");
-                    } else {
-                        if (prop != null) {
-                            safSQL.append(WithSQL.withMapping.get(z)).append(".").append(prop)
-                                    .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                    .append(", ");
-                        } else {
-                            safSQL.append(WithSQL.withMapping.get(z))
-                                    .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                    .append(", ");
-                        }
-                    }
-                    if (cR.hasAggFunc() || cR.getCount() > 0) {
-                        safSQL.setLength(safSQL.length() - 2);
-                        safSQL.append(")");
-                        safSQL.append(
-                                TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
-                                .append(", ");
-                    }
-                    break;
-                }
-            }
-
-            if (usesExistingWith) continue;
-
-            for (CypNode cN : matchC.getNodes()) {
-                if (cR.getNodeID().equals(cN.getId())) {
-                    String prop = cR.getField();
-                    needNodeTable = true;
-
-                    if (!nodesSoFar.contains(cR.getNodeID())) {
-                        nodesSoFar.add(cR.getNodeID());
-                        nodeTableCount++;
-                    }
-
-                    if (cR.hasAggFunc()) {
-                        safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
-                    }
-
-                    if (cR.getCount() > 0) {
-                        safSQL.append("count(");
-                        if (cR.getCount() == 2) safSQL.append("distinct ");
-                    }
-
-                    if (cR.getCaseString() != null) {
-                        String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
-                                "n0" + nodeTableCount + "." + cR.getField());
-                        safSQL.append(caseString).append(", ");
-                    } else {
-                        if (prop != null) {
-                            safSQL.append("n0").append(nodeTableCount).append(".").append(prop)
-                                    .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                    .append(", ");
-                        } else {
-                            safSQL.append("n0").append(nodeTableCount)
-                                    .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                    .append(", ");
-                        }
-                    }
-                    if (cR.hasAggFunc() || cR.getCount() > 0) {
-                        safSQL.setLength(safSQL.length() - 2);
-                        safSQL.append(")");
-                        safSQL.append(
-                                TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
-                                .append(", ");
-                    }
-                    isNode = true;
-                    break;
-                }
-            }
-
-            // must be a relationship being returned.
-            if (!isNode) {
-                for (CypRel cRel : matchC.getRels()) {
-                    if (cRel.getId() != null && cRel.getId().equals(cR.getNodeID())) {
-                        String field = cR.getField();
-                        int relPos = cRel.getPosInClause();
-                        String idRel = String.valueOf(alphabet[relPos - 1]);
-                        relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, idRel);
-
+                        String prop = cR.getField();
                         if (cR.hasAggFunc()) {
                             safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
                         }
-                        if (cR.getCount() > 0) safSQL.append("count(");
-
+                        if (cR.getCount() > 0) {
+                            safSQL.append("count(");
+                            if (cR.getCount() == 2) safSQL.append("distinct ");
+                        }
                         if (cR.getCaseString() != null) {
                             String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
-                                    idRel + "." + cR.getField());
+                                    WithSQL.withMapping.get(z) + "." + cR.getField());
                             safSQL.append(caseString).append(", ");
                         } else {
-                            if (field != null) {
-                                safSQL.append(idRel).append(".").append(field)
+                            if (prop != null) {
+                                safSQL.append(WithSQL.withMapping.get(z)).append(".").append(prop)
                                         .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                         .append(", ");
                             } else {
-                                safSQL.append(idRel).append(".*")
-                                        .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                safSQL.append(WithSQL.withMapping.get(z))
+                                        .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                         .append(", ");
                             }
                         }
                         if (cR.hasAggFunc() || cR.getCount() > 0) {
                             safSQL.setLength(safSQL.length() - 2);
                             safSQL.append(")");
-                            if (cR.hasAggFunc())
-                                safSQL.append(
-                                        TranslateUtils.useAlias(
-                                                "collect(" + cR.getNodeID() + ")", null, alias))
-                                        .append(", ");
-                            else safSQL.append(
-                                    TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", null, alias))
+                            safSQL.append(
+                                    TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                     .append(", ");
                         }
                         break;
+                    }
+                }
+
+                if (usesExistingWith) continue;
+
+                for (CypNode cN : matchC.getNodes()) {
+                    if (cR.getNodeID().equals(cN.getId())) {
+                        String prop = cR.getField();
+                        needNodeTable = true;
+
+                        if (!nodesSoFar.contains(cR.getNodeID())) {
+                            nodesSoFar.add(cR.getNodeID());
+                            nodeTableCount++;
+                        }
+
+                        if (cR.hasAggFunc()) {
+                            safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                        }
+
+                        if (cR.getCount() > 0) {
+                            safSQL.append("count(");
+                            if (cR.getCount() == 2) safSQL.append("distinct ");
+                        }
+
+                        if (cR.getCaseString() != null) {
+                            String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
+                                    "n0" + nodeTableCount + "." + cR.getField());
+                            safSQL.append(caseString).append(", ");
+                        } else {
+                            if (prop != null) {
+                                safSQL.append("n0").append(nodeTableCount).append(".").append(prop)
+                                        .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                        .append(", ");
+                            } else {
+                                safSQL.append("n0").append(nodeTableCount)
+                                        .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                        .append(", ");
+                            }
+                        }
+                        if (cR.hasAggFunc() || cR.getCount() > 0) {
+                            safSQL.setLength(safSQL.length() - 2);
+                            safSQL.append(")");
+                            safSQL.append(
+                                    TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
+                                    .append(", ");
+                        }
+                        isNode = true;
+                        break;
+                    }
+                }
+
+                // must be a relationship being returned.
+                if (!isNode) {
+                    for (CypRel cRel : matchC.getRels()) {
+                        if (cRel.getId() != null && cRel.getId().equals(cR.getNodeID())) {
+                            String field = cR.getField();
+                            int relPos = cRel.getPosInClause();
+                            String idRel = String.valueOf(alphabet[relPos - 1]);
+                            relsNeeded = TranslateUtils.addToRelsNeeded(relsNeeded, idRel);
+
+                            if (cR.hasAggFunc()) {
+                                safSQL.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+                            }
+                            if (cR.getCount() > 0) safSQL.append("count(");
+
+                            if (cR.getCaseString() != null) {
+                                String caseString = cR.getCaseString().replace(cR.getNodeID() + "." + cR.getField(),
+                                        idRel + "." + cR.getField());
+                                safSQL.append(caseString).append(", ");
+                            } else {
+                                if (field != null) {
+                                    safSQL.append(idRel).append(".").append(field)
+                                            .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                            .append(", ");
+                                } else {
+                                    safSQL.append(idRel).append(".*")
+                                            .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                            .append(", ");
+                                }
+                            }
+                            if (cR.hasAggFunc() || cR.getCount() > 0) {
+                                safSQL.setLength(safSQL.length() - 2);
+                                safSQL.append(")");
+                                if (cR.hasAggFunc())
+                                    safSQL.append(
+                                            TranslateUtils.useAlias(
+                                                    "collect(" + cR.getNodeID() + ")", null, alias))
+                                            .append(", ");
+                                else safSQL.append(
+                                        TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", null, alias))
+                                        .append(", ");
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -454,6 +455,23 @@ public class MultipleRel extends AbstractTranslation {
                 switch (cR.getType()) {
                     case "node":
                         if (!(cR.getCount() > 0 && returnC.getItems().size() > 1)) {
+                            if (!nodesSeenSoFar.contains(cR.getNodeID())) {
+                                nodesSeenSoFar.add(cR.getNodeID());
+                                nodeTableCount++;
+                            }
+
+                            int posInClause = cR.getPosInClause();
+                            whereSQL.append("n0").append(nodeTableCount).append(".id = ");
+
+                            if (posInClause == 1) {
+                                whereSQL.append("a.a1");
+                                whereSQL.append(" AND ");
+                            } else {
+                                whereSQL.append(alphabet[posInClause - 2]).append(".").append(alphabet[posInClause - 2])
+                                        .append(2);
+                                whereSQL.append(" AND ");
+                            }
+                        } else if (cR.getCount() > 0 && cR.getNodeID() != null) {
                             if (!nodesSeenSoFar.contains(cR.getNodeID())) {
                                 nodesSeenSoFar.add(cR.getNodeID());
                                 nodeTableCount++;

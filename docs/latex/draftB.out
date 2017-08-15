@@ -1,0 +1,26 @@
+\BOOKMARK [1][-]{section.1}{Overview}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Quick usage}{section.1}% 2
+\BOOKMARK [1][-]{section.2}{Getting started}{}% 3
+\BOOKMARK [2][-]{subsection.2.1}{Prerequisites}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.2}{File system preparation}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.3}{Generating dump files from Neo4j}{section.2}% 6
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Windows OS}{subsection.2.3}% 7
+\BOOKMARK [3][-]{subsubsection.2.3.2}{Unix OS}{subsection.2.3}% 8
+\BOOKMARK [3][-]{subsubsection.2.3.3}{Dump file explanation}{subsection.2.3}% 9
+\BOOKMARK [2][-]{subsection.2.4}{Configuring the properties}{section.2}% 10
+\BOOKMARK [1][-]{section.3}{Schema conversion}{}% 11
+\BOOKMARK [2][-]{subsection.3.1}{Converting the graph database to a relational schema}{section.3}% 12
+\BOOKMARK [2][-]{subsection.3.2}{Graph to relational: theory}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.3}{Metafiles created during schema conversion}{section.3}% 14
+\BOOKMARK [1][-]{section.4}{Translation of queries}{}% 15
+\BOOKMARK [2][-]{subsection.4.1}{Usage}{section.4}% 16
+\BOOKMARK [2][-]{subsection.4.2}{Query translation}{section.4}% 17
+\BOOKMARK [3][-]{subsubsection.4.2.1}{Dealing with Cypher lists}{subsection.4.2}% 18
+\BOOKMARK [3][-]{subsubsection.4.2.2}{Where clauses}{subsection.4.2}% 19
+\BOOKMARK [3][-]{subsubsection.4.2.3}{Iterate semantics}{subsection.4.2}% 20
+\BOOKMARK [2][-]{subsection.4.3}{Workflow through the code}{section.4}% 21
+\BOOKMARK [1][-]{section.5}{ANTLR framework}{}% 22
+\BOOKMARK [2][-]{subsection.5.1}{ANTLR setting up}{section.5}% 23
+\BOOKMARK [1][-]{section.6}{Current Cypher translation list}{}% 24
+\BOOKMARK [2][-]{subsection.6.1}{Known issues}{section.6}% 25
+\BOOKMARK [2][-]{subsection.6.2}{List of test queries from OPUS}{section.6}% 26

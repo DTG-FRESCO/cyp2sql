@@ -611,9 +611,7 @@ class CypherTranslator {
                     caseString.append(s).append(" ");
                 }
             }
-            int posOfWhere = caseString.indexOf("when");
-            String caseForReturn = "case " + caseString.toString().substring(posOfWhere);
-            return new CypReturn(clause.get(1), clause.get(3), COUNT_FALSE, AGG_NONE, caseForReturn, matchC);
+            return new CypReturn(clause.get(1), clause.get(3), COUNT_FALSE, AGG_NONE, caseString.toString(), matchC);
         }
         // 10a.
         else if (cypWalker.hasAverage()) {

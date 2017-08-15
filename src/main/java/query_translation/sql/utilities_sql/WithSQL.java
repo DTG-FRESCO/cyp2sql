@@ -73,9 +73,10 @@ public class WithSQL {
     private static StringBuilder getOrderByForWith(StringBuilder sWith, ArrayList<String> tokens) {
         int posOfOrder = tokens.indexOf("order");
         sWith.append(" ORDER BY ");
+
         while (true) {
-            String field = tokens.get(posOfOrder + 2);
-            String dir = (posOfOrder + 3 >= tokens.size()) ? null : tokens.get(posOfOrder + 3);
+            String field = tokens.get(posOfOrder + 4);
+            String dir = (posOfOrder + 5 >= tokens.size()) ? null : tokens.get(posOfOrder + 5);
             if (dir != null) {
                 dir = (dir.equals("asc") || dir.equals("desc")) ? dir : null;
             }
@@ -108,6 +109,9 @@ public class WithSQL {
 
     private static StringBuilder getSelectForWith(StringBuilder sWith, ArrayList<String> tokens, DecodedQuery dQ) {
         sWith.append("SELECT ");
+
+        boolean hasDistinct = tokens.contains("distinct");
+        if (hasDistinct) tokens.remove("distinct");
         int posOfReturn = tokens.indexOf("return");
 
         for (int i = posOfReturn + 1; i < tokens.size(); i++) {
@@ -132,6 +136,8 @@ public class WithSQL {
                 }
 
                 String[] idAndProp = returnStmt.toString().split("\\.");
+
+                if (hasDistinct) sWith.append("distinct ");
 
                 boolean sWithChanged = false;
                 for (CypReturn cR : dQ.getRc().getItems()) {
