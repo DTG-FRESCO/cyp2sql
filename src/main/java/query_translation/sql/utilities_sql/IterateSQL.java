@@ -1,6 +1,7 @@
 package query_translation.sql.utilities_sql;
 
 import com.google.gson.JsonObject;
+import exceptions.DQInvalidException;
 import intermediate_rep.CypIterate;
 import intermediate_rep.CypNode;
 import intermediate_rep.DecodedQuery;
@@ -18,8 +19,10 @@ public class IterateSQL extends AbstractTranslation {
         return -1;
     }
 
-    public String translate(StringBuilder sql, CypIterate ci, C2SProperties props) {
+    @Override
+    public StringBuilder translate(StringBuilder sql, DecodedQuery dQ, C2SProperties props) throws DQInvalidException {
         // get correct loop query
+        CypIterate ci = dQ.getIterate();
         String firstStep = ci.getFirstQuery();
         int posOfLoopFrom = firstStep.indexOf(ci.getLoopIndexFrom());
         String lQuery = "MATCH " + firstStep.substring(posOfLoopFrom - 1, firstStep.length());
@@ -27,10 +30,10 @@ public class IterateSQL extends AbstractTranslation {
 
         // generate the traditional translation to SQL for the loop query (store in string as used
         // multiple times)
-        DecodedQuery loopDQ = AbstractConversion.convertCypherToSQL(ci.getFirstQuery(), props);
+        DecodedQuery loopDQ = AbstractConversion.genDQAndSQL(ci.getFirstQuery(), props);
         String loopSQL = loopDQ.getSqlEquiv();
 
-        String returnSQL = AbstractConversion.convertCypherToSQL(ci.getReturnStatement(), props).getSqlEquiv();
+        String returnSQL = AbstractConversion.genDQAndSQL(ci.getReturnStatement(), props).getSqlEquiv();
         returnSQL = returnSQL.substring(0, returnSQL.length() - 1);
 
         // need to modify loopSQL for the main SQL statement.
@@ -44,7 +47,7 @@ public class IterateSQL extends AbstractTranslation {
         // create the loop_work function with this string
         String loopWorkStr;
 
-        loopDQ = AbstractConversion.convertCypherToSQL(ci.getLoopQuery(), props);
+        loopDQ = AbstractConversion.genDQAndSQL(ci.getLoopQuery(), props);
         int posLoopFrom = calculatePos(ci.getLoopIndexFrom(), loopDQ);
         JsonObject obj = loopDQ.getMc().getNodes().get(posLoopFrom - 1).getProps();
         if (obj == null) {
@@ -70,11 +73,6 @@ public class IterateSQL extends AbstractTranslation {
         ci.setSQL(functionLoop + " " + mainInitStmt);
 
         // the iterate function should always be persistent on the database and shouldn't need modification.
-        return ci.getSQL();
-    }
-
-    @Override
-    public StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) {
-        return null;
+        return new StringBuilder(ci.getSQL());
     }
 }

@@ -3,6 +3,8 @@ package production;
 import database.Neo4jDriver;
 import database.postgres.InsertSchemaPostgres;
 import database.postgres.PostgresDriver;
+import exceptions.ConversionSQLException;
+import exceptions.DQInvalidException;
 import intermediate_rep.DecodedQuery;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.driver.v1.exceptions.ClientException;
@@ -17,20 +19,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Main class for starting the application.
- * View README.md for additional guidance.
+ * Main class for starting the application. View README.md for usage.
  */
 public class C2SMain {
     // for optimisations based on the return clause of Cypher
     public static final Map<String, String> labelProps = new HashMap<>();
     // for use in deleting relationships attached to nodes
     public static final ArrayList<String> allRelTypes = new ArrayList<>();
+
     private static final String OS = System.getProperty("os.name").toLowerCase();
     public static int numResultsNeo4j;
     public static int numResultsPostgres;
-    // stores the current DecodedQuery object so that the Cypher results module can use it,
-    // without having to rerun computation.
-    public static DecodedQuery currentDQ = null;
+
     // static variable set by the translation unit if the ID needs to be returned from the Postgres database
     // by default it is set to false as this is the same logic as Neo4j
     public static boolean needToPrintID = false;
@@ -108,7 +108,7 @@ public class C2SMain {
      * - Secondly, it reads in all the possible types of relationships
      * (used for example when deleting nodes from the relational schema).
      *
-     * @param props
+     * @param props C2SProperties object.
      */
     static void getLabelMapping(C2SProperties props) {
         // open file and read in property keys, removing duplicates as they are of no use.
@@ -159,6 +159,8 @@ public class C2SMain {
      * https://neo4j.com/developer/kb/warm-the-cache-to-improve-performance-from-cold-start/
      * also, if there is an SSL issue when changing databases, attempt to fix it by running
      * some fix up code.
+     *
+     * @param props C2SProperties object.
      */
     static void warmUpResetSSL(C2SProperties props) {
         try {
@@ -215,6 +217,7 @@ public class C2SMain {
      * on a relational backend.
      *
      * @param databaseName The name of the database to be used for storing the relational representation.
+     * @param props        C2SProperties object.
      */
     private static void convertGraphSchema(String databaseName, C2SProperties props) {
         System.out.println("\n***CONVERTING THE SCHEMA***\n");
@@ -230,6 +233,15 @@ public class C2SMain {
         }
     }
 
+    /**
+     * Run the SQL on native Postgres (using psql via a script). The results are then piped back into the console
+     * and outputted using the System.out.println command.
+     *
+     * @param sql    SQL to execute through psql.
+     * @param dbName The name of the database for psql to connect to.
+     * @return Results from the psql script.
+     * @throws IOException Issue with running the script.
+     */
     private static String runPostgres(String sql, String dbName) throws IOException {
         String scriptLocation;
 
@@ -239,6 +251,7 @@ public class C2SMain {
         else
             scriptLocation = System.getProperty("user.dir") + "/auto_run_pg.sh";
 
+        System.out.println(sql);
         return runPostgres(sql, dbName, scriptLocation);
     }
 
@@ -247,8 +260,9 @@ public class C2SMain {
      * arguments currently to a Windows batch file, which performs the query on the Postgres database. The
      * results are then piped back into this tool and outputted.
      *
-     * @param sql    Query to be executed on the database.
-     * @param dbName Name of the relational database for the query to be executed on.
+     * @param sql            Query to be executed on the database.
+     * @param dbName         Name of the relational database for the query to be executed on.
+     * @param scriptLocation File location of the script to run.
      * @throws IOException Some issue with the Buffered Reader object.
      */
     public static String runPostgres(String sql, String dbName, String scriptLocation) throws IOException {
@@ -282,21 +296,29 @@ public class C2SMain {
      *                    to deal with any of the files, or printing of the results to these files. Instead, the
      *                    newly generated SQL is executed via a .bat script on Postgres, with the results piped
      *                    back to this tool.
-     * @throws Exception Something didn't go to plan...
+     * @param props       C2SProperties object.
      */
     static void translateCypherToSQL(String cypherInput, File f_cypher, File f_pg, String dbName, boolean execNeo4j,
-                                     C2SProperties props)
-            throws Exception {
+                                     C2SProperties props) throws ConversionSQLException {
         String sql;
 
         // either calculate the SQL or retrieve from a cache of valid translations.
         if (cache.containsKey(cypherInput)) sql = cache.get(cypherInput);
-        else sql = getTranslation(cypherInput, props);
+        else {
+            // generate the DecodedQuery object first, then use it to translate to SQL.
+            DecodedQuery dQ = getDQ(cypherInput, props);
+            sql = getTranslation(cypherInput, dQ, props);
+        }
 
         if (!execNeo4j) {
-            System.out.println(runPostgres(sql, dbName));
-            // cache.put(cypherInput, sql);
-            resetExecTimes();
+            try {
+                System.out.println(runPostgres(sql, dbName));
+                // cache.put(cypherInput, sql);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            } finally {
+                resetExecTimes();
+            }
             return;
         }
 
@@ -304,7 +326,7 @@ public class C2SMain {
         if (sql != null && !sql.isEmpty()) {
             sqlExecSuccess = executeSQL(sql, f_pg, (printBool || cypherInput.toLowerCase().contains("count")),
                     dbName, props);
-        } else throw new Exception("Conversion of SQL failed");
+        } else throw new ConversionSQLException("Conversion of SQL failed on input: " + cypherInput);
 
         // All the Cypher queries other than the extension
         if (!cypherInput.toLowerCase().contains("iterate"))
@@ -320,16 +342,24 @@ public class C2SMain {
                     && !cypherInput.toLowerCase().contains("foreach")) {
                 translationFail(cypherInput, sql, f_cypher, f_pg);
             } else if (cypherInput.toLowerCase().contains("count") && !cypherInput.toLowerCase().contains("with")) {
-                fileSame = FileUtils.contentEquals(f_cypher, f_pg);
-                if (!fileSame) {
-                    translationFail(cypherInput, sql, f_cypher, f_pg);
+                try {
+                    fileSame = FileUtils.contentEquals(f_cypher, f_pg);
+                    if (!fileSame) {
+                        translationFail(cypherInput, sql, f_cypher, f_pg);
+                    }
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
                 }
             }
 
             if ((numResultsNeo4j == numResultsPostgres) || fileSame) cache.put(cypherInput, sql);
 
             // print the performance of Cypher and SQL on Neo4J and Postgres respectively.
-            printSummary(cypherInput, sql, f_cypher, f_pg);
+            try {
+                printSummary(cypherInput, sql, f_cypher, f_pg);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
         }
 
         resetExecTimes();
@@ -346,6 +376,7 @@ public class C2SMain {
      * @param pg_results  File to store the results.
      * @param printOutput Write the results to a file for viewing.
      * @param dbName      Name of the database the SQL will be executed on.
+     * @param props       C2SProperties object.
      * @return True if the execution on Postgres was successful, false otherwise.
      */
     private static boolean executeSQL(String sql, File pg_results, boolean printOutput, String dbName,
@@ -399,13 +430,17 @@ public class C2SMain {
      * @param sql      Converted SQL.
      * @param f_cypher Neo4j results file object.
      * @param f_pg     Postgres results file object.
-     * @throws IOException Something went wrong in printSummary()
      */
-    private static void translationFail(String line, String sql, File f_cypher, File f_pg) throws IOException {
+    private static void translationFail(String line, String sql, File f_cypher, File f_pg) {
         System.err.println("\n**********Statements do not appear to " +
                 "be logically correct - please check**********\n"
                 + line + "\n" + sql + "\n***********");
-        printSummary(line, sql, f_cypher, f_pg);
+        try {
+            printSummary(line, sql, f_cypher, f_pg);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
         System.exit(1);
     }
 
@@ -437,26 +472,78 @@ public class C2SMain {
         return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
     }
 
-    public static String getTranslation(String cypherInput, C2SProperties props) {
-        if (cypherInput.toLowerCase().contains(" foreach ")) {
-            ForEach_Cypher fe = new ForEach_Cypher();
-            return fe.convertQuery(cypherInput, props);
-        } else if (cypherInput.toLowerCase().contains(" with ")) {
-            if (cypherInput.toLowerCase().split(" with ").length > 2) {
-                Multiple_With_Cypher mwc = new Multiple_With_Cypher();
-                return mwc.convertQuery(cypherInput, props);
+    /**
+     * Generate DecodedQuery object from a Cypher input. Must also provide an initialised C2SProperties object.
+     *
+     * @param cypherInput Cypher input to translate.
+     * @param props       C2SProperties object.
+     * @return A new DecodedQuery object (may also contain SQL translation in the object in some instances).
+     */
+    public static DecodedQuery getDQ(String cypherInput, C2SProperties props) {
+        try {
+            if (cypherInput.toLowerCase().contains(" foreach ")) {
+                ForEach_Cypher fe = new ForEach_Cypher();
+                return fe.generateDQ(cypherInput, props);
+            } else if (cypherInput.toLowerCase().contains(" with ")) {
+                if (cypherInput.toLowerCase().split(" with ").length > 2) {
+                    Multiple_With_Cypher mwc = new Multiple_With_Cypher();
+                    return mwc.generateDQ(cypherInput, props);
+                } else {
+                    With_Cypher wc = new With_Cypher();
+                    return wc.generateDQ(cypherInput, props);
+                }
+            } else if (cypherInput.toLowerCase().contains("shortestpath")) {
+                SP_Cypher spc = new SP_Cypher();
+                return spc.generateDQ(cypherInput, props);
+            } else if (cypherInput.toLowerCase().contains("iterate")) {
+                Iterate_Cypher ic = new Iterate_Cypher();
+                return ic.generateDQ(cypherInput, props);
             } else {
-                With_Cypher wc = new With_Cypher();
-                return wc.convertQuery(cypherInput, props);
+                return AbstractConversion.genDQAndSQL(cypherInput, props);
             }
-        } else if (cypherInput.toLowerCase().contains("shortestpath")) {
-            SP_Cypher spc = new SP_Cypher();
-            return spc.convertQuery(cypherInput, props);
-        } else if (cypherInput.toLowerCase().contains("iterate")) {
-            Iterate_Cypher ic = new Iterate_Cypher();
-            return ic.convertQuery(cypherInput, props);
-        } else {
-            return AbstractConversion.convertCypherToSQL(cypherInput, props).getSqlEquiv();
+        } catch (DQInvalidException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Translate a DecodedQuery object to SQL (the original Cypher input and a valid C2SProperties object must
+     * also be passed as arguments).
+     *
+     * @param cypherInput Original Cypher input (must be the same input as the one used to generate dQ).
+     * @param dQ          A non-null DecodedQuery object.
+     * @param props       C2SProperties object.
+     * @return SQL equivalent of Cypher
+     */
+    public static String getTranslation(String cypherInput, DecodedQuery dQ, C2SProperties props) {
+        try {
+            if (cypherInput.toLowerCase().contains(" foreach ")) {
+                ForEach_Cypher fe = new ForEach_Cypher();
+                return fe.convertToSQL(dQ, props);
+            } else if (cypherInput.toLowerCase().contains(" with ")) {
+                if (cypherInput.toLowerCase().split(" with ").length > 2) {
+                    Multiple_With_Cypher mwc = new Multiple_With_Cypher();
+                    return mwc.convertToSQL(dQ, props);
+                } else {
+                    With_Cypher wc = new With_Cypher();
+                    return wc.convertQuery(cypherInput, props);
+                }
+            } else if (cypherInput.toLowerCase().contains("shortestpath")) {
+                SP_Cypher spc = new SP_Cypher();
+                return spc.convertToSQL(dQ, props);
+            } else if (cypherInput.toLowerCase().contains("iterate")) {
+                Iterate_Cypher ic = new Iterate_Cypher();
+                return ic.convertToSQL(dQ, props);
+            } else {
+                return dQ.getSqlEquiv();
+            }
+        } catch (DQInvalidException ex) {
+            ex.printStackTrace();
+            return null;
+        } catch (NullPointerException nulle) {
+            System.err.println("No valid DecodedQuery object presented.");
+            return null;
         }
     }
 }

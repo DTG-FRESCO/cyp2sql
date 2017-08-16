@@ -25,7 +25,7 @@ public class CypherTokenizer {
      * @return DecodedQuery object representing the Cypher input.
      * @throws Exception Error somewhere.
      */
-    public static DecodedQuery decode(String cypher, boolean DEBUG_PRINT) throws Exception {
+    public static DecodedQuery decode(String cypher, boolean DEBUG_PRINT) {
         return CypherTranslator.generateDecodedQuery(getTokenList(cypher, DEBUG_PRINT), cypherWalker);
     }
 

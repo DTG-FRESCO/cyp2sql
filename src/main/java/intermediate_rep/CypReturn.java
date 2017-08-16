@@ -1,5 +1,6 @@
 package intermediate_rep;
 
+import exceptions.DQInvalidException;
 import query_translation.sql.utilities_sql.WithSQL;
 
 /**
@@ -33,10 +34,10 @@ public class CypReturn {
      * @param matchC     The MatchClause object associated with the same Cypher query is also needed, so that
      *                   the type of the return item can be calculated (type meaning either the return item is returning
      *                   a node, a relationship, or is part of a longer Cypher query that contains the WITH keyword.)
-     * @throws Exception Error in discovering the type of the return item.
+     * @throws DQInvalidException Error in discovering the type of the return item.
      */
     public CypReturn(String id, String field, int count_x, int agg_func_x, String caseS, MatchClause matchC)
-            throws Exception {
+            throws DQInvalidException {
         this.nodeID = id;
         this.field = field;
         this.count = count_x;
@@ -69,10 +70,9 @@ public class CypReturn {
      * @param idReturnItem The id of the return item for which the type is being calculated for.
      * @param matchC       The MatchClause object for the Cypher input.
      * @return String - one of ['node', 'rel', 'withNode']
-     * @throws Exception The return item is not a node, relationship, or part of a longer Cypher input, and therefore
-     *                   must be invalid.
+     * @throws DQInvalidException Error in discovering the type of the return item.
      */
-    private String discoverType(String idReturnItem, MatchClause matchC) throws Exception {
+    private String discoverType(String idReturnItem, MatchClause matchC) throws DQInvalidException {
         //check the nodes first
         for (CypNode cN : matchC.getNodes()) {
             if (cN.getId() != null && cN.getId().equals(idReturnItem)) {
@@ -97,7 +97,7 @@ public class CypReturn {
             }
         }
 
-        throw new Exception("RETURN DISCOVER TYPE INCORRECT - NOT A NODE OR REL");
+        throw new DQInvalidException("Failed to discover the return type - not a node or a relationship...");
     }
 
     public String getNodeID() {

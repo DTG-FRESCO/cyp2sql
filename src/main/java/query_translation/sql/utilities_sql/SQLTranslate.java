@@ -1,5 +1,6 @@
 package query_translation.sql.utilities_sql;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.*;
 import production.C2SMain;
 import production.C2SProperties;
@@ -23,12 +24,13 @@ import static intermediate_rep.CypCount.COUNT_FALSE;
  * Agnostic to the methods above is appending the ORDER BY, GROUP BY, LIMIT and SKIP elements.
  */
 public class SQLTranslate {
-    public static String translateRead(DecodedQuery decodedQuery, C2SProperties props) throws Exception {
+    public static String translateRead(DecodedQuery decodedQuery, C2SProperties props)
+            throws DQInvalidException, IOException {
         // SQL built up from a StringBuilder object.
         StringBuilder sql = new StringBuilder();
 
-        if (decodedQuery.getMc().getNodes().isEmpty()) throw new Exception("MATCH CLAUSE INVALID");
-        if (decodedQuery.getRc().getItems() == null) throw new Exception("RETURN CLAUSE INVALID");
+        if (decodedQuery.getMc().getNodes().isEmpty()) throw new DQInvalidException("MATCH CLAUSE INVALID");
+        if (decodedQuery.getRc().getItems() == null) throw new DQInvalidException("RETURN CLAUSE INVALID");
 
         // There are 3 Cypher query types that can be translated:
         // - queries with no relations in
@@ -237,8 +239,8 @@ public class SQLTranslate {
      * @return Query after GROUP BY
      * @throws IOException Error reading the associated metafile from the workarea location.
      */
-    private static StringBuilder obtainGroupByClause(ReturnClause rc, StringBuilder sql,
-                                                     C2SProperties props) throws IOException {
+    private static StringBuilder obtainGroupByClause(ReturnClause rc, StringBuilder sql, C2SProperties props)
+            throws IOException {
         sql.append(" GROUP BY ");
 
         int nodeTableCount = 0;

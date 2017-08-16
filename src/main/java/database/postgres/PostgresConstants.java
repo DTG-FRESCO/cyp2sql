@@ -1,7 +1,7 @@
 package database.postgres;
 
 /**
- * RelDBConstants holds strings that are inserted into a relational database during the initial schema conversion.
+ * PostgresConstants holds strings that are inserted into a relational database during the initial schema conversion.
  */
 class PostgresConstants {
     static final String ADJLIST_FROM = "CREATE MATERIALIZED VIEW adjList_from AS (select idl as LeftNode, " +

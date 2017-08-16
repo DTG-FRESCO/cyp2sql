@@ -2,6 +2,7 @@ package translator;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import exceptions.DQInvalidException;
 import intermediate_rep.*;
 import production.C2SMain;
 
@@ -27,9 +28,8 @@ class CypherTranslator {
      * @param tokenList Token list generated from the ANTLR framework.
      * @param cypWalker CypherWalker object containing additional info about the Cypher input.
      * @return DecodedQuery object representing the Cypher input.
-     * @throws Exception Failed to generate a valid DecodedObject for the Cypher input.
      */
-    static DecodedQuery generateDecodedQuery(ArrayList<String> tokenList, CypherWalker cypWalker) throws Exception {
+    static DecodedQuery generateDecodedQuery(ArrayList<String> tokenList, CypherWalker cypWalker) {
         // find positions of the tokens in the query (-1 means not found)
         int posOfMatch = tokenList.indexOf("match");
         int posOfWhere = tokenList.indexOf("where");
@@ -37,7 +37,11 @@ class CypherTranslator {
 
         // if no RETURN keyword is present, then the Cypher input must contain a CREATE OR DELETE keyword.
         if (posOfReturn == -1) {
-            return generateDQCreateDelete(tokenList, cypWalker, posOfMatch, posOfWhere);
+            try {
+                return generateDQCreateDelete(tokenList, cypWalker, posOfMatch, posOfWhere);
+            } catch (DQInvalidException ex) {
+                return null;
+            }
         } else {
             int posOfOrder = tokenList.indexOf("order");
             int posOfSkip = tokenList.indexOf("skip");
@@ -83,21 +87,26 @@ class CypherTranslator {
                 }
             }
 
-            MatchClause matchC = matchDecode(matchClause);
-            ReturnClause returnC = returnDecode(returnClause, matchC, cypWalker);
+            try {
+                MatchClause matchC = matchDecode(matchClause);
+                ReturnClause returnC = returnDecode(returnClause, matchC, cypWalker);
 
-            // if ORDER BY is present in the query
-            OrderClause orderC = null;
-            if (orderClause != null) {
-                orderC = orderDecode(orderClause);
+                // if ORDER BY is present in the query
+                OrderClause orderC = null;
+                if (orderClause != null) {
+                    orderC = orderDecode(orderClause);
+                }
+
+                int skipAmount = (posOfSkip != -1) ? cypWalker.getSkipAmount() : -1;
+                int limitAmount = (posOfLimit != -1) ? cypWalker.getLimitAmount() : -1;
+
+                if (cypWalker.doesCluaseHaveWhere()) whereDecode(matchC, cypWalker);
+
+                return new DecodedQuery(matchC, returnC, orderC, skipAmount, limitAmount, cypWalker, null);
+            } catch (DQInvalidException ex) {
+                ex.printStackTrace();
+                return null;
             }
-
-            int skipAmount = (posOfSkip != -1) ? cypWalker.getSkipAmount() : -1;
-            int limitAmount = (posOfLimit != -1) ? cypWalker.getLimitAmount() : -1;
-
-            if (cypWalker.doesCluaseHaveWhere()) whereDecode(matchC, cypWalker);
-
-            return new DecodedQuery(matchC, returnC, orderC, skipAmount, limitAmount, cypWalker);
         }
     }
 
@@ -109,14 +118,15 @@ class CypherTranslator {
      * @param posOfMatch Index in token list where MATCH keyword is present (-1 if not).
      * @param posOfWhere Index in token list where WHERE keyword is present (-1 if not).
      * @return DecodedQuery object with all relevant information.
-     * @throws Exception Failed to generate a valid DecodedObject for the Cypher input.
      */
     private static DecodedQuery generateDQCreateDelete(ArrayList<String> tokenList, CypherWalker cypWalker,
-                                                       int posOfMatch, int posOfWhere) throws Exception {
+                                                       int posOfMatch, int posOfWhere) throws DQInvalidException {
         int posOfCreate = tokenList.indexOf("create");
         int posOfDelete = tokenList.indexOf("delete");
 
         MatchClause matchC_Create_Delete;
+
+        if (posOfCreate == -1 && posOfDelete == -1) throw new DQInvalidException("Cypher input malformed.");
 
         if (posOfCreate == -1) {
             // delete statement.
@@ -136,7 +146,7 @@ class CypherTranslator {
             }
         }
 
-        return new DecodedQuery(matchC_Create_Delete, null, null, -1, -1, cypWalker);
+        return new DecodedQuery(matchC_Create_Delete, null, null, -1, -1, cypWalker, null);
     }
 
     /**
@@ -144,9 +154,8 @@ class CypherTranslator {
      *
      * @param matchClause The tokens comprising the MATCH clause of Cypher.
      * @return MatchClause object with all the important information inside it.
-     * @throws Exception Error in the clause.
      */
-    private static MatchClause matchDecode(List<String> matchClause) throws Exception {
+    private static MatchClause matchDecode(List<String> matchClause) throws DQInvalidException {
         MatchClause m = new MatchClause();
 
         // extract the nodes from the match clause
@@ -168,7 +177,7 @@ class CypherTranslator {
      * @param m      Needed for the internal ID representation.
      * @return List of internal node objects extracted.
      */
-    private static ArrayList<CypNode> extractNodes(List<String> clause, MatchClause m) {
+    private static ArrayList<CypNode> extractNodes(List<String> clause, MatchClause m) throws DQInvalidException {
         // nodes to return at the end of the function.
         ArrayList<CypNode> nodes = new ArrayList<>();
 
@@ -182,8 +191,8 @@ class CypherTranslator {
         String id;
         String labels;
 
+
         while (!clause.isEmpty()) {
-            nodeString = null;
             propsString = null;
             o = null;
 
@@ -211,31 +220,30 @@ class CypherTranslator {
                         break;
                     }
                 }
+            } else
+                throw new DQInvalidException("Node structure invalid in the original Cypher MATCH clause.");
+
+            if (propsString != null) {
+                o = getJSONProps(propsString);
             }
 
-            if (nodeString != null) {
-                if (propsString != null) {
-                    o = getJSONProps(propsString);
-                }
+            String[] idAndLabels = extractIdAndLabels(nodeString);
+            id = idAndLabels[0];
+            labels = idAndLabels[1];
 
-                String[] idAndLabels = extractIdAndLabels(nodeString);
-                id = idAndLabels[0];
-                labels = idAndLabels[1];
+            // add the formatted node object to list of nodes
+            // associated with the match clause
+            // calling m.getInternalID() will force the internalID property of the object to automatically
+            // be incremented.
+            int internalID = m.getInternalID();
 
-                // add the formatted node object to list of nodes
-                // associated with the match clause
-                // calling m.getInternalID() will force the internalID property of the object to automatically
-                // be incremented.
-                int internalID = m.getInternalID();
-
-                if (id != null && !nodeIDS.containsKey(id)) {
-                    nodeIDS.put(id, internalID);
-                } else if (nodeIDS.containsKey(id)) {
-                    labels = nodes.get(nodeIDS.get(id) - 1).getType();
-                    o = nodes.get(nodeIDS.get(id) - 1).getProps();
-                }
-                nodes.add(new CypNode(internalID, id, labels, o));
+            if (id != null && !nodeIDS.containsKey(id)) {
+                nodeIDS.put(id, internalID);
+            } else if (nodeIDS.containsKey(id)) {
+                labels = nodes.get(nodeIDS.get(id) - 1).getType();
+                o = nodes.get(nodeIDS.get(id) - 1).getProps();
             }
+            nodes.add(new CypNode(internalID, id, labels, o));
         }
         return nodes;
     }
@@ -248,7 +256,7 @@ class CypherTranslator {
      * @return An ArrayList of CypRel objects that correspond to the relationships (if any) described by Cypher.
      * @throws Exception Error in the clause.
      */
-    private static ArrayList<CypRel> extractRels(List<String> clause, MatchClause m) throws Exception {
+    private static ArrayList<CypRel> extractRels(List<String> clause, MatchClause m) throws DQInvalidException {
         ArrayList<CypRel> rels = new ArrayList<>();
 
         /*
@@ -386,7 +394,7 @@ class CypherTranslator {
                         }
                     }
                 } else {
-                    throw new Exception("RELATIONSHIP STRUCTURE IS INVALID");
+                    throw new DQInvalidException("Relationship structure is invalid or cannot currently be translated.");
                 }
                 if (!varAdded) rels.add(new CypRel(m.getInternalID(), id, type, o, direction));
             }
@@ -517,7 +525,7 @@ class CypherTranslator {
      * @throws Exception Error in creating the ReturnClause object (exception thrown in extractReturn method).
      */
     private static ReturnClause returnDecode(List<String> returnClause, MatchClause matchC, CypherWalker cypWalker)
-            throws Exception {
+            throws DQInvalidException {
         ReturnClause r = new ReturnClause();
 
         List<CypReturn> items = new ArrayList<>();
@@ -549,10 +557,9 @@ class CypherTranslator {
      * @param matchC    MatchClause of same Cypher input.
      * @param cypWalker CypherWalker object used in the parsing process.
      * @return CypReturn object generated from the list of tokens passed as an argument to this function.
-     * @throws Exception The tokens presented do not match a possible structure for a return item.
      */
     private static CypReturn extractReturn(List<String> clause, MatchClause matchC, CypherWalker cypWalker)
-            throws Exception {
+            throws DQInvalidException {
         /*
 
         In order below of the types of return items that can be successfully parsed, and te string representation
@@ -632,7 +639,7 @@ class CypherTranslator {
         else if (cypWalker.hasMax()) {
             String field = (clause.size() == 6) ? clause.get(4) : null;
             return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_MAX, null, matchC);
-        } else throw new Exception("RETURN CLAUSE MALFORMED" + clause);
+        } else throw new DQInvalidException("Return clause is malformed: " + clause);
     }
 
     /**
@@ -640,9 +647,8 @@ class CypherTranslator {
      *
      * @param orderClause Tokenised form of the ORDER BY part of the Cypher input.
      * @return OrderClause representing the tokenised input.
-     * @throws Exception Failed to generate a valid OrderClause object.
      */
-    private static OrderClause orderDecode(List<String> orderClause) throws Exception {
+    private static OrderClause orderDecode(List<String> orderClause) throws DQInvalidException {
         OrderClause o = new OrderClause();
 
         List<CypOrder> items = new ArrayList<>();
@@ -670,9 +676,8 @@ class CypherTranslator {
      *
      * @param clause Token list describing the ORDER BY part of the original Cypher query.
      * @return CypOrder object matching the inputted token list.
-     * @throws Exception The tokens presented do not match a possible structure for an ORDER BY item.
      */
-    private static CypOrder extractOrder(List<String> clause) throws Exception {
+    private static CypOrder extractOrder(List<String> clause) throws DQInvalidException {
         /*
         In order below of the types of ORDER BY structures that can be successfully parsed, and the
         string representation of what they are parsed into when they become CypOrder objects.
@@ -695,7 +700,8 @@ class CypherTranslator {
         // 3.
         else if (clause.size() == 5 && clause.contains("count")) {
             return new CypOrder(clause.get(2), "count(n)", clause.get(4));
-        } else throw new Exception("ORDER CLAUSE MALFORMED");
+        } else throw new DQInvalidException("The Order By clause is malformed in some way " +
+                "and could not be translated: " + clause);
     }
 
     /**
@@ -704,9 +710,8 @@ class CypherTranslator {
      *
      * @param matchC    MatchClause object generated from same Cypher input.
      * @param cypWalker CypherWalker object (contains string for WHERE part of input which is being parsed)
-     * @throws Exception Error in generating the WhereClause object.
      */
-    private static void whereDecode(MatchClause matchC, CypherWalker cypWalker) throws Exception {
+    private static void whereDecode(MatchClause matchC, CypherWalker cypWalker) throws DQInvalidException {
         String fullClause = cypWalker.getWhereClause().toLowerCase();
 
         // store the individual parts of the full WHERE clause of the Cypher input.
@@ -832,7 +837,8 @@ class CypherTranslator {
                 String[] idAndValue = clause.split(" is ");
                 String op = (idAndValue[1].contains("not")) ? "is_not_null" : "is_null";
                 addCondition(idAndValue, matchC, op, not, cW);
-            }
+            } else throw new DQInvalidException("WHERE component could not be translated to an intermediate" +
+                    "representation: " + clause);
         }
     }
 
@@ -850,10 +856,9 @@ class CypherTranslator {
      *                       component is of the format (any(... IN [...])). In the latter case of 'in', the
      *                       WHERE component is of the form (any(... = ...)). See a list of the example queries
      *                       for more info.
-     * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addAnyWhere(String collection, String predicateValue, MatchClause matchC, boolean not,
-                                    CypWhere cW, String typeAny) throws Exception {
+                                    CypWhere cW, String typeAny) throws DQInvalidException {
         String[] idAndProp;
 
         if (collection.startsWith("labels(")) {
@@ -885,7 +890,7 @@ class CypherTranslator {
             }
         }
 
-        throw new Exception("WHERE CLAUSE MALFORMED");
+        throw new DQInvalidException("WHERE CLAUSE MALFORMED!");
     }
 
     /**
@@ -898,10 +903,9 @@ class CypherTranslator {
      * @param matchC     MatchClause of the Cypher input.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
      * @param cW         CypWhere object.
-     * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addIDWhere(String[] idAndValue, MatchClause matchC, boolean not, CypWhere cW)
-            throws Exception {
+            throws DQInvalidException {
         String id = idAndValue[0].substring(3);
         // opAndValue[0] will contain the operator (such as =, <, >=)
         // opAndValue[1] will contain the value (such as 349, [1, 2], etc.)
@@ -923,7 +927,7 @@ class CypherTranslator {
             }
         }
 
-        throw new Exception("WHERE CLAUSE MALFORMED");
+        throw new DQInvalidException("WHERE CLAUSE MALFORMED");
     }
 
     /**
@@ -935,10 +939,9 @@ class CypherTranslator {
      * @param matchC MatchClause of the Cypher input.
      * @param not    If the NOT keyword is used in this component, this flag is set to true.
      * @param cW     CypWhere object.
-     * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addExistsWhere(String clause, MatchClause matchC, boolean not, CypWhere cW)
-            throws Exception {
+            throws DQInvalidException {
         String[] idAndProp = clause.split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
@@ -957,7 +960,7 @@ class CypherTranslator {
             }
         }
 
-        throw new Exception("WHERE CLAUSE MALFORMED");
+        throw new DQInvalidException("WHERE CLAUSE MALFORMED");
     }
 
     /**
@@ -969,10 +972,9 @@ class CypherTranslator {
      * @param matchC     MatchClause of the Cypher input.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
      * @param cW         CypWhere object.
-     * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addLabelsWhere(String[] idAndValue, MatchClause matchC, boolean not, CypWhere cW)
-            throws Exception {
+            throws DQInvalidException {
         String id = idAndValue[1].substring(7, idAndValue[1].length() - 1);
         String val = idAndValue[0].replace("'", "");
 
@@ -984,7 +986,7 @@ class CypherTranslator {
             }
         }
 
-        throw new Exception("WHERE CLAUSE MALFORMED");
+        throw new DQInvalidException("WHERE CLAUSE MALFORMED");
     }
 
     /**
@@ -995,10 +997,9 @@ class CypherTranslator {
      * @param op         Logical operator of the where component.
      * @param not        If the NOT keyword is used in this component, this flag is set to true.
      * @param cW         CypWhere object.
-     * @throws Exception The id does not match any nodes/relationships.
      */
     private static void addCondition(String[] idAndValue, MatchClause matchC, String op, boolean not, CypWhere cW)
-            throws Exception {
+            throws DQInvalidException {
         String[] idAndProp = idAndValue[0].split("\\.");
 
         for (CypNode cN : matchC.getNodes()) {
@@ -1017,7 +1018,7 @@ class CypherTranslator {
             }
         }
 
-        throw new Exception("WHERE CLAUSE MALFORMED");
+        throw new DQInvalidException("WHERE CLAUSE MALFORMED");
     }
 
     /**

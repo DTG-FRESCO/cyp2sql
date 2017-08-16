@@ -1,6 +1,8 @@
 package query_translation.sql.conversion_types;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.CypIterate;
+import intermediate_rep.DecodedQuery;
 import production.C2SProperties;
 import query_translation.sql.utilities_sql.IterateSQL;
 
@@ -11,7 +13,13 @@ import query_translation.sql.utilities_sql.IterateSQL;
  */
 public class Iterate_Cypher extends AbstractConversion {
     @Override
-    public String convertQuery(String cypher, C2SProperties props) {
+    public String convertToSQL(DecodedQuery dQ, C2SProperties props) throws DQInvalidException {
+        IterateSQL it = new IterateSQL();
+        return it.translate(new StringBuilder(), dQ, props).toString();
+    }
+
+    @Override
+    public DecodedQuery generateDQ(String cypher, C2SProperties props) {
         CypIterate cypIter = new CypIterate(cypher);
 
         String line = cypIter.getOriginalCypherInput();
@@ -29,8 +37,6 @@ public class Iterate_Cypher extends AbstractConversion {
         String firstStep = matchClause + "return " + cypIter.getLoopIndexTo() + ";";
         cypIter.setFirstQuery(firstStep);
 
-        StringBuilder sql = new StringBuilder();
-        IterateSQL it = new IterateSQL();
-        return it.translate(sql, cypIter, props);
+        return new DecodedQuery(null, null, null, -1, -1, null, cypIter);
     }
 }

@@ -5,6 +5,7 @@ To use this tool without going near the code, include the .jar in your classpath
 
 ```java
 import database.postgres.InsertSchemaPostgres;
+import intermediate_rep.DecodedQuery;
 import production.C2SMain;
 import production.C2SProperties;
 import schema_conversion.SchemaConvert;
@@ -32,15 +33,25 @@ public class C2STestUsage {
                 if (successConvert) InsertSchemaPostgres.executeSchemaChange(dbName, props);
                 break;
             case "translate":
-                // location of the script to allow results from Postgres to be piped back 
-                // to this class. View and adapt the scripts if necessary.
+                // location of the script to allow results from Postgres to be piped back to 
+                // this class. View and adapt the scripts if necessary.
                 String scriptLoc = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/pgdbPlay.bat";
 
                 // Cypher query to translate and then execute.
-                String cypher = "MATCH (n) RETURN count(n);";
+                String cypher = "MATCH (a:Meta) RETURN DISTINCT a.type " +
+                 "UNION MATCH (a:Process) RETURN DISTINCT a.type;";
 
                 try {
-                    String sql = C2SMain.getTranslation(cypher, props);
+                    // obtain the intermediate representation
+                    DecodedQuery dQ = C2SMain.getDQ(cypher, props);
+                    System.out.println(dQ.getUnionParts().get(0).getMc());
+
+                    // convert the intermediate representation to SQL
+                    String sql = C2SMain.getTranslation(cypher, dQ, props);
+                    System.out.println(sql);
+
+                    // execute directly on Postgres if desired (the script will pipe 
+                    // the results back into this tool).
                     String postgresOutput = C2SMain.runPostgres(sql, dbName, scriptLoc);
                     System.out.println(postgresOutput);
                 } catch (IOException e) {

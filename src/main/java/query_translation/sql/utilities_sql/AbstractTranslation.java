@@ -1,5 +1,6 @@
 package query_translation.sql.utilities_sql;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.DecodedQuery;
 import production.C2SProperties;
 
@@ -13,5 +14,5 @@ abstract class AbstractTranslation {
     static char[] extendID = "123456789".toCharArray();
     static boolean usesOptimalTable = false;
 
-    public abstract StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props);
+    public abstract StringBuilder translate(StringBuilder sql, DecodedQuery decodedQuery, C2SProperties props) throws DQInvalidException;
 }

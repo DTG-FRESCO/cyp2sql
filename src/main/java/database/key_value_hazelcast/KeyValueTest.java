@@ -15,8 +15,8 @@ import java.util.*;
 
 /**
  * Main class for inserting a graph schema into a key-value store.
- * This class is mainly used as an example - the key-value store being
- * used is Hazelcast, which is an in-memory database.
+ * This class is mainly used as an example - the key-value store being used is Hazelcast,
+ * which is an in-memory database.
  */
 public class KeyValueTest {
     private static Map<Integer, String> mapNodes;

@@ -14,11 +14,12 @@ class C2SInteractive {
      *
      * @param f_cypher File object to store the results from Neo4j.
      * @param f_sql    File object to store the results from Postgres.
+     * @param props    C2SProperties object (should already be initialised).
      * @param dbName   Name of the relational database that the generated SQL will be executed on.
      */
     static void run_debug(File f_cypher, File f_sql, String dbName, C2SProperties props) {
         System.out.println("PRINT TO FILE : " + ((C2SMain.printBool) ? "enabled" : "disabled"));
-        System.out.println("Cypher to SQL Translator Tool v1.0");
+        System.out.println("Cypher to SQL Translator Tool v1.1");
         System.out.println("To exit, type :exit.");
 
         while (true) {
@@ -33,7 +34,6 @@ class C2SInteractive {
                 try {
                     C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, dbName, true, props);
                 } catch (Exception e) {
-                    System.err.println("Error with the last query...");
                     e.printStackTrace();
                 }
             }
@@ -45,9 +45,10 @@ class C2SInteractive {
      * the results are outputted to the console, but from the relational database.
      *
      * @param dbName Name of the relational database that the translated query is to be executed on.
+     * @param props  C2SProperties object (should already be initialised).
      */
     static void run(String dbName, C2SProperties props) {
-        System.out.println("Cypher to SQL Translator Tool v1.0");
+        System.out.println("Cypher to SQL Translator Tool v1.1");
         System.out.println("To exit, type :exit.");
 
         while (true) {
@@ -62,7 +63,6 @@ class C2SInteractive {
                 try {
                     C2SMain.translateCypherToSQL(resp, null, null, dbName, false, props);
                 } catch (Exception e) {
-                    System.err.println("Error with the last query...");
                     e.printStackTrace();
                 }
             }

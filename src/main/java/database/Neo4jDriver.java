@@ -26,6 +26,7 @@ public class Neo4jDriver {
      *
      * @param query          Cypher to execute.
      * @param cypher_results File to store the results.
+     * @param props          C2SProperties object (should already be initialised).
      * @param printOutput    Set to true to store the outputs of the query on disk.
      */
     public static void run(String query, File cypher_results, boolean printOutput, C2SProperties props) {

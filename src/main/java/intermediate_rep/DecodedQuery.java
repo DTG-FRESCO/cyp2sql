@@ -2,6 +2,8 @@ package intermediate_rep;
 
 import translator.CypherWalker;
 
+import java.util.ArrayList;
+
 /**
  * This class definition bundles together all of the intermediate representations
  * built up by the tool, as well as storing the SQL translation for completeness.
@@ -11,11 +13,14 @@ public class DecodedQuery {
     private ReturnClause returnC;
     private OrderClause orderC;
     private CypForEach forEachC;
+    private CypIterate iterate;
     private int skipAmount;
     private int limitAmount;
     private CypherWalker cypherAdditionalInfo;
     // The SQL translation is also stored in this object for completeness.
     private String sqlEquiv;
+    private ArrayList<String> withParts = new ArrayList<>();
+    private ArrayList<DecodedQuery> unionParts = new ArrayList<>();
 
     /**
      * Create the DecodedQuery object based on the parsing of the Cypher input.
@@ -27,13 +32,19 @@ public class DecodedQuery {
      * @param limit LIMIT value.
      * @param c     The CypherWalker object.
      */
-    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, int skip, int limit, CypherWalker c) {
+    public DecodedQuery(MatchClause m, ReturnClause r, OrderClause o, int skip, int limit, CypherWalker c,
+                        CypIterate it) {
         this.matchC = m;
         this.returnC = r;
         this.orderC = o;
         this.skipAmount = skip;
         this.limitAmount = limit;
         this.cypherAdditionalInfo = c;
+        this.iterate = it;
+    }
+
+    public DecodedQuery() {
+
     }
 
     public MatchClause getMc() {
@@ -74,5 +85,25 @@ public class DecodedQuery {
 
     public void setForEachC(CypForEach forEachC) {
         this.forEachC = forEachC;
+    }
+
+    public CypIterate getIterate() {
+        return iterate;
+    }
+
+    public ArrayList<String> getWithParts() {
+        return withParts;
+    }
+
+    public void setWithParts(ArrayList<String> withParts) {
+        this.withParts = withParts;
+    }
+
+    public void addToUnionParts(DecodedQuery unionDQ) {
+        unionParts.add(unionDQ);
+    }
+
+    public ArrayList<DecodedQuery> getUnionParts() {
+        return unionParts;
     }
 }

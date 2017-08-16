@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class containing all methods required to store the results of the schema conversion from Neo4j to Postgres.
+ * Store the results of the schema conversion from Neo4j to Postgres.
  */
 public class InsertSchemaPostgres {
     private static List<String> fieldsForMetaFile = new ArrayList<>();
@@ -21,6 +21,7 @@ public class InsertSchemaPostgres {
      * Executing the various schema parts one by one to Postgres.
      *
      * @param database Name of the Postgres database to store the new schema on.
+     * @param props    C2SProperties object (should already be initialised).
      */
     public static void executeSchemaChange(String database, C2SProperties props) {
         PostgresDriver.createConnection(database, props);
@@ -54,6 +55,8 @@ public class InsertSchemaPostgres {
      * All of the fields and relationships gathered during the schema conversion are stored in
      * meta files (to be used when outputting the results of the queries from both Postgres and
      * Neo4j).
+     *
+     * @param props C2SProperties object (should already be initialised).
      */
     private static void addFieldsToMetaFile(C2SProperties props) {
         FileOutputStream fos;
@@ -86,6 +89,7 @@ public class InsertSchemaPostgres {
      * If there is a label which is applied to a node only ever on its own in isolation, then store this as a
      * relation to remove unnecessary NULLs which slow execution of SQL down.
      *
+     * @param props C2SProperties object (should already be initialised).
      * @return SQL to execute.
      */
     private static String insertEachLabel(C2SProperties props) {
@@ -342,6 +346,16 @@ public class InsertSchemaPostgres {
         return sb;
     }
 
+    /**
+     * For each type of relationship in the original Neo4j graph, add a relation into Postgres.
+     *
+     * @param sbTypes The StringBuilder object containing all of the SQL to be executed.
+     * @param columns The columns of the relation to be committed to the database.
+     * @param o       The JSONObject containing the value of the key 'type'. The value will be the name of the
+     *                relation (for example, if the value is 'OWNS', the relation stored will be 'e$OWNS'.
+     * @param values  String of the values to store into the database.
+     * @return Updated StringBuilder object with additional SQL to execute on the database.
+     */
     private static StringBuilder addType(StringBuilder sbTypes, String columns, JsonObject o, String values) {
         sbTypes.append("INSERT INTO ");
         sbTypes.append("e$").append(o.get("type").getAsString()).append("(").append(columns);
@@ -351,6 +365,13 @@ public class InsertSchemaPostgres {
         return sbTypes;
     }
 
+    /**
+     * Correctly format the string to insert into the database.
+     *
+     * @param inputField The key for which the value is being retrieved for.
+     * @param obj        The JSONObject from a node/relationship.
+     * @return Correctly formatted String to insert into the SQL statement.
+     */
     private static String getInsertString(String inputField, JsonObject obj) {
         String temp;
 

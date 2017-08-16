@@ -25,6 +25,7 @@ public class PostgresDriver {
      * Create the initial connection to the database.
      *
      * @param dbName Name of the database to connect to.
+     * @param props  C2SProperties object (should already be initialised).
      */
     static void createConnection(String dbName, C2SProperties props) {
         try {
@@ -59,6 +60,7 @@ public class PostgresDriver {
      *
      * @param query  SQL to execute (beginning with CREATE)
      * @param dbName Database name to execute on.
+     * @param props  C2SProperties object (should already be initialised).
      * @throws SQLException Error with the SQL query being executed.
      */
     public static void executeCreateView(String query, String dbName, C2SProperties props) throws SQLException {
@@ -81,6 +83,7 @@ public class PostgresDriver {
      * @param database    Database to execute statement on.
      * @param pg_results  File to store the results.
      * @param printOutput Set to true if the output of the SQL statement should be stored in a local file.
+     * @param props       C2SProperties object (should already be initialised).
      * @throws SQLException Thrown if there is an error in the SQL statement.
      */
     public static void select(String query, String database, File pg_results, boolean printOutput, C2SProperties props)
@@ -190,6 +193,7 @@ public class PostgresDriver {
      *
      * @param query  SQL statement to execute.
      * @param dbName Database name of the database to execute the statement on.
+     * @param props  C2SProperties object (should already be initialised).
      * @throws SQLException Error with the transaction.
      */
     public static void insertOrDelete(String query, String dbName, C2SProperties props) throws SQLException {

@@ -1,7 +1,7 @@
 package query_translation.sql.conversion_types;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.DecodedQuery;
-import production.C2SMain;
 import production.C2SProperties;
 import query_translation.sql.utilities_sql.ShortestPath;
 import translator.CypherTokenizer;
@@ -11,10 +11,19 @@ import translator.CypherTokenizer;
  */
 public class SP_Cypher extends AbstractConversion {
     @Override
-    public String convertQuery(String cypher, C2SProperties props) {
+    public String convertToSQL(DecodedQuery dQ, C2SProperties props) {
+        ShortestPath sp = new ShortestPath();
+        return sp.translate(new StringBuilder(), dQ, props).toString();
+    }
+
+    @Override
+    public DecodedQuery generateDQ(String cypher, C2SProperties props) throws DQInvalidException {
         cypher = cypher.toLowerCase();
         int returnIndex = cypher.indexOf("return");
+        if (returnIndex == -1)
+            throw new DQInvalidException("Cypher input has no RETURN clause --> malformed.");
         int whereIndex = cypher.indexOf("where");
+
         String whereClause = null;
 
         if (whereIndex != -1) {
@@ -27,17 +36,9 @@ public class SP_Cypher extends AbstractConversion {
         String returnClause = cypher.substring(cypher.indexOf("return"));
         String cypherPathQuery = "MATCH " + path + ((whereIndex != -1) ? whereClause : "") + " " + returnClause;
 
-        DecodedQuery dQMainPath;
-        try {
-            dQMainPath = CypherTokenizer.decode(cypherPathQuery, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        DecodedQuery dQ = CypherTokenizer.decode(cypherPathQuery, false);
 
-        C2SMain.currentDQ = dQMainPath;
-        StringBuilder sql = new StringBuilder();
-        ShortestPath sp = new ShortestPath();
-        return sp.translate(sql, dQMainPath, props).toString();
+        if (dQ == null) throw new DQInvalidException("Could not convert Cypher input...");
+        return dQ;
     }
 }

@@ -1,5 +1,6 @@
 package query_translation.sql.utilities_sql;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.CypAggFuncs;
 import intermediate_rep.CypReturn;
 import intermediate_rep.DecodedQuery;
@@ -184,11 +185,12 @@ public class WithSQL {
         return sWith.toString();
     }
 
-    public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith, C2SProperties props) {
+    public static String createSelectMatch(String secondWith, DecodedQuery dqFirstWith, C2SProperties props)
+            throws DQInvalidException {
         withMapping.put(dqFirstWith.getRc().getItems().get(0).getNodeID(), "wA");
 
         StringBuilder resSecWith = new StringBuilder();
-        DecodedQuery dQSecWith = AbstractConversion.convertCypherToSQL(secondWith, props);
+        DecodedQuery dQSecWith = AbstractConversion.genDQAndSQL(secondWith, props);
 
         if (dQSecWith.getMc().getRels().isEmpty()) {
             NoRels nr = new NoRels();

@@ -1,5 +1,6 @@
 package query_translation.sql.conversion_types;
 
+import exceptions.DQInvalidException;
 import intermediate_rep.DecodedQuery;
 import production.C2SProperties;
 import query_translation.sql.utilities_sql.WithSQL;
@@ -14,16 +15,21 @@ public class With_Cypher extends AbstractConversion {
      * @param cypher Original Cypher input containing the WITH keyword.
      * @return SQL string equivalent of the original Cypher input.
      */
-    @Override
     public String convertQuery(String cypher, C2SProperties props) {
         int posOfMatch = cypher.toLowerCase().lastIndexOf("match");
         int posOfWhere = cypher.toLowerCase().indexOf("where");
         int posOfOrderBy = cypher.toLowerCase().indexOf("order by");
 
         // from the tokens in the original Cypher query, decide on the most appropriate method for translation.
-        if (posOfMatch != -1 && posOfMatch != 0) return withMatch(cypher, props);
-        if (posOfOrderBy == -1 || (posOfWhere != -1 && (posOfWhere < posOfOrderBy))) return withWhere(cypher, props);
-        else return withOB(cypher, props);
+        try {
+            if (posOfMatch != -1 && posOfMatch != 0) return withMatch(cypher, props);
+            if (posOfOrderBy == -1 || (posOfWhere != -1 && (posOfWhere < posOfOrderBy)))
+                return withWhere(cypher, props);
+            else return withOB(cypher, props);
+        } catch (DQInvalidException ex) {
+            ex.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -34,11 +40,11 @@ public class With_Cypher extends AbstractConversion {
      * @param props
      * @return SQL equivalent of the Cypher input.
      */
-    private String withMatch(String cypher, C2SProperties props) {
+    private String withMatch(String cypher, C2SProperties props) throws DQInvalidException {
         String changeLine = cypher.toLowerCase().replace("with", "return");
         String firstWith = changeLine.toLowerCase()
                 .substring(0, cypher.toLowerCase().lastIndexOf("match") + 1) + ";";
-        DecodedQuery dqFirstWith = convertCypherToSQL(firstWith, props);
+        DecodedQuery dqFirstWith = genDQAndSQL(firstWith, props);
 
         String withTemp = null;
         if (dqFirstWith != null) {
@@ -47,7 +53,6 @@ public class With_Cypher extends AbstractConversion {
 
         String secondWith = cypher.toLowerCase().substring(cypher.toLowerCase().lastIndexOf("match"));
         String sqlSelect = WithSQL.createSelectMatch(secondWith, dqFirstWith, props);
-
 
         return withTemp + " " + sqlSelect;
     }
@@ -60,11 +65,11 @@ public class With_Cypher extends AbstractConversion {
      * @param props
      * @return SQL equivalent of the Cypher input.
      */
-    private String withOB(String cypher, C2SProperties props) {
+    private String withOB(String cypher, C2SProperties props) throws DQInvalidException {
         int posOfReturn = cypher.toLowerCase().indexOf("return");
         String firstWith = cypher.toLowerCase().replace("with", "return");
         firstWith = firstWith.substring(0, posOfReturn + 1) + ";";
-        DecodedQuery dQ = convertCypherToSQL(firstWith, props);
+        DecodedQuery dQ = genDQAndSQL(firstWith, props);
 
         String withTemp = null;
         if (dQ != null) {
@@ -74,7 +79,7 @@ public class With_Cypher extends AbstractConversion {
         String indexName = dQ.getMc().getNodes().get(0).getId();
         String finalPart = "match (" + indexName + ") " +
                 cypher.toLowerCase().substring(posOfReturn, cypher.length());
-        DecodedQuery decQFinal = convertCypherToSQL(finalPart, props);
+        DecodedQuery decQFinal = genDQAndSQL(finalPart, props);
         String sqlSelect = WithSQL.createSelectOB(decQFinal);
         return withTemp + " " + sqlSelect;
     }
@@ -87,10 +92,10 @@ public class With_Cypher extends AbstractConversion {
      * @param props
      * @return SQL equivalent of the Cypher input.
      */
-    private String withWhere(String cypher, C2SProperties props) {
+    private String withWhere(String cypher, C2SProperties props) throws DQInvalidException {
         String changeLine = cypher.toLowerCase().replace("with", "return");
         String[] withParts = changeLine.toLowerCase().split(" where ");
-        DecodedQuery dQ = convertCypherToSQL(withParts[0] + ";", props);
+        DecodedQuery dQ = genDQAndSQL(withParts[0] + ";", props);
 
         String withTemp = null;
         if (dQ != null) {
@@ -99,5 +104,15 @@ public class With_Cypher extends AbstractConversion {
 
         String sqlSelect = WithSQL.createSelectWhere(withParts[1].trim(), dQ);
         return withTemp + " " + sqlSelect;
+    }
+
+    @Override
+    public String convertToSQL(DecodedQuery dQ, C2SProperties props) {
+        return null;
+    }
+
+    @Override
+    public DecodedQuery generateDQ(String cypher, C2SProperties props) {
+        return null;
     }
 }
