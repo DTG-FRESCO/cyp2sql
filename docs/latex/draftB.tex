@@ -13,7 +13,7 @@
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \lstdefinestyle{DOS}
 {
-backgroundcolor=\color{black},
+backgroundcolor=\color{gray},
 basicstyle=\color{white}\ttfamily,
 breaklines=true,
 postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
@@ -36,6 +36,23 @@ frame=single,
 framexleftmargin=2em
 }
 
+\lstset{frame=tb,
+language=Java,
+aboveskip=3mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\small\ttfamily},
+numbers=none,
+numberstyle=\tiny\color{gray},
+keywordstyle=\color{blue},
+commentstyle=\color{dkgreen},
+stringstyle=\color{mauve},
+breaklines=true,
+breakatwhitespace=true,
+tabsize=3
+}
+
 \begin{document}
 \title{\textsf{Cyp2SQL -- Documentation}}
 
@@ -45,7 +62,7 @@ framexleftmargin=2em
 
 \abstract{\emph{Cyp2SQL} is a tool for translating graph schemas and the graph query language Cypher to both
 a different database schema, and different database language (the original aim of this project was to translate
-Cypher to SQL).}
+Cypher to SQL). The tool can either be used as a standalone application, or, by utilising the .jar of the Java application, it can be used as an API for other applications. The license of the code is to be confirmed.}
 
 \tableofcontents
 \addtocontents{toc}{%
@@ -63,11 +80,15 @@ Cypher to SQL).}
 The pipeline of the tool consists of 5 stages (as shown in Figure \ref{toolchain}):
 
 \begin{itemize}
-\item A \emph{Schema Conversion} module for creating the initial database in an engine other than Neo4j (such as a relational schema in Postgres)
+\item A \emph{Schema Conversion} module for creating the initial database in a representation other than Neo4j (such as a relational schema in Postgres)
 \item A \emph{Parsing Cypher} module, which is the first part of the translation to another database language (such as SQL). This module relies on the ANTLR framework, and other hand-written parsing code
-\item An \emph{Intermediate Representation} is then built in Java
-\item A \emph{Translation Module} takes this intermediate representation, and converts it to the target database language (the tool was originally designed with SQL in mind)
-\item The \emph{Output Results \& Information} module executes both the original Cypher on Neo4j, and the newly created query on the other chosen database(s). The execution times of the queries may be recorded, and the results of the queries may be written to a local file if requested. In the latter case, the tool can also verify that both the number of results and the results themselves match (this is useful for debugging).
+\item An \emph{Intermediate Representation} is then built in Java -- the result of this stage of the pipeline is a \texttt{DecodedQuery} object.
+\item A \emph{Translation Module} takes this intermediate representation, and converts it to the target database language
+\item The \emph{Output Results \& Information} module can perform many different tasks, depending on the configuration desired:
+\begin{itemize}
+\item It can execute both the original Cypher on Neo4j, and the newly created query on the target database, and record the execution times of the queries. The tool may also be made to write the results to local files, so that the outputs can be compared for accuracy.
+\item The tool can also just execute the translated query on the database engine, and parse the results back into the \emph{Cyp2SQL} tool.
+\end{itemize}
 \end{itemize}
 
 \medskip
@@ -75,19 +96,87 @@ The pipeline of the tool consists of 5 stages (as shown in Figure \ref{toolchain
 The codebase is entirely Java. There are some additional features provided through the ANTLR tool, as described in \S \ref{sec:antlr}. There are some script/.bat files that help the tool execute SQL on Postgres and pipe the results back into the tool.
 
 \subsection{Quick usage}
+Using the \texttt{cyp2sql-next.jar} file:
 \begin{verbatim}
 <-schema|-translate|-s|-t> <propertiesFile> <targetDatabaseName> <-dp|-dn|-r>
 \end{verbatim}
 
 \begin{center}
 \begin{tabular}{ p{3cm} p{10.5cm} }
--s \textbar{} -schema & Runs the tool for schema conversion. \\
--t \textbar{} -translate & Runs the tool for query translation. \\
-propertiesFile & Path of the properties file \texttt{c2s\_props.properties}. See \S \ref{ss:prop}. \\
-targetDatabaseName & Name of the relational database for either the converted graph schema to be stored into, or for the translated queries to execute on. \\
-dp \textbar{} -dn \textbar{} -r & \textbf{Only needed when in query translation mode}. See \S \ref{sec:tranQ}.
+\texttt{-s \textbar{} -schema} & Runs the tool for schema conversion. See \S \ref{sec:schemaConv}. \\
+\texttt{-t \textbar{} -translate} & Runs the tool for query translation. See \S \ref{sec:tranQ}. \\
+\texttt{propertiesFile} & Path of the properties file \texttt{c2s\_props.properties}. See \S \ref{ss:prop}. \\
+\texttt{targetDatabaseName} & Name of the relational database for either the converted graph schema to be stored into, or for the translated queries to execute on. \\
+\texttt{dp \textbar{} -dn \textbar{} -r} & \textbf{Only needed when in query translation mode}.
 \end{tabular}
 \end{center}
+
+\medskip
+
+Using the code within another application as a library is also possible. Example usage:
+
+\begin{lstlisting}[language=Java, breaklines=true]
+import database.postgres.InsertSchemaPostgres;
+import intermediate_rep.DecodedQuery;
+import production.C2SMain;
+import production.C2SProperties;
+import schema_conversion.SchemaConvert;
+
+import java.io.IOException;
+
+public class C2STestUsage {
+public static void main(String args[]) {
+// these need to be set before anything can occur.
+String propsFile = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/c2s_props.properties";
+C2SProperties props = new C2SProperties(propsFile);
+
+// name of the blank database to either:
+// - convert the schema too
+// - execute the translated Cypher on
+String dbName = "testb";
+
+String thingToDo = "translate";
+
+switch (thingToDo) {
+case "convert":
+// the properties file must be edited first.
+// a dump from Neo4j is also needed.
+boolean successConvert = SchemaConvert.translate(props);
+if (successConvert) InsertSchemaPostgres.executeSchemaChange(dbName, props);
+break;
+case "translate":
+// location of the script to allow results from Postgres to be
+// piped back to this class. Adapt the scripts if necessary.
+String scriptLoc = "C:/Users/ocraw/IdeaProjects/cyp2sql-next/pgdbPlay.bat";
+
+// Cypher query to translate and then execute.
+String cypher = "MATCH (a:Meta) RETURN DISTINCT a.type " +
+"UNION MATCH (a:Process) RETURN DISTINCT a.type;";
+
+try {
+// obtain the intermediate representation
+DecodedQuery dQ = C2SMain.getDQ(cypher, props);
+System.out.println(dQ.getUnionParts().get(0).getMc());
+
+// convert the intermediate representation to SQL
+String sql = C2SMain.getTranslation(cypher, dQ, props);
+System.out.println(sql);
+
+// execute directly on Postgres if desired (the script will pipe
+// the results back into this tool).
+String postgresOutput = C2SMain.runPostgres(sql, dbName, scriptLoc);
+System.out.println(postgresOutput);
+} catch (IOException e) {
+e.printStackTrace();
+}
+break;
+default:
+System.err.println("Not a valid option...");
+System.exit(1);
+}
+}
+}
+\end{lstlisting}
 
 \section{Getting started}
 The code for the tool can be found in the \emph{cyp2sql-next} repository: \url{https://gitlab.dtg.cl.cam.ac.uk/fresco-projects/cyp2sql-next/}.
@@ -186,6 +275,7 @@ postgresPW & Postgres database password. \\
 
 
 \section{Schema conversion}
+\label{sec:schemaConv}
 The first step of the pipeline in translating Cypher to SQL is to convert the Neo4j graph database to a relational database. Using the dump file generated from the Neo4j graph, multiple relations can be built up and executed on a relational database backend. During this process, other metafiles are also created -- these are used throughout the translation process later for completeness, and in some cases, optimisations.
 
 
@@ -324,7 +414,7 @@ The tool requires a running Neo4j instance to be up and running.
 
 \medskip
 
-\textcolor{red}{NOTE: the script to run Postgres on Unix systems may not have the right permissions to run with the tool. \texttt{chmod +x auto\_run\_pg.sh} should fix the issue.}
+\textcolor{red}{NOTE: the script to run Postgres on Unix systems when the tool is in \texttt{-r} mode may not have the right permissions to run with the tool. \texttt{chmod +x auto\_run\_pg.sh} should fix the issue.}
 
 \medskip
 
@@ -408,7 +498,6 @@ Property stored with node: \texttt{[sys\_ time="p1null@null\$lt\#0\#tl"]}
 \end{itemize}
 
 \bigskip
-\newpage
 
 \begin{lstlisting}[language=Cypher]
 MATCH (a)
@@ -470,13 +559,6 @@ The \texttt{ITERATE} keyword makes it both clear that the Cypher will attempt to
 
 To demonstrate what this new syntax can do, consider the graph in Figure \ref{iterGraphFig}.
 
-\begin{figure}[h]
-\centerline{\includegraphics[scale=0.7]{iterateGraph.png}}
-\caption{A trivial graph consisting of thirteen nodes with three different labels -- blue for `l1', green for `l2', and red for `l3'.}
-\label{iterGraphFig}
-\end{figure}
-
-\newpage
 Figure \ref{iterGraphFig} shows a common pattern, \texttt{BLUE --> GREEN --> RED --> BLUE}. Finding all the blue nodes at the end of this pattern \emph{iteratively} would be hard to do with the existing Cypher syntax in a concise and clear manner. It is a more tractable problem with the \texttt{ITERATE} syntax:
 
 \begin{lstlisting}[language = Cypher]
@@ -484,6 +566,14 @@ ITERATE MATCH (a:l1)-->(b:l2)-->(c:l3)-->(d:l1)
 LOOP d ON a COLLECT n
 RETURN n.uid;
 \end{lstlisting}
+
+\begin{figure}[h]
+\centerline{\includegraphics[scale=0.7]{iterateGraph.png}}
+\caption{A trivial graph consisting of thirteen nodes with three different labels -- blue for `l1', green for `l2', and red for `l3'.}
+\label{iterGraphFig}
+\end{figure}
+
+\newpage
 
 Executing this query on Postgres returns the results shown in Table \ref{table:queryIter}.
 
@@ -603,6 +693,8 @@ ORDER BY idA.propertyB [ASC|DESC]?
 [SKIP skipValue]? [LIMIT limitValue]?
 \end{lstlisting}
 
+\newpage
+
 \subsection*{\texttt{MATCH ... WHERE ... RETURN}}
 These are also translated to SQL in the class \texttt{NoRels.java}.
 
@@ -662,6 +754,8 @@ WHERE idB.propertyB = idA.propertyA
 RETURN count(idA)
 \end{lstlisting}
 
+\newpage
+
 \subsection*{\texttt{UNION [ALL]?}}
 The individual components of the input are dealt with normally, and then combined together with the correct \texttt{UNION} semantics in the class \texttt{UnionSQL.java}.
 
@@ -674,8 +768,6 @@ RETURN idB.propertyA
 MATCH (idA)-[:rel2]->(idB)
 RETURN idB.propertyA
 \end{lstlisting}
-
-\newpage
 
 \subsection*{Variable length paths -- \texttt{-[*x..y]->}}
 This subset of Cypher is dealt with using the \texttt{SingleVar.java} class.
@@ -721,6 +813,8 @@ MATCH (idA)-[rel]->(idB)
 WHERE NOT id(idB) = value OR "someLabel" IN labels(idB)
 RETURN idA.propertyA
 \end{lstlisting}
+
+\newpage
 
 \subsection*{\texttt{... WHERE ... IN} and \texttt{any()}}
 These keywords are parsed in the class \texttt{CypherTranslator.java}, where they are stored with the node/relationship that they are referring to.

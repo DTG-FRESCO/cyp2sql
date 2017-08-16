@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9) (preloaded format=pdflatex 2016.10.10)  15 AUG 2017 12:36
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9) (preloaded format=pdflatex 2016.10.10)  16 AUG 2017 17:31
 entering extended mode
 **./draftB.tex
 (draftB.tex
@@ -343,24 +343,27 @@ File: listings.cfg 2015/06/04 1.6 listings configuration
 ))
 Package: listings 2015/06/04 1.6 (Carsten Heinz)
 
+("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\listings\lstlang1.sty"
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
 (draftB.aux)
 \openout1 = `draftB.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-Package doc Info: Made | a short reference for \verb on input line 39.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+Package doc Info: Made | a short reference for \verb on input line 56.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -423,7 +426,7 @@ G,.JBIG2,.JB2,.eps]
 (grfext)             \AppendGraphicsExtensions on input line 456.
 )
 \AtBeginShipoutBox=\box57
-Package hyperref Info: Link coloring ON on input line 39.
+Package hyperref Info: Link coloring ON on input line 56.
 
 ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\hyperref\nameref.sty"
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
@@ -433,9 +436,9 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count137
 )
-LaTeX Info: Redefining \ref on input line 39.
-LaTeX Info: Redefining \pageref on input line 39.
-LaTeX Info: Redefining \nameref on input line 39.
+LaTeX Info: Redefining \ref on input line 56.
+LaTeX Info: Redefining \pageref on input line 56.
+LaTeX Info: Redefining \nameref on input line 56.
 
 (draftB.out) (draftB.out)
 \@outlinefile=\write3
@@ -452,11 +455,11 @@ Package pdflscape Info: Auto-detected driver: pdftex on input line 81.
 )
 \c@lstlisting=\count138
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 45.
+(Font)              <12> on input line 62.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 45.
+(Font)              <8> on input line 62.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 45.
+(Font)              <6> on input line 62.
 
 (draftB.toc
 LaTeX Font Info:    External font `cmex10' loaded for size
@@ -490,48 +493,49 @@ Package epstopdf Info: Source file: <toolchainVec.eps>
 (epstopdf)                    size: 13776 bytes
 (epstopdf)             Command: <epstopdf --outfile=toolchainVec-eps-converted-
 to.pdf toolchainVec.eps>
-(epstopdf)             \includegraphics on input line 58.
+(epstopdf)             \includegraphics on input line 75.
 Package epstopdf Info: Output file is already uptodate.
  <toolchainVec-eps-converted-to.pdf, id=133, 562.1pt x 64.24pt>
 File: toolchainVec-eps-converted-to.pdf Graphic file (type pdf)
 
 <use toolchainVec-eps-converted-to.pdf>
-Package pdftex.def Info: toolchainVec-eps-converted-to.pdf used on input line 5
-8.
+Package pdftex.def Info: toolchainVec-eps-converted-to.pdf used on input line 7
+5.
 (pdftex.def)             Requested size: 443.57382pt x 50.69414pt.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 66.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 83.
 
 ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\base\omscmr.fd"
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 66.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 83.
  [1
 
 {C:/ProgramData/MiKTeX/2.9/pdftex/config/pdftex.map} <./toolchainVec-eps-conver
 ted-to.pdf>]
-Overfull \hbox (14.53378pt too wide) in paragraph at lines 83--90
+LaTeX Font Info:    Font shape `OMS/cmtt/m/n' in size <9> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 106.
+
+Overfull \hbox (14.53378pt too wide) in paragraph at lines 105--112
  [] 
  []
 
-LaTeX Font Info:    Font shape `OMS/cmtt/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 127.
-[2] ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\listings\lstlang1.sty"
+[2] [3] ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\listings\lstlang1.sty"
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
 ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\listings\lstlang1.sty"
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
-Overfull \hbox (14.53378pt too wide) in paragraph at lines 174--185
+Overfull \hbox (14.53378pt too wide) in paragraph at lines 263--274
  [] 
  []
 
-[3]
+[4]
 Missing character: There is no ‚ in font cmr9!
 Missing character: There is no Ä in font cmr9!
 Missing character: There is no ì in font cmr9!
 
-Underfull \hbox (badness 10000) in paragraph at lines 241--241
+Underfull \hbox (badness 10000) in paragraph at lines 331--331
 []\OT1/cmtt/m/n/9 doforeachfunc(integer[],
  []
 
@@ -539,10 +543,11 @@ Missing character: There is no ‚ in font cmr9!
 Missing character: There is no Ä in font cmr9!
 Missing character: There is no ô in font cmr9!
 
-Overfull \hbox (14.53378pt too wide) in paragraph at lines 236--243
+Overfull \hbox (14.53378pt too wide) in paragraph at lines 326--333
  [] 
  []
 
+[5]
 Package epstopdf Info: Source file: <schemaConv.eps>
 (epstopdf)                    date: 2017-08-15 10:49:35
 (epstopdf)                    size: 116852 bytes
@@ -551,68 +556,74 @@ Package epstopdf Info: Source file: <schemaConv.eps>
 (epstopdf)                    size: 42059 bytes
 (epstopdf)             Command: <epstopdf --outfile=schemaConv-eps-converted-to
 .pdf schemaConv.eps>
-(epstopdf)             \includegraphics on input line 254.
+(epstopdf)             \includegraphics on input line 344.
 Package epstopdf Info: Output file is already uptodate.
-<schemaConv-eps-converted-to.pdf, id=188, 567.11874pt x 703.62875pt>
+ <schemaConv-eps-converted-to.pdf, id=258, 567.11874pt x 703.62875pt>
 File: schemaConv-eps-converted-to.pdf Graphic file (type pdf)
 
 <use schemaConv-eps-converted-to.pdf>
-Package pdftex.def Info: schemaConv-eps-converted-to.pdf used on input line 254
+Package pdftex.def Info: schemaConv-eps-converted-to.pdf used on input line 344
 .
 (pdftex.def)             Requested size: 443.58829pt x 550.36354pt.
- [4] [5 <./schemaConv-eps-converted-to.pdf>]
-Overfull \hbox (14.53377pt too wide) in paragraph at lines 318--323
+ [6] [7 <./schemaConv-eps-converted-to.pdf>]
+Overfull \hbox (14.53377pt too wide) in paragraph at lines 408--413
  [] 
  []
 
-[6] <ss1.png, id=216, 224.3655pt x 124.83pt>
+<ss1.png, id=283, 224.3655pt x 124.83pt>
 File: ss1.png Graphic file (type png)
  <use ss1.png>
-Package pdftex.def Info: ss1.png used on input line 334.
+Package pdftex.def Info: ss1.png used on input line 424.
 (pdftex.def)             Requested size: 443.61852pt x 246.81557pt.
 
-<ss2.png, id=217, 228.9645pt x 85.7385pt>
+<ss2.png, id=284, 228.9645pt x 85.7385pt>
 File: ss2.png Graphic file (type png)
  <use ss2.png>
-Package pdftex.def Info: ss2.png used on input line 340.
+Package pdftex.def Info: ss2.png used on input line 430.
 (pdftex.def)             Requested size: 443.62805pt x 166.12184pt.
- [7 <./ss1.png> <./ss2.png>] [8]
-Overfull \hbox (55.21823pt too wide) in paragraph at lines 423--425
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[8 <./ss1.png>] [9 <./ss2.png>]
+Overfull \hbox (55.21823pt too wide) in paragraph at lines 512--514
 []\OT1/cmr/m/n/9 Property stored with node: \OT1/cmtt/m/n/9 [node[]id="p1or@nul
 l$lt#345#tl~p2and@(($gt#800#tg~p4null@)$eq#983#qe",
  []
 
 
-Overfull \hbox (14.53377pt too wide) in paragraph at lines 436--451
+Overfull \hbox (14.53377pt too wide) in paragraph at lines 525--540
  [] 
  []
 
+[10]
 Missing character: There is no ‚ in font cmr9!
 Missing character: There is no Ä in font cmr9!
 Missing character: There is no ú in font cmr9!
 Missing character: There is no ‚ in font cmr9!
 Missing character: There is no Ä in font cmr9!
 Missing character: There is no ù in font cmr9!
-<iterateGraph.png, id=242, 438.8897pt x 408.77719pt>
+ <iterateGraph.png, id=322, 438.8897pt x 408.77719pt>
 File: iterateGraph.png Graphic file (type png)
- <use iterateGraph.png>
-Package pdftex.def Info: iterateGraph.png used on input line 474.
+
+<use iterateGraph.png>
+Package pdftex.def Info: iterateGraph.png used on input line 571.
 (pdftex.def)             Requested size: 307.22069pt x 286.14207pt.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[9]
+[11]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 493.
- [10 <./iterateGraph.png>] [11]
+(Font)              <7> on input line 583.
+ [12 <./iterateGraph.png>]
 
 pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
 n <1.7>, but at most version <1.5> allowed
-<workflow.pdf, id=278, 597.55246pt x 845.07718pt>
+<workflow.pdf, id=345, 597.55246pt x 845.07718pt>
 File: workflow.pdf Graphic file (type pdf)
  <use workflow.pdf>
-Package pdftex.def Info: workflow.pdf used on input line 518.
+Package pdftex.def Info: workflow.pdf used on input line 608.
 (pdftex.def)             Requested size: 597.551pt x 845.07512pt.
 
 
@@ -620,7 +631,7 @@ pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
 n <1.7>, but at most version <1.5> allowed
 File: workflow.pdf Graphic file (type pdf)
 <use workflow.pdf>
-Package pdftex.def Info: workflow.pdf used on input line 518.
+Package pdftex.def Info: workflow.pdf used on input line 608.
 (pdftex.def)             Requested size: 597.551pt x 845.07512pt.
 
 
@@ -630,115 +641,117 @@ n <1.7>, but at most version <1.5> allowed
 
 pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
 n <1.7>, but at most version <1.5> allowed
-<workflow.pdf, id=281, page=1, 597.55246pt x 845.07718pt>
+<workflow.pdf, id=348, page=1, 597.55246pt x 845.07718pt>
 File: workflow.pdf Graphic file (type pdf)
 
 <use workflow.pdf, page 1>
-Package pdftex.def Info: workflow.pdf, page1 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page1 used on input line 608.
 (pdftex.def)             Requested size: 597.551pt x 845.07512pt.
 File: workflow.pdf Graphic file (type pdf)
  <use workflow.pdf, page 1>
-Package pdftex.def Info: workflow.pdf, page1 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page1 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
 File: workflow.pdf Graphic file (type pdf)
 
 <use workflow.pdf, page 1>
-Package pdftex.def Info: workflow.pdf, page1 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page1 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
 File: workflow.pdf Graphic file (type pdf)
  <use workflow.pdf, page 1>
-Package pdftex.def Info: workflow.pdf, page1 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page1 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
 File: workflow.pdf Graphic file (type pdf)
 
 <use workflow.pdf, page 1>
-Package pdftex.def Info: workflow.pdf, page1 used on input line 518.
-(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
- [12 <./workflow.pdf>]
-
-pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
-n <1.7>, but at most version <1.5> allowed
-<workflow.pdf, id=321, page=2, 597.55246pt x 845.07718pt>
-File: workflow.pdf Graphic file (type pdf)
-
-<use workflow.pdf, page 2>
-Package pdftex.def Info: workflow.pdf, page2 used on input line 518.
-(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
-File: workflow.pdf Graphic file (type pdf)
- <use workflow.pdf, page 2>
-Package pdftex.def Info: workflow.pdf, page2 used on input line 518.
-(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
-File: workflow.pdf Graphic file (type pdf)
-
-<use workflow.pdf, page 2>
-Package pdftex.def Info: workflow.pdf, page2 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page1 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
  [13 <./workflow.pdf>]
 
 pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
 n <1.7>, but at most version <1.5> allowed
-<workflow.pdf, id=328, page=3, 597.55246pt x 845.07718pt>
+<workflow.pdf, id=389, page=2, 597.55246pt x 845.07718pt>
+File: workflow.pdf Graphic file (type pdf)
+
+<use workflow.pdf, page 2>
+Package pdftex.def Info: workflow.pdf, page2 used on input line 608.
+(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
+File: workflow.pdf Graphic file (type pdf)
+ <use workflow.pdf, page 2>
+Package pdftex.def Info: workflow.pdf, page2 used on input line 608.
+(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
+File: workflow.pdf Graphic file (type pdf)
+
+<use workflow.pdf, page 2>
+Package pdftex.def Info: workflow.pdf, page2 used on input line 608.
+(pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
+ [14 <./workflow.pdf>]
+
+pdfTeX warning: pdflatex (file ./workflow.pdf): PDF inclusion: found PDF versio
+n <1.7>, but at most version <1.5> allowed
+<workflow.pdf, id=395, page=3, 597.55246pt x 845.07718pt>
 File: workflow.pdf Graphic file (type pdf)
 
 <use workflow.pdf, page 3>
-Package pdftex.def Info: workflow.pdf, page3 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page3 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
 File: workflow.pdf Graphic file (type pdf)
  <use workflow.pdf, page 3>
-Package pdftex.def Info: workflow.pdf, page3 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page3 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
 File: workflow.pdf Graphic file (type pdf)
 
 <use workflow.pdf, page 3>
-Package pdftex.def Info: workflow.pdf, page3 used on input line 518.
+Package pdftex.def Info: workflow.pdf, page3 used on input line 608.
 (pdftex.def)             Requested size: 562.1644pt x 795.0303pt.
- [14 <./workflow.pdf>]
-<ss3.png, id=343, 1116.42094pt x 738.50906pt>
+ [15 <./workflow.pdf>]
+<ss3.png, id=410, 1116.42094pt x 738.50906pt>
 File: ss3.png Graphic file (type png)
  <use ss3.png>
-Package pdftex.def Info: ss3.png used on input line 532.
+Package pdftex.def Info: ss3.png used on input line 622.
 (pdftex.def)             Requested size: 443.5793pt x 293.42636pt.
- [15 <./ss3.png>]
+ [16 <./ss3.png>]
 LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <12> not available
-(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 574.
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 664.
 
-[16] [17] [18] [19] [20]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 921.
- [21]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 921.
+[17] [18] [19] [20] [21] [22]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1015.
+ [23]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1015.
  (draftB.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 921.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 921.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1015.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1015.
+
 Package rerunfilecheck Info: File `draftB.out' has not changed.
 (rerunfilecheck)             Checksum: 3C42B956F6A97E0E93B13E4D730F1D52;1825.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 921.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1015.
  ) 
 Here is how much of TeX's memory you used:
- 9023 strings out of 493334
- 131333 string characters out of 3136671
- 391565 words of memory out of 3000000
- 12224 multiletter control sequences out of 15000+200000
+ 9167 strings out of 493334
+ 133380 string characters out of 3136671
+ 398922 words of memory out of 3000000
+ 12303 multiletter control sequences out of 15000+200000
  10270 words of font info for 37 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 40i,18n,51p,512b,1723s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 40i,18n,47p,512b,1791s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb>
 <C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C
 :/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx9.pfb><C:/P
 rogram Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Prog
 ram Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program
  Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Program Fi
-les (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Program Files 
-(x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86
-)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Program Files (x86)/Mi
-KTeX 2.9/fonts/type1/public/amsfonts/cm/cmss17.pfb><C:/Program Files (x86)/MiKT
-eX 2.9/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 
-2.9/fonts/type1/public/amsfonts/cm/cmti9.pfb><C:/Program Files (x86)/MiKTeX 2.9
-/fonts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Program Files (x86)/MiKTeX 2.9/f
-onts/type1/public/amsfonts/cm/cmtt8.pfb><C:/Program Files (x86)/MiKTeX 2.9/font
-s/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on draftB.pdf (21 pages, 1062793 bytes).
+les (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Program Files 
+(x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Program Files (x86
+)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/Mi
+KTeX 2.9/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Program Files (x86)/MiKTeX
+ 2.9/fonts/type1/public/amsfonts/cm/cmss17.pfb><C:/Program Files (x86)/MiKTeX 2
+.9/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.9/
+fonts/type1/public/amsfonts/cm/cmti9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fon
+ts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts
+/type1/public/amsfonts/cm/cmtt8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/ty
+pe1/public/amsfonts/cm/cmtt9.pfb>
+Output written on draftB.pdf (23 pages, 1080724 bytes).
 PDF statistics:
- 615 PDF objects out of 1000 (max. 8388607)
- 220 named destinations out of 1000 (max. 500000)
+ 701 PDF objects out of 1000 (max. 8388607)
+ 283 named destinations out of 1000 (max. 500000)
  269 words of extra memory for PDF output out of 10000 (max. 10000000)
 
