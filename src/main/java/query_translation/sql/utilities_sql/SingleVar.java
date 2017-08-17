@@ -113,11 +113,12 @@ public class SingleVar extends AbstractTranslation {
                     if (cN1.getProps() != null) {
                         sql.append(" WHERE ");
                         TranslateUtils.getWholeWhereClause(sql, cN1, "zz");
+                        if (sql.toString().endsWith(" and ")) sql.setLength(sql.length() - 5);
+                        else if (sql.toString().endsWith(" or ")) sql.setLength(sql.length() - 4);
                     }
                 } else {
                     sql.append(alphabet[(i - 1) % 26]).append(extendID[(i - 1) / 26]).append(" ON leftnode = xx");
                 }
-
                 sql.append("), ");
             }
         }

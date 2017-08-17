@@ -8,7 +8,8 @@ import production.C2SMain;
 
 import java.util.*;
 
-import static intermediate_rep.CypAggFuncs.*;
+import static intermediate_rep.CypAggFuncs.AGG_COLLECT;
+import static intermediate_rep.CypAggFuncs.AGG_NONE;
 import static intermediate_rep.CypCount.*;
 
 /**
@@ -621,24 +622,10 @@ class CypherTranslator {
             return new CypReturn(clause.get(1), clause.get(3), COUNT_FALSE, AGG_NONE, caseString.toString(), matchC);
         }
         // 10a.
-        else if (cypWalker.hasAverage()) {
+        else if (cypWalker.hasAverage() || cypWalker.hasSum() || cypWalker.hasMin() || cypWalker.hasMax()) {
             String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_AVG, null, matchC);
-        }
-        // 10b.
-        else if (cypWalker.hasSum()) {
-            String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_SUM, null, matchC);
-        }
-        // 10c.
-        else if (cypWalker.hasMin()) {
-            String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_MIN, null, matchC);
-        }
-        // 10d.
-        else if (cypWalker.hasMax()) {
-            String field = (clause.size() == 6) ? clause.get(4) : null;
-            return new CypReturn(clause.get(2), field, COUNT_FALSE, AGG_MAX, null, matchC);
+            int typeAgg = CypAggFuncs.convert(clause.get(0));
+            return new CypReturn(clause.get(2), field, COUNT_FALSE, typeAgg, null, matchC);
         } else throw new DQInvalidException("Return clause is malformed: " + clause);
     }
 

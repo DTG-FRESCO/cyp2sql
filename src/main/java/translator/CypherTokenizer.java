@@ -23,7 +23,6 @@ public class CypherTokenizer {
      * @param cypher      Cypher input.
      * @param DEBUG_PRINT Print out debug statements or not.
      * @return DecodedQuery object representing the Cypher input.
-     * @throws Exception Error somewhere.
      */
     public static DecodedQuery decode(String cypher, boolean DEBUG_PRINT) {
         return CypherTranslator.generateDecodedQuery(getTokenList(cypher, DEBUG_PRINT), cypherWalker);

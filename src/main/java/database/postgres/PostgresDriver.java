@@ -105,8 +105,7 @@ public class PostgresDriver {
                 for (ArrayList<String> as : results) {
                     int i = 0;
                     for (String column : colNames) {
-                        if ((!column.equals("id") || C2SMain.needToPrintID)
-                                && !column.equals("x") && !column.equals("label")) {
+                        if ((!column.equals("id") || C2SMain.needToPrintID) && !column.equals("label")) {
                             String result = as.get(i);
                             if (result != null) writer.println(column + " : " + result);
                         }

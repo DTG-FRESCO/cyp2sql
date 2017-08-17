@@ -420,7 +420,8 @@ public class MultipleRel extends AbstractTranslation {
             whereSQL.append(" AND ");
 
             if (i == 0) {
-                whereSQL.append("a.a1 != b.b2");
+                //whereSQL.append("a.a1 != b.b2");
+                whereSQL.setLength(whereSQL.length() - 5);
             } else {
                 whereSQL.append(alphabet[i - 1]).append(".").append(alphabet[i - 1]).append(2);
                 whereSQL.append(" != ");

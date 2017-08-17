@@ -166,9 +166,28 @@ can be translated. There is more information in the technical manual.
 - `MATCH (n) WHERE 'Global' in labels(n) AND any(name in n.name WHERE name = 'master') OR (exists(n.pid) AND n.status = 2) WITH n MATCH (m:Meta) WHERE m.node_id > n.node_id RETURN DISTINCT n LIMIT 10`
 - `MATCH (a) WHERE a.node_id < 345 OR ((a.node_id > 800 AND 'Process' in labels(a)) OR a.node_id = 983) RETURN count(a)`
 - `MATCH (a) WHERE (any(x in a.name where x = 'master') OR any(y in a.value where y in ['postgres', 'nginx'])) AND ('Global' in labels(a) OR 'Meta' in labels(a)) RETURN count(a)`
-- `MATCH (a)-[e]->(b)-[f]->(c) WHERE a.type = b.type AND c.pid < b.pid RETURN count(f)`
+- `MATCH (a)-[e]->(b)-[f]->(c) WHERE a.type = b.type AND id(b) < 500 AND id(c) > 900 RETURN count(f)`
 - `MATCH (a)-[z]->(b)-[w]->(c) WHERE a.node_id < b.node_id RETURN w.state, c.type ORDER BY c.node_id ASC`
 - `MATCH (a)-[e]->(b:Process) WHERE e.state > 5 WITH b MATCH (c) WHERE (exists(c.pid) AND c.pid < b.pid) WITH c MATCH (c)<--(d:Local) WHERE any(n in d.name WHERE n = '4') RETURN count(d) AS cool_thing`
 - `MATCH (a)-->(b)-->(c) WHERE c.node_id < b.node_id WITH c MATCH (d)--(c) WHERE exists(d.ref_count) WITH d MATCH (e)-->(d)<--(f) WHERE f.node_id > e.node_id WITH f MATCH (g)<-[ww]-(f) WHERE ww.state = 5 WITH g MATCH (g)-->(ii)-->(i) RETURN DISTINCT i.node_id ORDER BY i.node_id ASC`
 - `MATCH (a)-->(b)-->(c:Process) WHERE a.node_id < b.node_id RETURN a.node_id, b.node_id, case c.type when 3 then 'boo' else 'hiss' end`
 - `MATCH (a:Global)-[:LOC_OBJ]->(b) WITH a, count(b) AS num_things WHERE num_things > 2 RETURN a.name ORDER BY a.sys_time DESC`
+
+## Performance Results
+The tool has been modelled around a graph database I had access to from the University of Cambridge. 
+I have also tested the tool against this galaxies dataset: https://dl.dropboxusercontent.com/u/14493611/the_universe_is_a_graph.html 
+(many thanks to the original author of this post).
+
+The OPUS dataset from the University of Cambridge contains 400k nodes and 812k relationships. The galaxies dataset contains around 20k nodes and 584k nodes.
+
+| Query                                                                                                                                                                                                   | Neo4j OPUS      | Postgres OPUS |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|---------------|
+| MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);                                                                                                                                        | ≈ 605ms.        | ≈ 222ms.      |
+| MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a);                                                                                                                  | ≈ 940ms.        | ≈ 80ms.       |
+| MATCH (a:Global)-->(b:Global) WHERE any(n in a.name WHERE n = 'postgres') WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;   | ≈ 2050ms.       | ≈ 1850ms.     |
+| MATCH p=shortestPath((f {name:"omega"})-[*1..2]->(t:Meta)) RETURN count(t);                                                                                                                             | &gt; 100000ms.  | ≈ 800ms.      | 
+
+| Query                                                                                                         | Neo4j Galaxies | Postgres Galaxies |
+|---------------------------------------------------------------------------------------------------------------|----------------|-------------------|
+| MATCH (a)-[e]->(b)-[f]->(c) WHERE a.vll_gwc = b.vll_gwc AND id(b) < 1000 AND id(c) > 20000 RETURN count(f);   | ≈ 4600ms.      | ≈ 285ms.          |
+| MATCH (a)-->(b)<--(c) WHERE id(a) = 2349 AND id(c) = 7832 RETURN count(b);                                    | ≈ 63ms.        | ≈ 2ms.            |

@@ -64,4 +64,21 @@ public class CypAggFuncs {
                 return "";
         }
     }
+
+    public static int convert(String s) {
+        switch (s) {
+            case "collect":
+                return 1;
+            case "sum":
+                return 2;
+            case "avg":
+                return 3;
+            case "min":
+                return 4;
+            case "max":
+                return 5;
+            default:
+                return -1;
+        }
+    }
 }
