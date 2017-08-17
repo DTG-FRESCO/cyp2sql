@@ -190,7 +190,7 @@ public class SchemaConvert {
                 // escape character in SQL (' replaced with '')
                 line = line.replace("'", "''");
 
-                if (line.startsWith("create")) {
+                if (line.startsWith("create (")) {
                     if (firstLine) {
                         firstLine = false;
                     } else {

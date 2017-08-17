@@ -278,6 +278,8 @@ postgresPW & Postgres database password. \\
 \label{sec:schemaConv}
 The first step of the pipeline in translating Cypher to SQL is to convert the Neo4j graph database to a relational database. Using the dump file generated from the Neo4j graph, multiple relations can be built up and executed on a relational database backend. During this process, other metafiles are also created -- these are used throughout the translation process later for completeness, and in some cases, optimisations.
 
+The tool can currently handle the following datatypes: \texttt{TEXT}, \texttt{INT}, \texttt{REAL}, \texttt{BOOLEAN}, and \texttt{TEXT[]}.
+
 
 \subsection{Converting the graph database to a relational schema}
 For the tool to run successfully and without error, make sure all the properties in the properties file are correct. Next, a blank relational database needs to be created. The tool currently will not overwrite existing databases -- if an error has occurred when writing to the database, it must be wiped clean before the tool can run again.

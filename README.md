@@ -77,8 +77,7 @@ called anything, but something sensible like `./testFolder/workarea` would be go
 the existing Neo4j graph that *may* handle values of type list.
 5. Create a new folder for the results of the queries to be stored in, and then within that folder, create two text files - 
 `./testFolder/results/neo4j.txt` & `./testFolder/results/postgres.txt`
-
-The properties file, `c2s_props.properties` then needs to be edited with the correct details (view the main documentation for more information).
+6. The properties file, `c2s_props.properties` then needs to be edited with the correct details (the main technical manual contains more information on this if necessary).
 
 A new, blank database in Postgres should also be setup. For the results from Postgres to be placed into the console, a password may need to be entered into a local Postgres config file - https://www.postgresql.org/docs/8.3/static/libpq-pgpass.html provides more information. 
 

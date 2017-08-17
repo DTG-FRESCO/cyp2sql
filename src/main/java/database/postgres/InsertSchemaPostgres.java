@@ -117,6 +117,8 @@ public class InsertSchemaPostgres {
                         .replace(" BIGINT", "")
                         .replace(" INT", "")
                         .replace(" TEXT", "")
+                        .replace(" REAL", "")
+                        .replace(" BOOLEAN", "")
                         .split(", ")) {
                     bw_labelProps.write(y);
                     bw_labelProps.newLine();
@@ -179,7 +181,9 @@ public class InsertSchemaPostgres {
                     .replace(" TEXT[]", "")
                     .replace(" BIGINT", "")
                     .replace(" TEXT", "")
-                    .replace(" INT", ""))
+                    .replace(" INT", "")
+                    .replace(" BOOLEAN", "")
+                    .replace(" REAL", ""))
                     .append(", ");
         }
 
@@ -384,6 +388,12 @@ public class InsertSchemaPostgres {
                 temp = value + ", ";
             } else if (inputField.endsWith("INT") && !inputField.contains("BIGINT")) {
                 int value = obj.get(inputField.split(" ")[0]).getAsInt();
+                temp = value + ", ";
+            } else if (inputField.endsWith("REAL") && !inputField.contains("BIGINT")) {
+                float value = obj.get(inputField.split(" ")[0]).getAsFloat();
+                temp = value + ", ";
+            } else if (inputField.endsWith("BOOLEAN") && !inputField.contains("BIGINT")) {
+                boolean value = obj.get(inputField.split(" ")[0]).getAsBoolean();
                 temp = value + ", ";
             } else if (inputField.endsWith("[]")) {
                 // is text with list property

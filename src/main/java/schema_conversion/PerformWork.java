@@ -225,6 +225,7 @@ class PerformWork implements Runnable {
         } else {
             // enter hacks here...
             if (key.equals("mono_time")) return "BIGINT";
+
             else {
                 String testValue = value.getAsString();
                 try {
@@ -232,7 +233,16 @@ class PerformWork implements Runnable {
                     Integer.parseInt(testValue);
                     return "INT";
                 } catch (NumberFormatException nfe) {
-                    return "TEXT";
+                    try {
+                        //noinspection ResultOfMethodCallIgnored
+                        Float.parseFloat(testValue);
+                        return "REAL";
+                    } catch (NumberFormatException nfe2) {
+                        boolean x = Boolean.parseBoolean(testValue);
+                        if (x) return "BOOLEAN";
+                        else if (testValue.equalsIgnoreCase("false")) return "BOOLEAN";
+                        else return "TEXT";
+                    }
                 }
             }
         }
