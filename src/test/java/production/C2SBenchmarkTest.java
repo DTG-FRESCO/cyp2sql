@@ -28,7 +28,7 @@ public class C2SBenchmarkTest {
      */
     @Test
     public void allQueriesTest() throws Exception {
-        boolean run = false;
+        boolean run = true;
         if (run) {
             // Using JUnit, two files are created in temp storage to hold the results outputted from both databases.
             File f_neo4j = folder.newFile("neo4j_results.txt");

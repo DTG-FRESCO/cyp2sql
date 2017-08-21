@@ -45,12 +45,19 @@ public class Multiple_With_Cypher extends AbstractConversion {
         String letter = String.valueOf(alphabet[numParts - 2]).toUpperCase();
         if (finalPartDQ.getMc().getRels().size() > 0) {
             int indexLastWhere = finalSQL.lastIndexOf("WHERE");
-            finalSQL = finalSQL.substring(0, indexLastWhere) + ", w" + letter + " WHERE " +
-                    finalSQL.substring(indexLastWhere + 6);
-            finalSQL = finalSQL.substring(0, finalSQL.length() - 1);
+
+            if (indexLastWhere == -1)
+                finalSQL = finalSQL.substring(0, finalSQL.length() - 1) + ", w" + letter + " WHERE ";
+            else {
+                finalSQL = finalSQL.substring(0, indexLastWhere) + ", w" + letter + " WHERE " +
+                        finalSQL.substring(indexLastWhere + 6);
+                finalSQL = finalSQL.substring(0, finalSQL.length() - 1);
+            }
+
             String correctPart = (mappingMultipleWith.keySet().contains(finalPartDQ.getMc().getNodes().get(0).getId()))
                     ? "a.a1" : "a.a2";
-            finalSQL = finalSQL + " AND " + correctPart + " = w" + letter + ".id";
+            finalSQL = (!finalSQL.endsWith(" WHERE ")) ? finalSQL + " AND " : finalSQL;
+            finalSQL = finalSQL + correctPart + " = w" + letter + ".id";
         } else finalSQL = finalSQL.replace(" nodes n01 ", " nodes n01, w" + letter + " ");
 
         multipleWithSQL.append(finalSQL).append(tempEnd);

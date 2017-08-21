@@ -2,23 +2,23 @@
 \contentsline {section}{\numberline {1}Overview}{1}{section.1}
 \contentsline {subsection}{\numberline {1.1}Quick usage}{2}{subsection.1.1}
 \contentsline {section}{\numberline {2}Getting started}{3}{section.2}
-\contentsline {subsection}{\numberline {2.1}Prerequisites}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.1}Prerequisites}{4}{subsection.2.1}
 \contentsline {subsection}{\numberline {2.2}File system preparation}{4}{subsection.2.2}
 \contentsline {subsection}{\numberline {2.3}Generating dump files from Neo4j}{4}{subsection.2.3}
 \contentsline {subsubsection}{\numberline {2.3.1}Windows OS}{4}{subsubsection.2.3.1}
 \contentsline {subsubsection}{\numberline {2.3.2}Unix OS}{4}{subsubsection.2.3.2}
 \contentsline {subsubsection}{\numberline {2.3.3}Dump file explanation}{4}{subsubsection.2.3.3}
-\contentsline {subsection}{\numberline {2.4}Configuring the properties}{4}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.4}Configuring the properties}{5}{subsection.2.4}
 \contentsline {section}{\numberline {3}Schema conversion}{5}{section.3}
 \contentsline {subsection}{\numberline {3.1}Converting the graph database to a relational schema}{5}{subsection.3.1}
 \contentsline {subsection}{\numberline {3.2}Graph to relational: theory}{5}{subsection.3.2}
 \contentsline {subsection}{\numberline {3.3}Metafiles created during schema conversion}{6}{subsection.3.3}
-\contentsline {section}{\numberline {4}Translation of queries}{6}{section.4}
-\contentsline {subsection}{\numberline {4.1}Usage}{6}{subsection.4.1}
-\contentsline {subsection}{\numberline {4.2}Query translation}{8}{subsection.4.2}
+\contentsline {section}{\numberline {4}Translation of queries}{8}{section.4}
+\contentsline {subsection}{\numberline {4.1}Usage}{8}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Query translation}{9}{subsection.4.2}
 \contentsline {subsubsection}{\numberline {4.2.1}Dealing with Cypher lists}{9}{subsubsection.4.2.1}
 \contentsline {subsubsection}{\numberline {4.2.2}Where clauses}{9}{subsubsection.4.2.2}
-\contentsline {subsubsection}{\numberline {4.2.3}Iterate semantics}{10}{subsubsection.4.2.3}
+\contentsline {subsubsection}{\numberline {4.2.3}Iterate semantics}{11}{subsubsection.4.2.3}
 \contentsline {subsection}{\numberline {4.3}Workflow through the code}{12}{subsection.4.3}
 \contentsline {section}{\numberline {5}ANTLR framework}{16}{section.5}
 \contentsline {subsection}{\numberline {5.1}ANTLR setting up}{16}{subsection.5.1}

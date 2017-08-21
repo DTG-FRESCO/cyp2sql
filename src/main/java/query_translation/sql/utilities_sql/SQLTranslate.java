@@ -45,7 +45,8 @@ public class SQLTranslate {
         } else {
             MultipleRel mr = new MultipleRel();
             sql = mr.translate(sql, decodedQuery, props);
-            if (decodedQuery.getCypherAdditionalInfo().hasCount() && decodedQuery.getRc().getItems().size() > 1)
+            if ((decodedQuery.getCypherAdditionalInfo().hasCount() || decodedQuery.getCypherAdditionalInfo().hasAgg())
+                    && decodedQuery.getRc().getItems().size() > 1)
                 sql = obtainGroupByClause(decodedQuery.getRc(), sql, props);
         }
 
@@ -216,13 +217,22 @@ public class SQLTranslate {
         }
 
         for (CypOrder cO : orderC.getItems()) {
+            int posInReturn = 1;
+            for (CypReturn cR : rc.getItems()) {
+                if (cR.getType().equals("node") && cR.getNodeID().equals(cO.getID())) {
+                    nodeID = "n0" + posInReturn;
+                    break;
+                }
+                if (cR.getType().equals("node")) posInReturn++;
+            }
+
             if (cO.getField().startsWith("count")) {
                 sql.append("count(").append(nodeID).append(")").append(cO.getAscOrDesc()).append(", ");
                 break;
             }
-            sql.append(nodeID).append(".").append(cO.getField()).append(" ")
-                    .append(cO.getAscOrDesc());
-            sql.append(", ");
+
+            sql.append(nodeID).append(".")
+                    .append(cO.getField()).append(" ").append(cO.getAscOrDesc()).append(", ");
         }
 
         sql.setLength(sql.length() - 2);

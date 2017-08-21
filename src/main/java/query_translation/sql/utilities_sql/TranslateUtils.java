@@ -209,7 +209,10 @@ class TranslateUtils {
             else if (list) sql.append(v).append(" ");
             else if (v.startsWith("id(")) {
                 String id = v.substring(v.indexOf("(") + 1, v.length() - 1);
-                String withTable = Multiple_With_Cypher.mappingMultipleWith.get(id);
+                String withTable;
+                if (Multiple_With_Cypher.mappingMultipleWith != null)
+                    withTable = Multiple_With_Cypher.mappingMultipleWith.get(id);
+                else withTable = "n2";
                 sql.append(withTable).append(".id");
             } else if (v.contains(".")) {
                 String idAndValue[] = v.split("\\.");
@@ -316,6 +319,7 @@ class TranslateUtils {
                 // TODO: extend for more of the aggregate functions.
                 if (key.startsWith("collect")) key = key.substring(8, key.length() - 1);
                 if (key.startsWith("sum")) key = key.substring(4, key.length() - 1);
+                if (key.startsWith("max")) key = key.substring(4, key.length() - 1);
                 if (field != null) {
                     if (key.equals((nodeID) + "." + (field))) {
                         return (" AS " + alias.get(s));

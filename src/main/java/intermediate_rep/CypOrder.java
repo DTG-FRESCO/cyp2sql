@@ -4,7 +4,7 @@ package intermediate_rep;
  * Class for storing the order by clause of a cypher query (if there is one).
  */
 public class CypOrder {
-    private String nodeID;
+    private String idOrder;
     private String field;
     private String ascOrDesc;
 
@@ -21,7 +21,7 @@ public class CypOrder {
      *                  'asc', is recorded instead.
      */
     public CypOrder(String id, String field, String ascOrDesc) {
-        this.nodeID = id;
+        this.idOrder = id;
         this.field = field;
         this.ascOrDesc = ascOrDesc;
     }
@@ -36,7 +36,11 @@ public class CypOrder {
 
     @Override
     public String toString() {
-        return "(ID: " + this.nodeID + ", FIELD: " + this.field +
+        return "(ID: " + this.idOrder + ", FIELD: " + this.field +
                 ", ORDER_TYPE: " + this.ascOrDesc + ")";
+    }
+
+    public String getID() {
+        return idOrder;
     }
 }

@@ -253,4 +253,8 @@ public class CypherWalker extends CypherBaseListener {
     boolean hasMax() {
         return hasMax;
     }
+
+    public boolean hasAgg() {
+        return (hasAverage || hasSum || hasMin || hasMax);
+    }
 }

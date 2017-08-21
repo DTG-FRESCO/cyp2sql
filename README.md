@@ -66,6 +66,14 @@ public class C2STestUsage {
 }
 ```
 
+The library can be built with Maven to ensure all of the dependencies are present:
+
+```bash
+$ git clone git@gitlab.dtg.cl.cam.ac.uk:fresco-projects/cyp2sql-next.git
+$ cd cyp2sql-next
+$ mvn install
+```
+
 ## Installation
 
 1. Clone the repository. 
@@ -131,27 +139,25 @@ Whilst the goal of this project would be to cover most of the syntax available i
 this is simply not possible yet, although below serves as a rough guide as to what
 can be translated. There is more information in the technical manual.
 
-- `MATCH p=shortestPath((f {name:"omega"})-[*1..6]->(t:Meta)) RETURN count(t)`
-- `MATCH (a)-[*1..3]->(c:Process) RETURN count(c)`
-- `MATCH (a:Local)-[*4..9]->(b) RETURN DISTINCT b.node_id, b.sys_time AS time_alias ORDER BY b.node_id DESC`
-- `MATCH (n {name:["/var/db/entropy/saved-entropy.7", "/var/db/entropy/saved-entropy.8"]}) RETURN n.node_id ORDER BY n.node_id ASC`
-- `MATCH (a:Global)-[]->(b) RETURN b.node_id AS conn_id`
-- `MATCH (a:Global)-[]->(b) RETURN count(b.node_id)`
-- `MATCH (a:Global)-->(b:Local)-->(c:Process)<--(d:Local)<--(b) RETURN count(b)`
-- `MATCH ()-[r]-() RETURN DISTINCT r.state ORDER BY r.state`
-- `MATCH (n:Local)<--(m:Global) RETURN m.node_id AS thing, m.type AS ty ORDER BY m.sys_time LIMIT 3`
-- `MATCH (a:Global) RETURN count(a) AS funky`
-- `MATCH (a:Meta) WHERE a.sys_time < 0 RETURN count(a)`
+- `MATCH (a:Meta) RETURN count(distinct a.name)`
 - `MATCH (a:Meta) WHERE a.sys_time < 0 OR a.node_id > 845 RETURN count(a)`
+- `MATCH (n) WHERE id(n) = 345 RETURN n.mono_time, n.sys_time, n.name`
+- `MATCH (n {name:["/var/db/entropy/saved-entropy.7", "/var/db/entropy/saved-entropy.8"]}) RETURN n.node_id ORDER BY n.node_id ASC`
+- `MATCH (n) WHERE exists(n.value) AND exists(n.timestamp) RETURN count(n)`
+- `MATCH (a:Global)-[]->(b) RETURN b.node_id AS conn_id`
 - `MATCH (a)-[r:LOC_OBJ]-(b) RETURN b.name, r.state ORDER BY b.node_id ASC LIMIT 15`
 - `MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r)`
-- `MATCH (n) WHERE id(n) = 345 RETURN n.mono_time, n.sys_time, n.name`
+- `MATCH (n:Local)<--(m:Global) RETURN m.node_id AS thing, m.type AS ty ORDER BY m.sys_time LIMIT 3`
 - `MATCH (a)-->(b)-->(c)-->(d) WHERE id(d) < 123 RETURN count(a) AS cool`
-- `MATCH (n) WHERE exists(n.value) AND exists(n.timestamp) RETURN count(n)`
+- `MATCH (a:Global)-->(b:Local)-->(c:Process)<--(d:Local)<--(b) RETURN count(b)`
+- `MATCH ()-[r]-() RETURN DISTINCT r.state ORDER BY r.state`
 - `MATCH (n)--()--()--()--(n) WHERE exists(n.status) RETURN count(n)`
 - `MATCH (s)-[e]-(d) WHERE id(s) = 349 AND NOT 'Process' in labels(s) AND NOT 'Global' in labels(d) RETURN d.node_id ORDER BY d.node_id ASC`
 - `MATCH (n:Process)<-[e:PROC_OBJ]-(c:Local) WHERE id(n) = 916 AND e.state in [5] RETURN c.name, e.state ORDER BY c.name DESC`
 - `MATCH (a)-[e]-(b) WHERE id(a) IN [100, 200, 300, 400] AND id(b) IN [101, 201, 202, 302, 404] RETURN e.state`
+- `MATCH (a)-[*1..3]->(c:Process) RETURN count(c)`
+- `MATCH (a:Local)-[*4..9]->(b) RETURN DISTINCT b.node_id, b.sys_time AS time_alias ORDER BY b.node_id DESC`
+- `MATCH p=shortestPath((f {name:"omega"})-[*1..6]->(t:Meta)) RETURN count(t)`
 - `MATCH (a) WHERE any(name in a.name WHERE name = 'uid') RETURN count(a)`
 - `MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a)`
 - `MATCH (n) WHERE 'Process' in labels(n) WITH n MATCH (m) WHERE m.status = n.status RETURN count(n)`
@@ -161,35 +167,42 @@ can be translated. There is more information in the technical manual.
 - `MATCH (n) WHERE id(n) < 3 WITH n MATCH (m) WHERE id(m) < id(n) WITH m MATCH (p) WHERE p.node_id < m.node_id RETURN count(p)`
 - `MATCH (n) WHERE 'Meta' in labels(n) OR any(name in n.name WHERE name = 'postgres') WITH n MATCH (m:Process) WHERE id(m) > id(n) WITH m MATCH (p)-->(m) WITH p MATCH (j)<-[:PROC_OBJ_PREV]-(p) WHERE p.sys_time = j.sys_time RETURN count(j)`
 - `MATCH (a:Global {name:'postgres'})-->(b:Global) WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5`
-- `MATCH (a:Meta) RETURN count(distinct a.name)`
 - `MATCH (a:Local)-->(b)<--(c:Process)<--(d) RETURN min(d.node_id)`
 - `MATCH (n) WHERE 'Global' in labels(n) AND any(name in n.name WHERE name = 'master') OR (exists(n.pid) AND n.status = 2) WITH n MATCH (m:Meta) WHERE m.node_id > n.node_id RETURN DISTINCT n LIMIT 10`
 - `MATCH (a) WHERE a.node_id < 345 OR ((a.node_id > 800 AND 'Process' in labels(a)) OR a.node_id = 983) RETURN count(a)`
 - `MATCH (a) WHERE (any(x in a.name where x = 'master') OR any(y in a.value where y in ['postgres', 'nginx'])) AND ('Global' in labels(a) OR 'Meta' in labels(a)) RETURN count(a)`
-- `MATCH (a)-[e]->(b)-[f]->(c) WHERE a.type = b.type AND id(b) < 500 AND id(c) > 900 RETURN count(f)`
+- `MATCH (a)-[e]->(b)-[f]->(c) WHERE a.type = b.type AND c.pid < b.pid RETURN count(f)`
 - `MATCH (a)-[z]->(b)-[w]->(c) WHERE a.node_id < b.node_id RETURN w.state, c.type ORDER BY c.node_id ASC`
 - `MATCH (a)-[e]->(b:Process) WHERE e.state > 5 WITH b MATCH (c) WHERE (exists(c.pid) AND c.pid < b.pid) WITH c MATCH (c)<--(d:Local) WHERE any(n in d.name WHERE n = '4') RETURN count(d) AS cool_thing`
 - `MATCH (a)-->(b)-->(c) WHERE c.node_id < b.node_id WITH c MATCH (d)--(c) WHERE exists(d.ref_count) WITH d MATCH (e)-->(d)<--(f) WHERE f.node_id > e.node_id WITH f MATCH (g)<-[ww]-(f) WHERE ww.state = 5 WITH g MATCH (g)-->(ii)-->(i) RETURN DISTINCT i.node_id ORDER BY i.node_id ASC`
 - `MATCH (a)-->(b)-->(c:Process) WHERE a.node_id < b.node_id RETURN a.node_id, b.node_id, case c.type when 3 then 'boo' else 'hiss' end`
 - `MATCH (a:Global)-[:LOC_OBJ]->(b) WITH a, count(b) AS num_things WHERE num_things > 2 RETURN a.name ORDER BY a.sys_time DESC`
+- `MATCH (a)-->(b) WITH b MATCH (c)<--(b) WHERE id(c) < 643 WITH c MATCH ()-[r]-(c) RETURN count(r)`
+- `MATCH (n) WHERE id(n) IN [10, 110, 317] AND exists(n.pid) RETURN n.status, n.pid`
+- `MATCH (proc:Process)<-[po:PROC_OBJ]-(loc:Local)<-[lo:LOC_OBJ]-(gl:Global)-->(:Local)-->(proc2:Process) WHERE id(proc) IN [137, 149, 162, 278] RETURN DISTINCT proc2.pid ORDER BY proc2.pid ASC`
 
 ## Performance Results
 The tool has been modelled around a graph database I had access to from the University of Cambridge. 
 I have also tested the tool against this galaxies dataset: https://dl.dropboxusercontent.com/u/14493611/the_universe_is_a_graph.html 
 (many thanks to the original author of this post).
 
-The OPUS dataset from the University of Cambridge contains 400k nodes and 812k relationships. The galaxies dataset contains around 20k nodes and 584k nodes.
+The OPUS dataset from the University of Cambridge contains 400k nodes and 812k relationships. The galaxies dataset contains around 20k nodes and 584k relationships.
 
 | Query                                                                                                                                                                                                   | Neo4j OPUS      | Postgres OPUS |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|---------------|
 | MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);                                                                                                                                        | ≈ 605ms.        | ≈ 222ms.      |
 | MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a);                                                                                                                  | ≈ 940ms.        | ≈ 80ms.       |
 | MATCH (a:Global)-->(b:Global) WHERE any(n in a.name WHERE n = 'postgres') WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;   | ≈ 2050ms.       | ≈ 1850ms.     |
-| MATCH p=shortestPath((f {name:"omega"})-[*1..2]->(t:Meta)) RETURN count(t);                                                                                                                             | &gt; 100000ms.  | ≈ 800ms.      | 
+| MATCH p=shortestPath((f {name:"omega"})-[*1..2]->(t:Meta)) RETURN count(t);                                                                                                                             | &gt; 100000ms.  | ≈ 800ms.      |
+| MATCH (m) WHERE exists(m.ref_count) RETURN id(m), m.name;                                                                                                                                               | ≈ 1040ms.       | ≈ 185ms.      |
 
-| Query                                                                                                                                                  | Neo4j Galaxies   | Postgres Galaxies |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|-------------------|
-| MATCH (a)-[e]->(b)-[f]->(c) WHERE a.vll_gwc = b.vll_gwc AND id(b) < 1000 AND id(c) > 20000 RETURN count(f);                                            | ≈ 4600ms.        | ≈ 285ms.          |
-| MATCH (a)-->(b)<--(c) WHERE id(a) = 2349 AND id(c) = 7832 RETURN count(b);                                                                             | ≈ 63ms.          | ≈ 2ms.            |
-| MATCH (a)-->(b) WHERE a.vll_gwc = '3' OR a.vll_gsc = '5' AND a.nn_gsc = '6' RETURN DISTINCT id(a), id(b);                                              | ≈ 780ms.         | ≈ 515ms.          |
-| MATCH (a:Galaxy)-->(b:Galaxy) WHERE id(b) > 15000 WITH b MATCH (c) WHERE c.vll_gsc = '4' WITH c MATCH (d)<--(c) WHERE d.nn_gwc = '3' RETURN count(d);  | ≈ 1.16 * 10^7ms. | ≈ 8.83 * 10^5 ms. |
+| Query                                                                                                                                                  | Neo4j Galaxies    | Postgres Galaxies |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|-------------------|
+| MATCH (a)-[e]->(b)-[f]->(c) WHERE a.vll_gwc = b.vll_gwc AND id(b) < 1000 AND id(c) > 20000 RETURN count(f);                                            | ≈ 4600ms.         | ≈ 285ms.          |
+| MATCH (a)-->(b)<--(c) WHERE id(a) = 2349 AND id(c) = 7832 RETURN count(b);                                                                             | ≈ 63ms.           | ≈ 2ms.            |
+| MATCH (a)-->(b) WHERE a.vll_gwc = '3' OR a.vll_gsc = '5' AND a.nn_gsc = '6' RETURN DISTINCT id(a), id(b);                                              | ≈ 780ms.          | ≈ 515ms.          |
+| MATCH (a:Galaxy)-->(b:Galaxy) WHERE id(b) > 15000 WITH b MATCH (c) WHERE c.vll_gsc = '4' WITH c MATCH (d)<--(c) WHERE d.nn_gwc = '3' RETURN count(d);  | ≈ 1.16 * 10^7 ms. | ≈ 8.83 * 10^5 ms. |
+
+I have, with some bias of course, shown queries that perform better when translated and executed on Postgres. 
+There are many queries where Neo4j massively outperforms the relational representation. 
+It is very dependent on the graph schema, the graph size, how specific the query is (in terms of indexing performance), and the type of query itself.

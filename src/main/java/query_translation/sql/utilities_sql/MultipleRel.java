@@ -248,12 +248,17 @@ public class MultipleRel extends AbstractTranslation {
                                         .append(", ");
                             }
                         }
-                        if (cR.hasAggFunc() || cR.getCount() > 0) {
+                        if (cR.getCount() > 0) {
                             safSQL.setLength(safSQL.length() - 2);
                             safSQL.append(")");
                             safSQL.append(
                                     TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                     .append(", ");
+                        } else if (cR.hasAggFunc()) {
+                            safSQL.setLength(safSQL.length() - 2);
+                            safSQL.append(")");
+                            safSQL.append(
+                                    TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
                         }
                         break;
                     }
@@ -286,21 +291,26 @@ public class MultipleRel extends AbstractTranslation {
                             safSQL.append(caseString).append(", ");
                         } else {
                             if (prop != null) {
-                                safSQL.append("n0").append(nodeTableCount).append(".").append(prop)
-                                        .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                        .append(", ");
+                                safSQL.append("n0").append(nodeTableCount).append(".").append(prop);
+                                if (!cR.hasAggFunc())
+                                    safSQL.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                            .append(", ");
                             } else {
                                 safSQL.append("n0").append(nodeTableCount)
                                         .append(".*").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                         .append(", ");
                             }
                         }
-                        if (cR.hasAggFunc() || cR.getCount() > 0) {
+                        if (cR.getCount() > 0) {
                             safSQL.setLength(safSQL.length() - 2);
                             safSQL.append(")");
                             safSQL.append(
                                     TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                     .append(", ");
+                        } else if (cR.hasAggFunc()) {
+                            safSQL.append(")");
+                            safSQL.append(
+                                    TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
                         }
                         isNode = true;
                         break;
@@ -394,23 +404,6 @@ public class MultipleRel extends AbstractTranslation {
         whereSQL.append(" WHERE ");
         int numRels = matchC.getRels().size();
 
-        // in the case of only one relationship in the MATCH clause.
-        if ((numRels == 1)) {
-            if (matchC.getRels().get(0).getDirection().equals("none")) {
-                if (returnC.getItems().size() == 2
-                        && (!returnC.getItems().get(0).getNodeID().equals(returnC.getItems().get(1).getNodeID()))
-                        && returnC.getItems().get(0).getType().equals("node")
-                        && returnC.getItems().get(1).getType().equals("node")) {
-                    whereSQL.append(" n01.id = a.a1 AND n02.id = a.a2");
-                    return whereSQL;
-                } else {
-                    int posInCl = returnC.getItems().get(0).getPosInClause();
-                    if (posInCl == 1) return whereSQL.append(" n01.id = a.a1");
-                    else return whereSQL.append("n01.id = a.a2");
-                }
-            }
-        }
-
         // where there is more than one relationship, the CTEs need to join together appropriately,
         // to make sure the semantics are correct.
         for (int i = 0; i < numRels - 1; i++) {
@@ -419,6 +412,11 @@ public class MultipleRel extends AbstractTranslation {
             whereSQL.append(alphabet[i + 1]).append(".").append(alphabet[i + 1]).append(1);
             whereSQL.append(" AND ");
 
+            // think there is some logic here which may need addressing...
+            // if the nodes do not have an id attached to them, then some additional logic,
+            // such as a.a1 != b.b2 may be needed to make sure the semantics are consistent.
+            // for example, MATCH (:Local)<--(:Global)-->(c:Global) RETURN DISTINCT c.name works
+            // but, MATCH (:Local)<--(:Global)-->(c:Local) RETURN DISTINCT c.name does not without additional logic.
             if (i == 0) {
                 //whereSQL.append("a.a1 != b.b2");
                 whereSQL.setLength(whereSQL.length() - 5);
@@ -534,9 +532,10 @@ public class MultipleRel extends AbstractTranslation {
                 decodedQuery.getCypherAdditionalInfo().getAliasMap());
 
         StringBuilder where = null;
-        if (needNodeTable)
+        if (needNodeTable) {
             where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), false);
-        else if (!WithSQL.withMapping.isEmpty()) {
+            if (!WithSQL.withMapping.isEmpty()) where.append(" AND wA.id = a.a1");
+        } else if (!WithSQL.withMapping.isEmpty()) {
             if (decodedQuery.getMc().getRels().size() > 1) {
                 where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), true)
                         .append(" AND wA.id = a.a2");

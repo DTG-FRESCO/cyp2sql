@@ -1,6 +1,6 @@
 \documentclass[letterpaper]{ltxdoc}
 
-\usepackage[hmargin={3 cm,3cm},top=1.5cm, marginpar=3cm]{geometry}
+\usepackage[hmargin={3cm,3cm},top=1.5cm, marginpar=3cm]{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \hypersetup{colorlinks, linkcolor=blue, urlcolor=blue}
@@ -93,10 +93,10 @@ The pipeline of the tool consists of 5 stages (as shown in Figure \ref{toolchain
 
 \medskip
 
-The codebase is entirely Java. There are some additional features provided through the ANTLR tool, as described in \S \ref{sec:antlr}. There are some script/.bat files that help the tool execute SQL on Postgres and pipe the results back into the tool.
+The source code is entirely Java and is built using Maven. There are some additional features provided through the ANTLR tool, as described in \S \ref{sec:antlr}. There are some script/.bat files that help the tool execute SQL on Postgres and pipe the results back into the \emph{Cyp2SQL} tool.
 
 \subsection{Quick usage}
-Using the \texttt{cyp2sql-next.jar} file:
+Using the \texttt{cyp2sql-next.jar} file from the command line:
 \begin{verbatim}
 <-schema|-translate|-s|-t> <propertiesFile> <targetDatabaseName> <-dp|-dn|-r>
 \end{verbatim}
@@ -107,7 +107,7 @@ Using the \texttt{cyp2sql-next.jar} file:
 \texttt{-t \textbar{} -translate} & Runs the tool for query translation. See \S \ref{sec:tranQ}. \\
 \texttt{propertiesFile} & Path of the properties file \texttt{c2s\_props.properties}. See \S \ref{ss:prop}. \\
 \texttt{targetDatabaseName} & Name of the relational database for either the converted graph schema to be stored into, or for the translated queries to execute on. \\
-\texttt{dp \textbar{} -dn \textbar{} -r} & \textbf{Only needed when in query translation mode}.
+\texttt{dp \textbar{} -dn \textbar{} -r} & \textbf{Only needed when in query translation mode}. See \S \ref{ssec:usage} for further details.
 \end{tabular}
 \end{center}
 
@@ -115,7 +115,7 @@ Using the \texttt{cyp2sql-next.jar} file:
 
 Using the code within another application as a library is also possible. Example usage:
 
-\begin{lstlisting}[language=Java, breaklines=true]
+\begin{lstlisting}[language=Java]
 import database.postgres.InsertSchemaPostgres;
 import intermediate_rep.DecodedQuery;
 import production.C2SMain;
@@ -142,7 +142,8 @@ case "convert":
 // the properties file must be edited first.
 // a dump from Neo4j is also needed.
 boolean successConvert = SchemaConvert.translate(props);
-if (successConvert) InsertSchemaPostgres.executeSchemaChange(dbName, props);
+if (successConvert)
+InsertSchemaPostgres.executeSchemaChange(dbName, props);
 break;
 case "translate":
 // location of the script to allow results from Postgres to be
@@ -176,6 +177,16 @@ System.exit(1);
 }
 }
 }
+\end{lstlisting}
+
+\medskip
+
+The library and its dependencies can be added to a local Maven repository in the following way:
+
+\begin{lstlisting}[language=bash, breaklines=true, postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}, backgroundcolor=\color{gray}, basicstyle=\color{white}\ttfamily]
+$ git clone git@gitlab.dtg.cl.cam.ac.uk:fresco-projects/cyp2sql-next.git
+$ cd cyp2sql-next
+$ mvn install
 \end{lstlisting}
 
 \section{Getting started}
@@ -389,6 +400,7 @@ See the method \texttt{getLabelMapping()} in \texttt{C2SMain.java} for further i
 \section{Translation of queries}
 \label{sec:tranQ}
 \subsection{Usage}
+\label{ssec:usage}
 The tool requires a running Neo4j instance to be up and running.
 
 \medskip
