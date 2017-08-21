@@ -7,6 +7,8 @@
     <groupId>ojc37.cyp2sql-next</groupId>
     <artifactId>cyp2sql-next</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>cyp2sql</name>
     <build>
         <plugins>
             <plugin>

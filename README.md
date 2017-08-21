@@ -187,7 +187,9 @@ The OPUS dataset from the University of Cambridge contains 400k nodes and 812k r
 | MATCH (a:Global)-->(b:Global) WHERE any(n in a.name WHERE n = 'postgres') WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;   | ≈ 2050ms.       | ≈ 1850ms.     |
 | MATCH p=shortestPath((f {name:"omega"})-[*1..2]->(t:Meta)) RETURN count(t);                                                                                                                             | &gt; 100000ms.  | ≈ 800ms.      | 
 
-| Query                                                                                                         | Neo4j Galaxies | Postgres Galaxies |
-|---------------------------------------------------------------------------------------------------------------|----------------|-------------------|
-| MATCH (a)-[e]->(b)-[f]->(c) WHERE a.vll_gwc = b.vll_gwc AND id(b) < 1000 AND id(c) > 20000 RETURN count(f);   | ≈ 4600ms.      | ≈ 285ms.          |
-| MATCH (a)-->(b)<--(c) WHERE id(a) = 2349 AND id(c) = 7832 RETURN count(b);                                    | ≈ 63ms.        | ≈ 2ms.            |
+| Query                                                                                                                                                  | Neo4j Galaxies   | Postgres Galaxies |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|-------------------|
+| MATCH (a)-[e]->(b)-[f]->(c) WHERE a.vll_gwc = b.vll_gwc AND id(b) < 1000 AND id(c) > 20000 RETURN count(f);                                            | ≈ 4600ms.        | ≈ 285ms.          |
+| MATCH (a)-->(b)<--(c) WHERE id(a) = 2349 AND id(c) = 7832 RETURN count(b);                                                                             | ≈ 63ms.          | ≈ 2ms.            |
+| MATCH (a)-->(b) WHERE a.vll_gwc = '3' OR a.vll_gsc = '5' AND a.nn_gsc = '6' RETURN DISTINCT id(a), id(b);                                              | ≈ 780ms.         | ≈ 515ms.          |
+| MATCH (a:Galaxy)-->(b:Galaxy) WHERE id(b) > 15000 WITH b MATCH (c) WHERE c.vll_gsc = '4' WITH c MATCH (d)<--(c) WHERE d.nn_gwc = '3' RETURN count(d);  | ≈ 1.16 * 10^7ms. | ≈ 8.83 * 10^5 ms. |

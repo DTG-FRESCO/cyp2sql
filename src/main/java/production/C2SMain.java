@@ -167,10 +167,7 @@ public class C2SMain {
             Neo4jDriver.warmUp(props);
         } catch (ClientException ce) {
             if (ce.getMessage().contains("SSLEngine problem")) {
-                System.out.println("Resetting Neo4j SSL properties...");
-                // Neo4jDriver.resetSSLNeo4J();
-                System.out.println("Reset complete.");
-                Neo4jDriver.warmUp(props);
+                System.err.println("SSL Engine issue");
             }
         } catch (ServiceUnavailableException unavail) {
             System.err.println("*** Make sure the Neo4j database is up and running correctly. ***");
