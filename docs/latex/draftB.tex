@@ -325,13 +325,13 @@ If the tool runs successfully and without error, the following should have happe
 
 \subsection{Graph to relational: theory}
 \label{ssec:grreltheory}
-All the nodes from the graph are stored in one relation (nodes), and all the relationships are stored in a separate relation (edges).
+All the nodes from the graph are stored in one relation (\emph{Nodes}), and all the relationships are stored in a separate relation (\emph{Edges}).
 
 There are some optimisations and additional implementation aspects. Storing all the attributes of the nodes in one relation, where there are multiple labels, will lead to a lot of NULL values populating the relation. To combat this, each individual label also has its own relation. The translator tool decides at run time the optimal relation to join.
 
 Furthermore, each relationship type has its own relation. Although this optimisation is quicker, the trade-off will be roughly double the amount of disk space required to store all the relations, as well as the additional complexity in the translation tool.
 
-For graph functions to be computable on the relational side, the schema converter also builds two materialised views –- \texttt{adjlist\_from} \& \texttt{adjlist\_to}.
+For graph functions to be computable on the relational side, the schema converter also builds two materialised views –- \texttt{adjlist\_from} \& \texttt{adjlist\_to}. For the performance of the queries to be better when relationships are used, a unique index constraint is added to the \emph{Edges} relation as well. It is recommended to add even further indices where applicable for larger boosts in speed.
 
 Some other functions are also committed to the database at this point:
 

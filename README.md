@@ -190,11 +190,10 @@ The OPUS dataset from the University of Cambridge contains 400k nodes and 812k r
 
 | Query                                                                                                                                                                                                   | Neo4j OPUS      | Postgres OPUS |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|---------------|
-| MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);                                                                                                                                        | ≈ 605ms.        | ≈ 222ms.      |
-| MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a);                                                                                                                  | ≈ 940ms.        | ≈ 80ms.       |
-| MATCH (a:Global)-->(b:Global) WHERE any(n in a.name WHERE n = 'postgres') WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;   | ≈ 2050ms.       | ≈ 1850ms.     |
-| MATCH p=shortestPath((f {name:"omega"})-[*1..2]->(t:Meta)) RETURN count(t);                                                                                                                             | &gt; 100000ms.  | ≈ 800ms.      |
-| MATCH (m) WHERE exists(m.ref_count) RETURN id(m), m.name;                                                                                                                                               | ≈ 1040ms.       | ≈ 185ms.      |
+| MATCH ()<-[r:LOC_OBJ {state:12}]-(idA {type:2}) RETURN count(r);                                                                                                                                        | ≈ 605ms.        | ≈ 150ms.      |
+| MATCH (a) WHERE any(lab in labels(a) WHERE lab IN ['Global', 'Meta']) RETURN count(a);                                                                                                                  | ≈ 835ms.        | ≈ 80ms.       |
+| MATCH (a:Global)-->(b:Global) WHERE any(n in a.name WHERE n = 'postgres') WITH b MATCH (c) WHERE c.sys_time = b.sys_time WITH c MATCH (c)<--(d) RETURN DISTINCT d.node_id ORDER BY d.node_id LIMIT 5;   | ≈ 1720ms.       | ≈ 1615ms.     |
+| MATCH (m) WHERE exists(m.ref_count) RETURN id(m), m.name;                                                                                                                                               | ≈ 935ms .       | ≈ 160ms.      |
 
 | Query                                                                                                                                                  | Neo4j Galaxies    | Postgres Galaxies |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|-------------------|

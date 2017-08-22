@@ -57,4 +57,7 @@ class PostgresConstants {
     static final String AUTO_SEQ_QUERY = "CREATE SEQUENCE nodes_id_seq;\n" +
             "ALTER TABLE nodes ALTER id SET DEFAULT NEXTVAL('nodes_id_seq');";
 
+    // indexes to improve the performance (particularly of larger databases).
+    static final String EDGES_INDEX = "CREATE UNIQUE INDEX edges_uniq_1 ON edges(idl, idr, type);";
+
 }
