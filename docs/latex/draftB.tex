@@ -863,6 +863,7 @@ RETURN idN.propertyA
 \subsection{Known issues}
 \begin{itemize}
 \item The use of \texttt{WITH} is still quite constrained in its use
+\item Alias names cannot be the same as field names -- for example, \texttt{a.points AS points} would not work; \texttt{a.points AS points\_x} is fine however
 \item When predicates in the \texttt{WHERE} clause are added, they may sometimes lead to incorrect translations (mostly in the \texttt{WITH} parts of a multiple relationship Cypher input). It can be solved in some cases by adding the predicates in a different way in the original input (see example below)
 \end{itemize}
 

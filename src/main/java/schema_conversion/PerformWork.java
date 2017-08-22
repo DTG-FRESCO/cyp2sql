@@ -132,6 +132,8 @@ class PerformWork implements Runnable {
             if (!SchemaConvert.edgesRelLabels.contains(entry.getKey() + " TEXT") &&
                     !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " INT") &&
                     !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " BIGINT") &&
+                    !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " REAL") &&
+                    !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " BOOLEAN") &&
                     !SchemaConvert.edgesRelLabels.contains(entry.getKey() + " TEXT[]")) {
                 String textToAdd = entry.getKey() + " " + type;
                 if (propsX.getListFields().contains(entry.getKey()))
@@ -195,6 +197,8 @@ class PerformWork implements Runnable {
 
             if (!SchemaConvert.nodeRelLabels.contains(entry.getKey() + " TEXT") &&
                     !SchemaConvert.nodeRelLabels.contains(entry.getKey() + " INT") &&
+                    !SchemaConvert.nodeRelLabels.contains(entry.getKey() + " REAL") &&
+                    !SchemaConvert.nodeRelLabels.contains(entry.getKey() + " BOOLEAN") &&
                     !SchemaConvert.nodeRelLabels.contains(entry.getKey() + " BIGINT") &&
                     !SchemaConvert.nodeRelLabels.contains(entry.getKey() + " TEXT[]")) {
                 SchemaConvert.nodeRelLabels.add(entry.getKey() + " " + type);
@@ -211,7 +215,7 @@ class PerformWork implements Runnable {
 
     /**
      * Calculate the datatype of a key, based on an example value presented to this method. This method mostly
-     * works as expected, however fails in some cases where it inteprets a field as an INT, where in fact it
+     * works as expected, however fails in some cases where it interprets a field as an INT, where in fact it
      * should be of type BIGINT. The tool cannot currently handle this automatically, however can be fixed
      * manually in the code.
      *

@@ -210,6 +210,10 @@ public class CypherWalker extends CypherBaseListener {
         return whereClause;
     }
 
+    String getOrderClause() {
+        return orderClause;
+    }
+
     public boolean hasDistinct() {
         return hasDistinct;
     }

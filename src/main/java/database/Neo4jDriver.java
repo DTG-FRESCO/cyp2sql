@@ -78,10 +78,14 @@ public class Neo4jDriver {
                                 }
                             } else {
                                 if (props.getListFields().contains(key)) {
-                                    writer.println(key + " : {" + entry.getValue()
-                                            .toString()
-                                            .replace("[", "")
-                                            .replace("]", "") + "}");
+                                    try {
+                                        writer.println(key + " : {" + entry.getValue()
+                                                .toString()
+                                                .replace("[", "")
+                                                .replace("]", "") + "}");
+                                    } catch (NullPointerException npe) {
+                                        // do nothing
+                                    }
                                 } else {
                                     if (key.startsWith("id(")) key = "id";
                                     writer.println(key + " : " + entry.getValue());

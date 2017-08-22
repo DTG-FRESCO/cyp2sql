@@ -95,7 +95,7 @@ class CypherTranslator {
                 // if ORDER BY is present in the query
                 OrderClause orderC = null;
                 if (orderClause != null) {
-                    orderC = orderDecode(orderClause);
+                    orderC = orderDecode(orderClause, cypWalker);
                 }
 
                 int skipAmount = (posOfSkip != -1) ? cypWalker.getSkipAmount() : -1;
@@ -633,9 +633,10 @@ class CypherTranslator {
      * Translate the ORDER BY part of the Cypher input (if one is present).
      *
      * @param orderClause Tokenised form of the ORDER BY part of the Cypher input.
+     * @param cypWalker
      * @return OrderClause representing the tokenised input.
      */
-    private static OrderClause orderDecode(List<String> orderClause) throws DQInvalidException {
+    private static OrderClause orderDecode(List<String> orderClause, CypherWalker cypWalker) throws DQInvalidException {
         OrderClause o = new OrderClause();
 
         List<CypOrder> items = new ArrayList<>();
@@ -647,11 +648,11 @@ class CypherTranslator {
             int posComma = orderClause.indexOf(",");
             currentWorking = orderClause.subList(0, posComma);
             orderClause = orderClause.subList(posComma + 1, orderClause.size());
-            items.add(extractOrder(currentWorking));
+            items.add(extractOrder(currentWorking, cypWalker));
         }
 
         if (!orderClause.isEmpty()) {
-            items.add(extractOrder(orderClause));
+            items.add(extractOrder(orderClause, cypWalker));
         }
 
         o.setItems(items);
@@ -661,10 +662,11 @@ class CypherTranslator {
     /**
      * Extracts a CypOrder object from the tokenised input.
      *
-     * @param clause Token list describing the ORDER BY part of the original Cypher query.
+     * @param clause    Token list describing the ORDER BY part of the original Cypher query.
+     * @param cypWalker
      * @return CypOrder object matching the inputted token list.
      */
-    private static CypOrder extractOrder(List<String> clause) throws DQInvalidException {
+    private static CypOrder extractOrder(List<String> clause, CypherWalker cypWalker) throws DQInvalidException {
         /*
         In order below of the types of ORDER BY structures that can be successfully parsed, and the
         string representation of what they are parsed into when they become CypOrder objects.
@@ -675,6 +677,7 @@ class CypherTranslator {
         1. a.name desc = [a, ., name, asc] --> ID: a, FIELD: name, ORDER_TYPE: desc
         2. a.name = [a, ., name] --> ID: a, FIELD: name, ORDER_TYPE: asc (this is the default setting)
         3. count(n.name) asc = [count, n, ., name, asc] --> ID: a, FIELD: count(n), ORDER_TYPE: asc
+        4. some alias is used
         */
         // 1.
         if (clause.size() == 4 && clause.contains(".")) {
@@ -687,6 +690,10 @@ class CypherTranslator {
         // 3.
         else if (clause.size() == 5 && clause.contains("count")) {
             return new CypOrder(clause.get(2), "count(n)", clause.get(4));
+        }
+        // 4.
+        else if (clause.size() == 1 && (clause.contains("asc") || clause.contains("desc"))) {
+            return new CypOrder(null, cypWalker.getOrderClause().split(" ")[0], clause.get(0));
         } else throw new DQInvalidException("The Order By clause is malformed in some way " +
                 "and could not be translated: " + clause);
     }

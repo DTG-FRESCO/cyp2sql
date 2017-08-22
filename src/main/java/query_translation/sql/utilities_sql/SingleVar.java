@@ -55,11 +55,12 @@ public class SingleVar extends AbstractTranslation {
 
         if (cn2.getType() != null && table.equals("nodes")) {
             if (!hasWhere) {
-                sql.append(" WHERE n01.label LIKE");
+                sql.append(" WHERE n01.label LIKE ");
             } else {
-                sql.append(" AND n01.label LIKE");
+                if (!sql.toString().toLowerCase().endsWith(" and ")) sql.append(" AND");
+                sql.append(" n01.label LIKE ");
             }
-            sql.append(" ").append(TranslateUtils.genLabelLike(cn2, "n01"));
+            sql.append(TranslateUtils.genLabelLike(cn2, "n01"));
         }
 
         return sql;

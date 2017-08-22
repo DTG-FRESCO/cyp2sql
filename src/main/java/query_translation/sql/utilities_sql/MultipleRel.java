@@ -337,26 +337,26 @@ public class MultipleRel extends AbstractTranslation {
                                 safSQL.append(caseString).append(", ");
                             } else {
                                 if (field != null) {
-                                    safSQL.append(idRel).append(".").append(field)
-                                            .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
-                                            .append(", ");
+                                    safSQL.append(idRel).append(".").append(field);
+                                    if (!cR.hasAggFunc())
+                                        safSQL.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
+                                                .append(", ");
                                 } else {
                                     safSQL.append(idRel).append(".*")
                                             .append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias))
                                             .append(", ");
                                 }
                             }
-                            if (cR.hasAggFunc() || cR.getCount() > 0) {
+                            if (cR.getCount() > 0) {
                                 safSQL.setLength(safSQL.length() - 2);
                                 safSQL.append(")");
-                                if (cR.hasAggFunc())
-                                    safSQL.append(
-                                            TranslateUtils.useAlias(
-                                                    "collect(" + cR.getNodeID() + ")", null, alias))
-                                            .append(", ");
-                                else safSQL.append(
-                                        TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", null, alias))
+                                safSQL.append(
+                                        TranslateUtils.useAlias("count(" + cR.getNodeID() + ")", cR.getField(), alias))
                                         .append(", ");
+                            } else if (cR.hasAggFunc()) {
+                                safSQL.append(")");
+                                safSQL.append(
+                                        TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
                             }
                             break;
                         }
@@ -455,6 +455,8 @@ public class MultipleRel extends AbstractTranslation {
                 switch (cR.getType()) {
                     case "node":
                         if (!(cR.getCount() > 0 && returnC.getItems().size() > 1)) {
+                            if (WithSQL.withMapping.containsKey(cR.getNodeID())) break;
+
                             if (!nodesSeenSoFar.contains(cR.getNodeID())) {
                                 nodesSeenSoFar.add(cR.getNodeID());
                                 nodeTableCount++;
@@ -534,7 +536,19 @@ public class MultipleRel extends AbstractTranslation {
         StringBuilder where = null;
         if (needNodeTable) {
             where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), false);
-            if (!WithSQL.withMapping.isEmpty()) where.append(" AND wA.id = a.a1");
+            if (!WithSQL.withMapping.isEmpty()) {
+                for (CypNode cN : decodedQuery.getMc().getNodes()) {
+                    if (WithSQL.withMapping.containsKey(cN.getId())) {
+                        int pos = cN.getPosInClause();
+                        if (pos == 1) where.append(" AND wA.id = a.a1");
+                        else {
+                            where.append(" AND wA.id = ").append(alphabet[pos - 1])
+                                    .append(".").append(alphabet[pos - 1]).append(1);
+                        }
+                    }
+                }
+
+            }
         } else if (!WithSQL.withMapping.isEmpty()) {
             if (decodedQuery.getMc().getRels().size() > 1) {
                 where = obtainWhereClause(decodedQuery.getRc(), decodedQuery.getMc(), true)

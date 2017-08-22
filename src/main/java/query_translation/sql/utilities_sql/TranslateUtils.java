@@ -34,7 +34,7 @@ class TranslateUtils {
             String value;
             if (entry.getValue().isJsonArray()) {
                 value = "ARRAY" + entry.getValue().getAsJsonArray().toString();
-            } else if (entry.getKey().equals("name")) {
+            } else if (C2SProperties.listFields.contains(entry.getKey())) {
                 value = "ARRAY[" + entry.getValue().toString() + "]";
             } else value = entry.getValue().getAsString();
 

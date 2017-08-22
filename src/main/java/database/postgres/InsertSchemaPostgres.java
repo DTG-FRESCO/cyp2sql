@@ -43,13 +43,16 @@ public class InsertSchemaPostgres {
             PostgresDriver.createInsert(PostgresConstants.CYPHER_ITERATE);
             PostgresDriver.createInsert(PostgresConstants.UNIQUE_ARR_FUNC);
             PostgresDriver.createInsert(PostgresConstants.AUTO_SEQ_QUERY);
+
+            addFieldsToMetaFile(props);
+
+            // potentially risky insert, presumes no duplicated edges
             PostgresDriver.createInsert(PostgresConstants.EDGES_INDEX);
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            PostgresDriver.closeConnection();
         }
-
-        addFieldsToMetaFile(props);
-        PostgresDriver.closeConnection();
     }
 
     /**

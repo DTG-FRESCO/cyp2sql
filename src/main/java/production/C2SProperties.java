@@ -12,6 +12,10 @@ import java.util.Properties;
  * documentation for the getLocalProperties() method for more detailed information.
  */
 public class C2SProperties {
+    // Some Neo4j fields need to be adapted to handle lists. Currently, this requires the
+    // user to manually outline the fields that *may* contain lists. These are stored
+    // in this array (they are read from a file titled lists.txt).
+    public static ArrayList<String> listFields;
     private String propsLocation;
     private String neo4jSchema;
     private String wspace;
@@ -21,11 +25,6 @@ public class C2SProperties {
     private String neoPW;
     private String postUN;
     private String postPW;
-
-    // Some Neo4j fields need to be adapted to handle lists. Currently, this requires the
-    // user to manually outline the fields that *may* contain lists. These are stored
-    // in this array (they are read from a file titled lists.txt).
-    private ArrayList<String> listFields;
 
     /**
      * Constructor method. Sets the location of the properties file (c2s_props.properties)
@@ -88,7 +87,7 @@ public class C2SProperties {
         this.neo4jRes = neo4jRes;
     }
 
-    String getSqlRes() {
+    public String getSqlRes() {
         return sqlRes;
     }
 
@@ -161,7 +160,7 @@ public class C2SProperties {
         return listFields;
     }
 
-    private void setListFields(ArrayList<String> listFields) {
-        this.listFields = listFields;
+    private void setListFields(ArrayList<String> listFieldsZ) {
+        listFields = listFieldsZ;
     }
 }

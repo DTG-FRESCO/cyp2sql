@@ -86,7 +86,7 @@ public class PostgresDriver {
      * @param props       C2SProperties object (should already be initialised).
      * @throws SQLException Thrown if there is an error in the SQL statement.
      */
-    public static void select(String query, String database, File pg_results, boolean printOutput, C2SProperties props)
+    public static int select(String query, String database, File pg_results, boolean printOutput, C2SProperties props)
             throws SQLException {
         if (!DB_OPEN) PostgresDriver.createConnection(database, props);
         Statement stmt;
@@ -124,6 +124,7 @@ public class PostgresDriver {
         C2SMain.needToPrintID = false;
         C2SMain.numResultsPostgres = numRecords;
         PostgresDriver.closeConnection();
+        return numRecords;
     }
 
     /**

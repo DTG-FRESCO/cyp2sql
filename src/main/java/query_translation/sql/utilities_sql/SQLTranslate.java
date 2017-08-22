@@ -217,22 +217,25 @@ public class SQLTranslate {
         }
 
         for (CypOrder cO : orderC.getItems()) {
-            int posInReturn = 1;
-            for (CypReturn cR : rc.getItems()) {
-                if (cR.getType().equals("node") && cR.getNodeID().equals(cO.getID())) {
-                    nodeID = "n0" + posInReturn;
+            if (cO.getID() == null) sql.append(cO.getField()).append(" ").append(cO.getAscOrDesc()).append(", ");
+            else {
+                int posInReturn = 1;
+                for (CypReturn cR : rc.getItems()) {
+                    if (cR.getType().equals("node") && cR.getNodeID().equals(cO.getID())) {
+                        nodeID = "n0" + posInReturn;
+                        break;
+                    }
+                    if (cR.getType().equals("node")) posInReturn++;
+                }
+
+                if (cO.getField().startsWith("count")) {
+                    sql.append("count(").append(nodeID).append(")").append(cO.getAscOrDesc()).append(", ");
                     break;
                 }
-                if (cR.getType().equals("node")) posInReturn++;
-            }
 
-            if (cO.getField().startsWith("count")) {
-                sql.append("count(").append(nodeID).append(")").append(cO.getAscOrDesc()).append(", ");
-                break;
+                sql.append(nodeID).append(".")
+                        .append(cO.getField()).append(" ").append(cO.getAscOrDesc()).append(", ");
             }
-
-            sql.append(nodeID).append(".")
-                    .append(cO.getField()).append(" ").append(cO.getAscOrDesc()).append(", ");
         }
 
         sql.setLength(sql.length() - 2);
@@ -262,9 +265,12 @@ public class SQLTranslate {
                 nodeTableCount++;
             }
 
-            if (cR.getField() != null && cR.getCount() == COUNT_FALSE) {
-                sql.append("n0").append(nodeTableCount).append(".").append(cR.getField()).append(", ");
-            } else if (cR.getCount() == COUNT_FALSE) {
+            if (cR.getField() != null && cR.getCount() == COUNT_FALSE && (cR.hasAggFunc() && cR.getAggFunc() == 1)) {
+                String ident;
+                if (cR.getType().equals("node")) ident = "n0" + nodeTableCount;
+                else ident = "a";
+                sql.append(ident).append(".").append(cR.getField()).append(", ");
+            } else if (cR.getCount() == COUNT_FALSE && !cR.hasAggFunc()) {
                 FileInputStream fis = new FileInputStream(props.getWspace() + "/meta_nodeProps.txt");
                 BufferedReader br = new BufferedReader(new InputStreamReader(fis));
                 String line;
