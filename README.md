@@ -1,4 +1,4 @@
-# Cypher to SQL Translation (Cyp2SQL)
+# Cypher to SQL Translation (Cyp2SQL) version 1.2
 
 ## Quick Usage
 To use this tool without going near the code, include the .jar in your classpath and use the tool as indicated by the tutorial below:
