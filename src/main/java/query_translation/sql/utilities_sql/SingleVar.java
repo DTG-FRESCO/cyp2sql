@@ -39,7 +39,7 @@ public class SingleVar extends AbstractTranslation {
         sql.setLength(sql.length() - 2);
         sql.append(" ");
 
-        String table = TranslateUtils.getTable(returnC);
+        String table = TranslateUtils.findOptimisedTable(returnC);
         sql.append("FROM ").append(table).append(" n01 ");
 
         sql.append(" INNER JOIN ").append(alphabet[amountHigh % 26])

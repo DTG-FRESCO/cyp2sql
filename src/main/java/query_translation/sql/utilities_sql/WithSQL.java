@@ -76,19 +76,22 @@ public class WithSQL {
         int posOfOrder = tokens.indexOf("order");
         sWith.append(" ORDER BY ");
 
+        tokens = new ArrayList<>(tokens.subList(posOfOrder, tokens.size()));
+
+        // deals with clauses such as ORDER BY <alias> ASC/DESC
+        if (tokens.size() == 3 || tokens.size() == 4) {
+            sWith.append(tokens.get(2)).append(" ").append((tokens.size() == 4) ? tokens.get(3) : "ASC");
+            return sWith;
+        }
+
         while (true) {
-            String field = tokens.get(posOfOrder + 4);
-            String dir = (posOfOrder + 5 >= tokens.size()) ? null : tokens.get(posOfOrder + 5);
-            if (dir != null) {
-                dir = (dir.equals("asc") || dir.equals("desc")) ? dir : null;
-            }
+            String field = tokens.get(4);
+            String dir = (tokens.get(5).equals("asc") || tokens.get(5).equals("desc")) ? tokens.get(5) : null;
             sWith.append(field).append(" ").append((dir == null) ? "" : dir);
-            posOfOrder += 2;
-            if (posOfOrder + 1 >= tokens.size() || !tokens.get(posOfOrder + 1).equals(",")) {
-                break;
-            } else {
-                posOfOrder++;
-            }
+
+            int posOfComma = tokens.indexOf(",");
+            if (posOfComma == -1) break;
+            else tokens = new ArrayList<>(tokens.subList(posOfComma + 1, tokens.size()));
         }
         return sWith;
     }
@@ -173,14 +176,36 @@ public class WithSQL {
     }
 
     public static String createSelectOB(DecodedQuery dQ) {
+        Map<String, String> alias = dQ.getCypherAdditionalInfo().getAliasMap();
+
         StringBuilder sWith = new StringBuilder();
         sWith.append("SELECT ");
+
+        // return only the correct things
         for (CypReturn cR : dQ.getRc().getItems()) {
             if (cR.hasAggFunc()) {
-                sWith.append(CypAggFuncs.sqlEquiv(cR.getAggFunc())).append(cR.getField()).append("), ");
+                sWith.append(CypAggFuncs.sqlEquiv(cR.getAggFunc()));
+            }
+            if (cR.getCount() > 0) {
+                sWith.append("count(");
+                if (cR.getCount() == 2) sWith.append("distinct ");
+            }
+            if (cR.getField() == null) {
+                sWith.append("*");
+            } else {
+                sWith.append("wA.").append(cR.getField());
+            }
+            if (cR.hasAggFunc() || cR.getCount() > 0) {
+                sWith.append(") ").append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
+            } else {
+                sWith.append(TranslateUtils.useAlias(cR.getNodeID(), cR.getField(), alias)).append(", ");
             }
         }
-        if (sWith.length() > 7) sWith.setLength(sWith.length() - 2);
+
+        if (sWith.toString().endsWith(", ")) {
+            sWith.setLength(sWith.length() - 2);
+        }
+
         sWith.append(" FROM wA");
         return sWith.toString();
     }

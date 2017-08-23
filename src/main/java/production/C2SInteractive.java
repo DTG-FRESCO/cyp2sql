@@ -1,7 +1,10 @@
 package production;
 
+import jline.TerminalFactory;
+import jline.console.ConsoleReader;
+
 import java.io.File;
-import java.util.Scanner;
+import java.io.IOException;
 
 /**
  * Class for running the translation part of the tool through the terminal. This is opposed to running the
@@ -22,20 +25,26 @@ class C2SInteractive {
         System.out.println("Cypher to SQL Translator Tool v1.1");
         System.out.println("To exit, type :exit.");
 
-        while (true) {
-            System.out.println("\nType query, or :exit.");
-            System.out.print("c2s> ");
-            Scanner in = new Scanner(System.in);
-            String resp = in.nextLine();
-
-            if (resp.isEmpty()) continue;
-            if (resp.equals(":exit")) break;
-            else {
+        try {
+            ConsoleReader console = new ConsoleReader();
+            console.setPrompt("cyp2sql> ");
+            String line;
+            while ((line = console.readLine()) != null) {
+                if (line.equals(":exit")) break;
+                if (line.isEmpty()) continue;
                 try {
-                    C2SMain.translateCypherToSQL(resp, f_cypher, f_sql, dbName, true, props);
+                    C2SMain.translateCypherToSQL(line, f_cypher, f_sql, dbName, true, props);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                TerminalFactory.get().restore();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -51,20 +60,26 @@ class C2SInteractive {
         System.out.println("Cypher to SQL Translator Tool v1.1");
         System.out.println("To exit, type :exit.");
 
-        while (true) {
-            System.out.println("\nType query, or :exit.");
-            System.out.print("c2s> ");
-            Scanner in = new Scanner(System.in);
-            String resp = in.nextLine();
-
-            if (resp.isEmpty()) continue;
-            if (resp.equals(":exit")) break;
-            else {
+        try {
+            ConsoleReader console = new ConsoleReader();
+            console.setPrompt("cyp2sql> ");
+            String line;
+            while ((line = console.readLine()) != null) {
+                if (line.equals(":exit")) break;
+                if (line.isEmpty()) continue;
                 try {
-                    C2SMain.translateCypherToSQL(resp, null, null, dbName, false, props);
+                    C2SMain.translateCypherToSQL(line, null, null, dbName, false, props);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                TerminalFactory.get().restore();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

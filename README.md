@@ -217,3 +217,19 @@ The OPUS dataset from the University of Cambridge contains 400k nodes and 812k r
 I have, with some bias of course, shown queries that perform better when translated and executed on Postgres. 
 There are many queries where Neo4j massively outperforms the relational representation. 
 It is very dependent on the graph schema, the graph size, how specific the query is (in terms of indexing performance), and the type of query itself.
+
+## Tested on
+I have tested the tool on some GraphGists (https://neo4j.com/graphgists/) - in each case the database is successfully converted over, although no guarantee can be made that all queries can be translated correctly.
+
+* Formula 1 2013 Season
+    * Source: https://neo4j.com/graphgist/formula-1-2013-season
+    * Queries that can be translated:
+        * `MATCH (driver:Driver)-[f:FINISHED]->(circuit:GrandPrix) RETURN driver.name AS fullname, SUM(f.points) AS total_points ORDER BY total_points DESC;`
+* Flight Analyzer
+    * Source: https://neo4j.com/graphgist/flight-analyzer
+    * Queries that can be translated:
+        * `MATCH (a:Airport {name:'SEA'})-[:ORIGIN]-(f1:Flight)-[d:DESTINATION]-(a2:Airport)-[:ORIGIN]-(f2:Flight)-[:DESTINATION]-(a3:Airport {name:'SFO'}) RETURN f1.date, f1.airline, a2.name, f2.date, f2.airline, a3.name;`
+        * `MATCH (a)<-[:DESTINATION]-(f:Flight)-[:ASSIGN]-(t:Ticket) WITH a, avg(t.price) AS aver ORDER BY aver DESC RETURN a.name;`
+        * `MATCH (a:Airport)<-[r:DESTINATION]-(f:Flight) WITH a, count(r) AS num_flights WHERE num_flights > 3 RETURN a.name, num_flights ORDER BY num_flights DESC;`    
+* Six Nations Championship
+    * Source: https://neo4j.com/graphgist/england-6-nations-2016-squad

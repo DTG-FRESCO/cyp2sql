@@ -76,7 +76,7 @@ public class ShortestPath extends AbstractTranslation {
             } else thingsToGroupBy.append("id").append(", ");
         }
 
-        String table = TranslateUtils.getTable(rc);
+        String table = TranslateUtils.findOptimisedTable(rc);
 
         if (sql.toString().endsWith(", ")) {
             sql.setLength(sql.length() - 2);

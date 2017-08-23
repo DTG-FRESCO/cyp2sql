@@ -367,7 +367,7 @@ public class MultipleRel extends AbstractTranslation {
 
         safSQL.setLength(safSQL.length() - 2);
 
-        String table = TranslateUtils.getTable(returnC);
+        String table = TranslateUtils.findOptimisedTable(returnC);
 
         boolean fromAdded = false;
         if (needNodeTable) {
