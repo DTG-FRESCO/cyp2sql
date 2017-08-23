@@ -223,13 +223,18 @@ I have tested the tool on some GraphGists (https://neo4j.com/graphgists/) - in e
 
 * Formula 1 2013 Season
     * Source: https://neo4j.com/graphgist/formula-1-2013-season
-    * Queries that can be translated:
+    * Example queries that can be translated:
         * `MATCH (driver:Driver)-[f:FINISHED]->(circuit:GrandPrix) RETURN driver.name AS fullname, SUM(f.points) AS total_points ORDER BY total_points DESC;`
 * Flight Analyzer
     * Source: https://neo4j.com/graphgist/flight-analyzer
-    * Queries that can be translated:
+    * Example queries that can be translated:
         * `MATCH (a:Airport {name:'SEA'})-[:ORIGIN]-(f1:Flight)-[d:DESTINATION]-(a2:Airport)-[:ORIGIN]-(f2:Flight)-[:DESTINATION]-(a3:Airport {name:'SFO'}) RETURN f1.date, f1.airline, a2.name, f2.date, f2.airline, a3.name;`
         * `MATCH (a)<-[:DESTINATION]-(f:Flight)-[:ASSIGN]-(t:Ticket) WITH a, avg(t.price) AS aver ORDER BY aver DESC RETURN a.name;`
         * `MATCH (a:Airport)<-[r:DESTINATION]-(f:Flight) WITH a, count(r) AS num_flights WHERE num_flights > 3 RETURN a.name, num_flights ORDER BY num_flights DESC;`    
 * Six Nations Championship
     * Source: https://neo4j.com/graphgist/england-6-nations-2016-squad
+* Game of Thrones
+    * Source: https://neo4j.com/graphgist/game-of-thrones
+    * Example queries  that can be translated (note: use of the label 'group' not possible in current version of tool)
+        * `MATCH (p:Person)-[r]-(h:House) WHERE h.name = "Lannister" RETURN COUNT(r) AS lannisters;`
+        * `MATCH (p:Person {alive: "f"}) RETURN p;`

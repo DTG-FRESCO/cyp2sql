@@ -110,26 +110,28 @@ public class InsertSchemaPostgres {
 
             for (String label : SchemaConvert.labelMappings.keySet()) {
                 String tableLabel = label.replace(", ", "_");
-                sb.append("CREATE TABLE ").append(tableLabel).append("(");
-                sb.append(SchemaConvert.labelMappings.get(label));
-                sb.append("); ");
+                if (!tableLabel.equals("group")) {
+                    sb.append("CREATE TABLE ").append(tableLabel).append("(");
+                    sb.append(SchemaConvert.labelMappings.get(label));
+                    sb.append("); ");
 
-                bw_labelProps.write("*" + tableLabel + "*");
-                bw_labelProps.newLine();
-
-                for (String y : SchemaConvert.labelMappings.get(label).replace(" TEXT[]", "")
-                        .replace(" BIGINT", "")
-                        .replace(" INT", "")
-                        .replace(" TEXT", "")
-                        .replace(" REAL", "")
-                        .replace(" BOOLEAN", "")
-                        .split(", ")) {
-                    bw_labelProps.write(y);
+                    bw_labelProps.write("*" + tableLabel + "*");
                     bw_labelProps.newLine();
-                }
 
-                bw_labelNames.write(tableLabel);
-                bw_labelNames.newLine();
+                    for (String y : SchemaConvert.labelMappings.get(label).replace(" TEXT[]", "")
+                            .replace(" BIGINT", "")
+                            .replace(" INT", "")
+                            .replace(" TEXT", "")
+                            .replace(" REAL", "")
+                            .replace(" BOOLEAN", "")
+                            .split(", ")) {
+                        bw_labelProps.write(y);
+                        bw_labelProps.newLine();
+                    }
+
+                    bw_labelNames.write(tableLabel);
+                    bw_labelNames.newLine();
+                }
             }
 
             bw_labelProps.close();
@@ -178,29 +180,30 @@ public class InsertSchemaPostgres {
      */
     private static StringBuilder insertDataForLabels(StringBuilder sb, String label, JsonObject o) {
         String tableLabel = label.replace(", ", "_");
-        sb.append("INSERT INTO ").append(tableLabel).append("(");
+        if (!tableLabel.equals("group")) {
+            sb.append("INSERT INTO ").append(tableLabel).append("(");
 
-        for (String prop : SchemaConvert.labelMappings.get(label).split(", ")) {
-            sb.append(prop
-                    .replace(" TEXT[]", "")
-                    .replace(" BIGINT", "")
-                    .replace(" TEXT", "")
-                    .replace(" INT", "")
-                    .replace(" BOOLEAN", "")
-                    .replace(" REAL", ""))
-                    .append(", ");
+            for (String prop : SchemaConvert.labelMappings.get(label).split(", ")) {
+                sb.append(prop
+                        .replace(" TEXT[]", "")
+                        .replace(" BIGINT", "")
+                        .replace(" TEXT", "")
+                        .replace(" INT", "")
+                        .replace(" BOOLEAN", "")
+                        .replace(" REAL", ""))
+                        .append(", ");
+            }
+
+            sb.setLength(sb.length() - 2);
+            sb.append(") VALUES(");
+
+            for (String z : SchemaConvert.labelMappings.get(label).split(", ")) {
+                sb.append(getInsertString(z, o));
+            }
+
+            sb.setLength(sb.length() - 2);
+            sb.append("); ");
         }
-
-        sb.setLength(sb.length() - 2);
-        sb.append(") VALUES(");
-
-        for (String z : SchemaConvert.labelMappings.get(label).split(", ")) {
-            sb.append(getInsertString(z, o));
-        }
-
-        sb.setLength(sb.length() - 2);
-        sb.append("); ");
-
         return sb;
     }
 
