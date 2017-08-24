@@ -17,10 +17,17 @@
  * limitations under the License.
  */
 
-package exceptions;
+package database;
 
-public class DQInvalidException extends Exception {
-    public DQInvalidException(String s) {
-        super(s);
-    }
+import java.util.Arrays;
+import java.util.List;
+
+public class SchemaConstants {
+    // notice leading space!
+    public static List<String> DATATYPES =
+            Arrays.asList(" TEXT[]", " BIGINT", " TEXT", " INT", " BOOLEAN", " REAL");
+
+    // reserved keywords in SQL that therefore cannot be used as relation names!
+    public static List<String> RESERVED_KW =
+            Arrays.asList("group", "user");
 }

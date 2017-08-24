@@ -22,5 +22,5 @@
 \BOOKMARK [1][-]{section.5}{ANTLR framework}{}% 22
 \BOOKMARK [2][-]{subsection.5.1}{ANTLR setting up}{section.5}% 23
 \BOOKMARK [1][-]{section.6}{Current Cypher translation list}{}% 24
-\BOOKMARK [2][-]{subsection.6.1}{Known issues}{section.6}% 25
-\BOOKMARK [2][-]{subsection.6.2}{List of test queries from OPUS}{section.6}% 26
+\BOOKMARK [1][-]{section.7}{Known issues}{}% 25
+\BOOKMARK [1][-]{section.8}{List of test queries from OPUS}{}% 26

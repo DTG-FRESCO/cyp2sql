@@ -1,6 +1,26 @@
+/*
+ * Copyright (c) 2017.
+ *
+ * Oliver Crawford <o.crawford@hotmail.co.uk>
+ * Lucian Carata <lc525@cam.ac.uk>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package production;
 
 import jline.TerminalFactory;
+import jline.UnsupportedTerminal;
 import jline.console.ConsoleReader;
 
 import java.io.File;
@@ -24,6 +44,8 @@ class C2SInteractive {
         System.out.println("PRINT TO FILE : " + ((C2SMain.printBool) ? "enabled" : "disabled"));
         System.out.println("Cypher to SQL Translator Tool v1.1");
         System.out.println("To exit, type :exit.");
+
+        jline.TerminalFactory.registerFlavor(jline.TerminalFactory.Flavor.WINDOWS, UnsupportedTerminal.class);
 
         try {
             ConsoleReader console = new ConsoleReader();

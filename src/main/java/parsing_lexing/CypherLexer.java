@@ -1,12 +1,30 @@
+/*
+ * Copyright (c) 2017.
+ *
+ * Oliver Crawford <o.crawford@hotmail.co.uk>
+ * Lucian Carata <lc525@cam.ac.uk>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package parsing_lexing;// Generated from Cypher.g4 by ANTLR 4.7
-import org.antlr.v4.runtime.Lexer;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.TokenStream;
+
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.atn.*;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.ATNDeserializer;
+import org.antlr.v4.runtime.atn.LexerATNSimulator;
+import org.antlr.v4.runtime.atn.PredictionContextCache;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class CypherLexer extends Lexer {
@@ -107,6 +125,7 @@ public class CypherLexer extends Lexer {
      */
     @Deprecated
     public static final String[] tokenNames;
+
     static {
         tokenNames = new String[_SYMBOLIC_NAMES.length];
         for (int i = 0; i < tokenNames.length; i++) {
@@ -703,6 +722,7 @@ public class CypherLexer extends Lexer {
                     "\u0418\u041a\2";
     public static final ATN _ATN =
             new ATNDeserializer().deserialize(_serializedATN.toCharArray());
+
     static {
         _decisionToDFA = new DFA[_ATN.getNumberOfDecisions()];
         for (int i = 0; i < _ATN.getNumberOfDecisions(); i++) {

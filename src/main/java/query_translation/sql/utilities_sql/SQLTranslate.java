@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2017.
+ *
+ * Oliver Crawford <o.crawford@hotmail.co.uk>
+ * Lucian Carata <lc525@cam.ac.uk>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package query_translation.sql.utilities_sql;
 
 import exceptions.DQInvalidException;
@@ -24,6 +43,8 @@ import static intermediate_rep.CypCount.COUNT_FALSE;
  * Agnostic to the methods above is appending the ORDER BY, GROUP BY, LIMIT and SKIP elements.
  */
 public class SQLTranslate {
+    private static final char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+
     public static String translateRead(DecodedQuery decodedQuery, C2SProperties props)
             throws DQInvalidException, IOException {
         // SQL built up from a StringBuilder object.
@@ -223,6 +244,10 @@ public class SQLTranslate {
                 for (CypReturn cR : rc.getItems()) {
                     if (cR.getType().equals("node") && cR.getNodeID().equals(cO.getID())) {
                         nodeID = "n0" + posInReturn;
+                        break;
+                    }
+                    if (cR.getType().equals("rel") && cR.getNodeID().equals(cO.getID())) {
+                        nodeID = String.valueOf(alphabet[cR.getPosInClause() - 1]);
                         break;
                     }
                     if (cR.getType().equals("node")) posInReturn++;

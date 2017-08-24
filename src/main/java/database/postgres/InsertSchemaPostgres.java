@@ -1,8 +1,28 @@
+/*
+ * Copyright (c) 2017.
+ *
+ * Oliver Crawford <o.crawford@hotmail.co.uk>
+ * Lucian Carata <lc525@cam.ac.uk>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package database.postgres;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import database.SchemaConstants;
 import production.C2SProperties;
 import schema_conversion.SchemaConvert;
 
@@ -49,7 +69,10 @@ public class InsertSchemaPostgres {
             // potentially risky insert, presumes no duplicated edges
             PostgresDriver.createInsert(PostgresConstants.EDGES_INDEX);
         } catch (SQLException e) {
-            e.printStackTrace();
+            if (e.getMessage().contains("not create unique index")) {
+                System.err.println("Could not create a unique index in the edges relation " +
+                        "as there is a duplicated relationship present.");
+            } else e.printStackTrace();
         } finally {
             PostgresDriver.closeConnection();
         }
@@ -110,7 +133,7 @@ public class InsertSchemaPostgres {
 
             for (String label : SchemaConvert.labelMappings.keySet()) {
                 String tableLabel = label.replace(", ", "_");
-                if (!tableLabel.equals("group")) {
+                if (!SchemaConstants.RESERVED_KW.contains(tableLabel)) {
                     sb.append("CREATE TABLE ").append(tableLabel).append("(");
                     sb.append(SchemaConvert.labelMappings.get(label));
                     sb.append("); ");
@@ -180,18 +203,15 @@ public class InsertSchemaPostgres {
      */
     private static StringBuilder insertDataForLabels(StringBuilder sb, String label, JsonObject o) {
         String tableLabel = label.replace(", ", "_");
-        if (!tableLabel.equals("group")) {
+        if (!SchemaConstants.RESERVED_KW.contains(tableLabel)) {
             sb.append("INSERT INTO ").append(tableLabel).append("(");
 
             for (String prop : SchemaConvert.labelMappings.get(label).split(", ")) {
-                sb.append(prop
-                        .replace(" TEXT[]", "")
-                        .replace(" BIGINT", "")
-                        .replace(" TEXT", "")
-                        .replace(" INT", "")
-                        .replace(" BOOLEAN", "")
-                        .replace(" REAL", ""))
-                        .append(", ");
+                String modified_prop = prop;
+                for (String data_type : SchemaConstants.DATATYPES) {
+                    modified_prop = modified_prop.replace(data_type, "");
+                }
+                sb.append(modified_prop).append(", ");
             }
 
             sb.setLength(sb.length() - 2);

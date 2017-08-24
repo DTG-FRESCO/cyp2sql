@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2017.
+ *
+ * Oliver Crawford <o.crawford@hotmail.co.uk>
+ * Lucian Carata <lc525@cam.ac.uk>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package translator;
 
 import com.google.gson.JsonObject;
@@ -255,7 +274,7 @@ class CypherTranslator {
      * @param clause Token version of the clause.
      * @param m      Internal representation of the MATCH clause.
      * @return An ArrayList of CypRel objects that correspond to the relationships (if any) described by Cypher.
-     * @throws Exception Error in the clause.
+     * @throws DQInvalidException Relationship structure invalid in some way.
      */
     private static ArrayList<CypRel> extractRels(List<String> clause, MatchClause m) throws DQInvalidException {
         ArrayList<CypRel> rels = new ArrayList<>();
@@ -523,7 +542,7 @@ class CypherTranslator {
      *                     the RETURN part can be).
      * @param cypWalker    Additional information about the query.
      * @return ReturnClause object
-     * @throws Exception Error in creating the ReturnClause object (exception thrown in extractReturn method).
+     * @throws DQInvalidException Error in creating the ReturnClause object (exception thrown in extractReturn method).
      */
     private static ReturnClause returnDecode(List<String> returnClause, MatchClause matchC, CypherWalker cypWalker)
             throws DQInvalidException {
@@ -663,7 +682,7 @@ class CypherTranslator {
      * Extracts a CypOrder object from the tokenised input.
      *
      * @param clause    Token list describing the ORDER BY part of the original Cypher query.
-     * @param cypWalker
+     * @param cypWalker CypherWalker object.
      * @return CypOrder object matching the inputted token list.
      */
     private static CypOrder extractOrder(List<String> clause, CypherWalker cypWalker) throws DQInvalidException {

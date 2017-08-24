@@ -860,10 +860,11 @@ LOOP idX ON idA COLLECT idN
 RETURN idN.propertyA
 \end{lstlisting}
 
-\subsection{Known issues}
+\section{Known issues}
 \begin{itemize}
 \item The use of \texttt{WITH} is still quite constrained in its use
 \item Alias names cannot be the same as field names -- for example, \texttt{a.points AS points} would not work; \texttt{a.points AS points\_x} is fine however
+\item Some labels from Neo4j may map to reserved keywords in SQL (such as \emph{Group} and \emph{User}) - in these cases the optimised table for these labels cannot be created
 \item When predicates in the \texttt{WHERE} clause are added, they may sometimes lead to incorrect translations (mostly in the \texttt{WITH} parts of a multiple relationship Cypher input). It can be solved in some cases by adding the predicates in a different way in the original input (see example below)
 \end{itemize}
 
@@ -882,7 +883,7 @@ RETURN count(f);
 // and will not work (currently).
 \end{lstlisting}
 
-\subsection{List of test queries from OPUS}
+\section{List of test queries from OPUS}
 \begin{verbatim}
 MATCH p=shortestPath((f {name:"omega"})-[*1..6]->(t:Meta)) RETURN count(t);
 

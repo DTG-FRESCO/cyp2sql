@@ -238,3 +238,7 @@ I have tested the tool on some GraphGists (https://neo4j.com/graphgists/) - in e
     * Example queries  that can be translated (note: use of the label 'group' not possible in current version of tool)
         * `MATCH (p:Person)-[r]-(h:House) WHERE h.name = "Lannister" RETURN COUNT(r) AS lannisters;`
         * `MATCH (p:Person {alive: "f"}) RETURN p;`
+* Fitness and Nutritional Information
+    * Source: https://neo4j.com/graphgist/fitness-and-nutritional-recommendations
+* Belgian Beers
+    * Source: https://neo4j.com/graphgist/scraping-wikipedia-and-loading-into-a-graphgist
